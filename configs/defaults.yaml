@@ -1,0 +1,6 @@
+# default normalization options
+keep_engraving: false
+strip_scheme_blocks: true
+strip_comments: true
+normalize_whitespace: true
+expand_relative: false

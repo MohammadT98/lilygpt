@@ -1,0 +1,15 @@
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lilynorm"
+version = "0.1.0"
+description = "LilyPond normalization + tokenization pipeline"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]          # we use the src/ layout
+
+[project.scripts]
+lilynorm = "lilynorm.cli:main"   # gives you a `lilynorm` command

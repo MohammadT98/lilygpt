@@ -1,0 +1,4 @@
+keep_engraving: false
+strip_comments: true
+normalize_whitespace: true
+expand_relative: false
