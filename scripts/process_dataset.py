@@ -28,6 +28,7 @@ import json
 import re
 import sys
 from pathlib import Path
+from typing import TextIO
 
 from lilynorm.utils.options import NormOptions
 from lilynorm.stages import preparse, normalize, engrave_strip, tokenize_gpt
@@ -76,6 +77,27 @@ def normalize_file(path: Path, opts: NormOptions) -> str:
     stage2 = normalize.run(stage1, opts)
     stage3 = engrave_strip.run(stage2, opts)
     return stage3
+
+
+class _Tee:
+    """Mirror writes to both the original stream and a log file."""
+
+    def __init__(self, stream: TextIO, log_file: TextIO) -> None:
+        self._stream = stream
+        self._log_file = log_file
+
+    def write(self, data: str) -> int:
+        written = self._stream.write(data)
+        self._log_file.write(data)
+        return written
+
+    def flush(self) -> None:
+        self._stream.flush()
+        self._log_file.flush()
+
+    @property
+    def encoding(self):
+        return getattr(self._stream, "encoding", None)
 
 
 def find_voice_blocks(text: str) -> list[tuple[str, int, int]]:
@@ -140,96 +162,117 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    input_root = Path(args.input).expanduser().resolve()
-    if not input_root.exists():
-        print(f"[dataset] input folder not found: {input_root}", file=sys.stderr)
-        return 2
+    log_dir = Path("data/logs").expanduser()
+    log_dir.mkdir(parents=True, exist_ok=True)
+    log_path = log_dir / "process_dataset.log"
 
-    norm_root = Path(args.normalized_out).expanduser().resolve()
-    tok_root = Path(args.tokenized_out).expanduser().resolve()
-    opts = NormOptions()
-    processed = 0
-    skipped = 0
-    trimmed_multi_voice = 0
-    single_voice_missing = 0
+    stdout_backup = sys.stdout
+    stderr_backup = sys.stderr
+    log_file: TextIO | None = None
 
-    ly_files = sorted(input_root.rglob("*.ly"))
-    if not ly_files:
-        print(f"[dataset] no .ly files found under {input_root}")
-        return 0
+    try:
+        log_file = log_path.open("w", encoding="utf-8")
+        sys.stdout = _Tee(stdout_backup, log_file)
+        sys.stderr = _Tee(stderr_backup, log_file)
 
-    for src in ly_files:
-        rel = src.relative_to(input_root)
-        text = src.read_text(encoding="utf-8", errors="ignore")
-        if not should_process(src, text):
-            skipped += 1
-            continue
+        input_root = Path(args.input).expanduser().resolve()
+        if not input_root.exists():
+            print(f"[dataset] input folder not found: {input_root}", file=sys.stderr)
+            return 2
 
-        print(f"[dataset] processing {rel}")
+        norm_root = Path(args.normalized_out).expanduser().resolve()
+        tok_root = Path(args.tokenized_out).expanduser().resolve()
+        opts = NormOptions()
+        processed = 0
+        skipped = 0
+        trimmed_multi_voice = 0
+        single_voice_missing = 0
 
-        try:
-            normalized_text = normalize_file(src, opts)
-        except Exception as exc:  # pragma: no cover - defensive
-            print(f"[dataset] ! failed to normalize {rel}: {exc}", file=sys.stderr)
-            continue
+        ly_files = sorted(input_root.rglob("*.ly"))
+        if not ly_files:
+            print(f"[dataset] no .ly files found under {input_root}")
+            return 0
 
-        if not args.keep_figures:
-            normalized_text = FIGURE_ASSIGN_RE.sub("", normalized_text)
-            normalized_text = FIGURE_INLINE_RE.sub("", normalized_text)
-            normalized_text = normalized_text.replace("<figure>", "").replace("</figure>", "")
-
-        selected_voice = None
-        if args.single_voice_only:
-            voice_blocks = find_voice_blocks(normalized_text)
-            if not voice_blocks:
-                single_voice_missing += 1
-                print(
-                    f"[dataset] ! skipped {rel} (voices=0) "
-                    "due to --single-voice-only"
-                )
+        for src in ly_files:
+            rel = src.relative_to(input_root)
+            text = src.read_text(encoding="utf-8", errors="ignore")
+            if not should_process(src, text):
+                skipped += 1
                 continue
-            selected_voice, block_start, block_end = voice_blocks[0]
-            prefix = normalized_text[:block_start]
-            normalized_text = (prefix + normalized_text[block_start:block_end]).rstrip() + "\n"
-            if len(voice_blocks) > 1:
-                trimmed_multi_voice += 1
-                print(
-                    f"[dataset] ! trimmed {rel} to single voice {selected_voice} "
-                    f"(removed {len(voice_blocks) - 1} voices)"
-                )
 
-        if args.dry_run:
+            print(f"[dataset] processing {rel}")
+
+            try:
+                normalized_text = normalize_file(src, opts)
+            except Exception as exc:  # pragma: no cover - defensive
+                print(f"[dataset] ! failed to normalize {rel}: {exc}", file=sys.stderr)
+                continue
+
+            if not args.keep_figures:
+                normalized_text = FIGURE_ASSIGN_RE.sub("", normalized_text)
+                normalized_text = FIGURE_INLINE_RE.sub("", normalized_text)
+                normalized_text = normalized_text.replace("<figure>", "").replace("</figure>", "")
+
+            selected_voice = None
+            if args.single_voice_only:
+                voice_blocks = find_voice_blocks(normalized_text)
+                if not voice_blocks:
+                    single_voice_missing += 1
+                    print(
+                        f"[dataset] ! skipped {rel} (voices=0) "
+                        "due to --single-voice-only"
+                    )
+                    continue
+                selected_voice, block_start, block_end = voice_blocks[0]
+                prefix = normalized_text[:block_start]
+                normalized_text = (
+                    prefix + normalized_text[block_start:block_end]
+                ).rstrip() + "\n"
+                if len(voice_blocks) > 1:
+                    trimmed_multi_voice += 1
+                    print(
+                        f"[dataset] ! trimmed {rel} to single voice {selected_voice} "
+                        f"(removed {len(voice_blocks) - 1} voices)"
+                    )
+
+            if args.dry_run:
+                processed += 1
+                continue
+
+            # Normalized output mirrors source path (.ly extension retained).
+            norm_path = norm_root / rel
+            norm_path.parent.mkdir(parents=True, exist_ok=True)
+            norm_path.write_text(normalized_text.rstrip() + "\n", encoding="utf-8")
+
+            norm_path = norm_root / rel
+            norm_path.parent.mkdir(parents=True, exist_ok=True)
+            norm_path.write_text(normalized_text.rstrip() + "\n", encoding="utf-8")
+
+            if not args.skip_tokenize:
+                tok_ids = tokenize_gpt.run(normalized_text, model_name=args.tokenizer_model)
+                tok_path = tok_root / rel.with_suffix(".tokens.json")
+                tok_path.parent.mkdir(parents=True, exist_ok=True)
+                tok_path.write_text(json.dumps({"input_ids": tok_ids}) + "\n", encoding="utf-8")
+
             processed += 1
-            continue
 
-        # Normalized output mirrors source path (.ly extension retained).
-        norm_path = norm_root / rel
-        norm_path.parent.mkdir(parents=True, exist_ok=True)
-        norm_path.write_text(normalized_text.rstrip() + "\n", encoding="utf-8")
-
-        norm_path = norm_root / rel
-        norm_path.parent.mkdir(parents=True, exist_ok=True)
-        norm_path.write_text(normalized_text.rstrip() + "\n", encoding="utf-8")
-
-        if not args.skip_tokenize:
-            tok_ids = tokenize_gpt.run(normalized_text, model_name=args.tokenizer_model)
-            tok_path = tok_root / rel.with_suffix(".tokens.json")
-            tok_path.parent.mkdir(parents=True, exist_ok=True)
-            tok_path.write_text(json.dumps({"input_ids": tok_ids}) + "\n", encoding="utf-8")
-
-        processed += 1
-
-    print(
-        f"[dataset] done. processed={processed} skipped={skipped} "
-        f"normalized_out={norm_root}"
-        + ("" if args.skip_tokenize else f" tokenized_out={tok_root}")
-        + (
-            ""
-            if not args.single_voice_only
-            else f" single_voice_trimmed={trimmed_multi_voice} single_voice_skipped={single_voice_missing}"
+        print(
+            f"[dataset] done. processed={processed} skipped={skipped} "
+            f"normalized_out={norm_root}"
+            + ("" if args.skip_tokenize else f" tokenized_out={tok_root}")
+            + (
+                ""
+                if not args.single_voice_only
+                else f" single_voice_trimmed={trimmed_multi_voice} single_voice_skipped={single_voice_missing}"
+            )
         )
-    )
-    return 0
+        return 0
+    finally:
+        if log_file is not None:
+            log_file.flush()
+            log_file.close()
+        sys.stdout = stdout_backup
+        sys.stderr = stderr_backup
 
 
 if __name__ == "__main__":
