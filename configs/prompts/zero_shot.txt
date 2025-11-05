@@ -1,0 +1,14 @@
+Write LilyPond code only.
+Put \version "2.24.4" on the first line.
+Define exactly one identity music function named \id that returns its argument unchanged, using:
+
+id = #(define-music-function (parser location music) (ly:music?)
+  #{ $music #})
+
+
+Then write exactly one \relative c' { ... } block containing all the music (no other top-level music).
+At the start of the block, include \key c \major, \time 4/4, and \tempo 4 = 120.
+Inside the block, call \id exactly once and use it to wrap the entire melody (nothing musical outside the \id { ... } braces).
+Inside \id { ... }, write exactly 8 bars separated by |, each bar totaling 4 quarter-note beats.
+Use only lowercase notes a–g with explicit durations 4 or 8 (no other durations). No tuplets, no dotted notes, no ties or slurs.
+No rests, no chords, no repeats, no \transpose, no \score or \layout, no other variables/macros or Scheme, no text, no voices (<< >> or \\).
