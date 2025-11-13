@@ -36,12 +36,12 @@ def debug_print(label: str, content: str, separator: bool = True):
 # ─────────────────────────────────────────────────────────────
 @dataclass
 class ParseOptions:
-    expand_relative: bool = True
+    expand_relative: bool = False
     inline_variables: bool = True              # recursive & cycle-safe
     expand_music_functions: bool = True
-    resolve_transpose: bool = False
+    resolve_transpose: bool = True
     expand_repeat_unfold: bool = True          # nested-tolerant
-    normalize_tuplets: bool = True             # \times → \tuplet, spacing, dedupe
+    normalize_tuplets: bool = False             # \times → \tuplet, spacing, dedupe
     normalize_drums: bool = True               # in \drummode { ... }
     normalize_whitespace: bool = False
     preserve_linebreaks: bool = True
@@ -696,19 +696,19 @@ try:
     from lilynorm.utils.options import NormOptions  # type: ignore
 except Exception:  # pragma: no cover
     class NormOptions:  # fallback typing stub
-        keep_engraving: bool
-        strip_scheme_blocks: bool
-        strip_comments: bool
-        normalize_whitespace: bool
-        expand_relative: bool
-        inline_variables: bool
-        expand_music_functions: bool
-        resolve_transpose: bool
-        expand_repeat_unfold: bool
-        normalize_tuplets: bool
-        normalize_drums: bool
-        preserve_linebreaks: bool
-        canonicalize_chord_brackets: bool
+        keep_engraving: bool = False
+        strip_scheme_blocks: bool = True
+        strip_comments: bool = True
+        normalize_whitespace: bool = True
+        expand_relative: bool = False
+        inline_variables: bool = True
+        expand_music_functions: bool = True
+        resolve_transpose: bool = True 
+        expand_repeat_unfold: bool = True
+        normalize_tuplets: bool = False  
+        normalize_drums: bool = True
+        preserve_linebreaks: bool = True
+        canonicalize_chord_brackets: bool = True
 
 def _map_options(o: "NormOptions") -> ParseOptions:
     """
