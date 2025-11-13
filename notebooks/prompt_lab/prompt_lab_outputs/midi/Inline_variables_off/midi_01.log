@@ -1,0 +1,88 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpj1fwf1y6\render C:\Users\Navid\AppData\Local\Temp\tmpj1fwf1y6\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:6:1: error: not a note name: mySeq
+
+mySeq = { c4 d e f }
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:6:7: error: syntax error, unexpected '='
+mySeq 
+      = { c4 d e f }
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:1: error: unknown escaped string: `\mySeq'
+
+\mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:1: error: string outside of text script or \lyricmode
+
+\mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:10: error: unknown escaped string: `\mySeq'
+\mySeq | 
+         \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:10: error: string outside of text script or \lyricmode
+\mySeq | 
+         \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:19: error: unknown escaped string: `\mySeq'
+\mySeq | \mySeq | 
+                  \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:19: error: string outside of text script or \lyricmode
+\mySeq | \mySeq | 
+                  \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:28: error: unknown escaped string: `\mySeq'
+\mySeq | \mySeq | \mySeq | 
+                           \mySeq | \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:28: error: string outside of text script or \lyricmode
+\mySeq | \mySeq | \mySeq | 
+                           \mySeq | \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:37: error: unknown escaped string: `\mySeq'
+\mySeq | \mySeq | \mySeq | \mySeq | 
+                                    \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:37: error: string outside of text script or \lyricmode
+\mySeq | \mySeq | \mySeq | \mySeq | 
+                                    \mySeq | \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:46: error: unknown escaped string: `\mySeq'
+\mySeq | \mySeq | \mySeq | \mySeq | \mySeq | 
+                                             \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:46: error: string outside of text script or \lyricmode
+\mySeq | \mySeq | \mySeq | \mySeq | \mySeq | 
+                                             \mySeq | \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:55: error: unknown escaped string: `\mySeq'
+\mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | 
+                                                      \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:55: error: string outside of text script or \lyricmode
+\mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | 
+                                                      \mySeq | \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:64: error: unknown escaped string: `\mySeq'
+\mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | 
+                                                               \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:11:64: error: string outside of text script or \lyricmode
+\mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | \mySeq | 
+                                                               \mySeq |
+
+C:/Users/Navid/AppData/Local/Temp/tmpj1fwf1y6/render.ly:5:3: error: errors found, ignoring music expression
+  
+  \new Staff {
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpj1fwf1y6\\render.ly"
+

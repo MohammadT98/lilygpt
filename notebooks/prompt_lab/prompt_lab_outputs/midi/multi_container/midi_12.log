@@ -1,0 +1,18 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpcfl14lck\render C:\Users\Navid\AppData\Local\Temp\tmpcfl14lck\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpcfl14lck'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpcfl14lck/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpcfl14lck/render.ly:5:1: error: Spurious expression in \score
+
+\relative c' { \key c \major \time 4/4 \tempo 4 = 100 c4 d4 e4 f4 | c4 d4 e4 f4 | c4 d4 e4 f4 | c4 d4 e4 f4 | c4 d4 e4 f4 | c4 d4 e4 f4 | c4 d4 e4 f4 | c4 d4 e4 f4 | }
+
+Interpreting music...
+MIDI output to `render.mid'...
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpcfl14lck\\render.ly"
+

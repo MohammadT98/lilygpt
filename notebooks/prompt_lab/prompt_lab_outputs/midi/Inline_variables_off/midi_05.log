@@ -1,0 +1,37 @@
+[no_midi_output] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpy4opr9ee\render C:\Users\Navid\AppData\Local\Temp\tmpy4opr9ee\render.ly
+returncode: 0
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpy4opr9ee'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpy4opr9ee/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpy4opr9ee/render.ly:1: warning: no \version statement found, please add
+
+\version "2.24.4"
+
+for future compatibility
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpy4opr9ee/render.ly:3:3: warning: skipping zero-duration score
+  
+  \new Staff {
+
+C:/Users/Navid/AppData/Local/Temp/tmpy4opr9ee/render.ly:3:3: warning: to suppress this, consider adding a spacer rest
+  
+  \new Staff {
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpy4opr9ee/render.ly:3:3: warning: skipping zero-duration score
+  
+  \new Staff {
+
+C:/Users/Navid/AppData/Local/Temp/tmpy4opr9ee/render.ly:3:3: warning: to suppress this, consider adding a spacer rest
+  
+  \new Staff {
+
+Success: compilation successfully completed
+
+
+No .midi/.mid found. Ensure sanitized file contains \midi {}.

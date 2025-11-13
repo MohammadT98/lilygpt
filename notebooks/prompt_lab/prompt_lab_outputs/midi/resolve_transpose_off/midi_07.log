@@ -1,0 +1,56 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmproxn848v\render C:\Users\Navid\AppData\Local\Temp\tmproxn848v\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmproxn848v'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:10:25: warning: Ignoring non-music expression
+\transpose d c { d4 e4 f
+                        #4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | }
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:10:40: warning: Ignoring non-music expression
+\transpose d c { d4 e4 f#4 g4 | a4 b4 c
+                                       #4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | }
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:10:55: warning: Ignoring non-music expression
+\transpose d c { d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f
+                                                      #4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | }
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:10:70: warning: Ignoring non-music expression
+\transpose d c { d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c
+                                                                     #4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | }
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:10:85: warning: Ignoring non-music expression
+\transpose d c { d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f
+                                                                                    #4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | }
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:10:100: warning: Ignoring non-music expression
+\transpose d c { d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c
+                                                                                                   #4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | }
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:10:115: warning: Ignoring non-music expression
+\transpose d c { d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f
+                                                                                                                  #4 g4 | a4 b4 c#4 d4 | }
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:10:130: warning: Ignoring non-music expression
+\transpose d c { d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c#4 d4 | d4 e4 f#4 g4 | a4 b4 c
+                                                                                                                                 #4 d4 | }
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:12:3: error: syntax error, unexpected \layout
+  
+  \layout {}
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:5:3: error: errors found, ignoring music expression
+  
+  \new Staff {
+
+C:/Users/Navid/AppData/Local/Temp/tmproxn848v/render.ly:14:2: error: syntax error, unexpected end of input, expecting '}'
+}
+ 
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmproxn848v\\render.ly"
+

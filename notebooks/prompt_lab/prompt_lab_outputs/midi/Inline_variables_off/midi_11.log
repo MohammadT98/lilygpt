@@ -1,0 +1,176 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpqct_z3p9\render C:\Users\Navid\AppData\Local\Temp\tmpqct_z3p9\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:5:1: error: unknown escaped string: `\myBarA'
+
+\myBarA = { c4 d4 e4 f4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:5:1: error: string outside of text script or \lyricmode
+
+\myBarA = { c4 d4 e4 f4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:5:9: error: syntax error, unexpected '='
+\myBarA 
+        = { c4 d4 e4 f4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:6:1: error: unknown escaped string: `\myBarB'
+
+\myBarB = { g4 a4 b4 c4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:6:1: error: string outside of text script or \lyricmode
+
+\myBarB = { g4 a4 b4 c4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:6:9: error: syntax error, unexpected '='
+\myBarB 
+        = { g4 a4 b4 c4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:7:1: error: unknown escaped string: `\myBarC'
+
+\myBarC = { d4 e4 f4 g4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:7:1: error: string outside of text script or \lyricmode
+
+\myBarC = { d4 e4 f4 g4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:7:9: error: syntax error, unexpected '='
+\myBarC 
+        = { d4 e4 f4 g4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:8:1: error: unknown escaped string: `\myBarD'
+
+\myBarD = { a4 b4 c4 d4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:8:1: error: string outside of text script or \lyricmode
+
+\myBarD = { a4 b4 c4 d4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:8:9: error: syntax error, unexpected '='
+\myBarD 
+        = { a4 b4 c4 d4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:9:1: error: unknown escaped string: `\myBarE'
+
+\myBarE = { e4 f4 g4 a4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:9:1: error: string outside of text script or \lyricmode
+
+\myBarE = { e4 f4 g4 a4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:9:9: error: syntax error, unexpected '='
+\myBarE 
+        = { e4 f4 g4 a4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:10:1: error: unknown escaped string: `\myBarF'
+
+\myBarF = { b4 c4 d4 e4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:10:1: error: string outside of text script or \lyricmode
+
+\myBarF = { b4 c4 d4 e4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:10:9: error: syntax error, unexpected '='
+\myBarF 
+        = { b4 c4 d4 e4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:11:1: error: unknown escaped string: `\myBarG'
+
+\myBarG = { f4 g4 a4 b4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:11:1: error: string outside of text script or \lyricmode
+
+\myBarG = { f4 g4 a4 b4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:11:9: error: syntax error, unexpected '='
+\myBarG 
+        = { f4 g4 a4 b4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:12:1: error: unknown escaped string: `\myBarH'
+
+\myBarH = { c4 d4 e4 f4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:12:1: error: string outside of text script or \lyricmode
+
+\myBarH = { c4 d4 e4 f4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:12:9: error: syntax error, unexpected '='
+\myBarH 
+        = { c4 d4 e4 f4 }
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:1: error: unknown escaped string: `\myBarA'
+
+\myBarA | \myBarB | \myBarC | \myBarD | \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:1: error: string outside of text script or \lyricmode
+
+\myBarA | \myBarB | \myBarC | \myBarD | \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:11: error: unknown escaped string: `\myBarB'
+\myBarA | 
+          \myBarB | \myBarC | \myBarD | \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:11: error: string outside of text script or \lyricmode
+\myBarA | 
+          \myBarB | \myBarC | \myBarD | \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:21: error: unknown escaped string: `\myBarC'
+\myBarA | \myBarB | 
+                    \myBarC | \myBarD | \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:21: error: string outside of text script or \lyricmode
+\myBarA | \myBarB | 
+                    \myBarC | \myBarD | \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:31: error: unknown escaped string: `\myBarD'
+\myBarA | \myBarB | \myBarC | 
+                              \myBarD | \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:31: error: string outside of text script or \lyricmode
+\myBarA | \myBarB | \myBarC | 
+                              \myBarD | \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:41: error: unknown escaped string: `\myBarE'
+\myBarA | \myBarB | \myBarC | \myBarD | 
+                                        \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:41: error: string outside of text script or \lyricmode
+\myBarA | \myBarB | \myBarC | \myBarD | 
+                                        \myBarE | \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:51: error: unknown escaped string: `\myBarF'
+\myBarA | \myBarB | \myBarC | \myBarD | \myBarE | 
+                                                  \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:51: error: string outside of text script or \lyricmode
+\myBarA | \myBarB | \myBarC | \myBarD | \myBarE | 
+                                                  \myBarF | \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:61: error: unknown escaped string: `\myBarG'
+\myBarA | \myBarB | \myBarC | \myBarD | \myBarE | \myBarF | 
+                                                            \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:61: error: string outside of text script or \lyricmode
+\myBarA | \myBarB | \myBarC | \myBarD | \myBarE | \myBarF | 
+                                                            \myBarG | \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:71: error: unknown escaped string: `\myBarH'
+\myBarA | \myBarB | \myBarC | \myBarD | \myBarE | \myBarF | \myBarG | 
+                                                                      \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:17:71: error: string outside of text script or \lyricmode
+\myBarA | \myBarB | \myBarC | \myBarD | \myBarE | \myBarF | \myBarG | 
+                                                                      \myBarH |
+
+C:/Users/Navid/AppData/Local/Temp/tmpqct_z3p9/render.ly:4:3: error: errors found, ignoring music expression
+  
+  \new Staff {
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpqct_z3p9\\render.ly"
+

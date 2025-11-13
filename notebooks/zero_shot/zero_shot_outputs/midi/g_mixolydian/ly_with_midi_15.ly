@@ -1,0 +1,15 @@
+\version "2.24.4"
+
+\score {
+  \new Staff {
+{
+\clef treble
+\key g \mixolydian
+\time 4/4
+\tempo 4 = 100
+G'4 A'4 B'4 C'4 | D'4 E'4 F'4 G'4 | A'4 B'4 C'4 D'4 | E'4 F'4 G'4 A'4 | B'4 C'4 D'4 E'4 | F'4 G'4 A'4 B'4 | C'4 D'4 E'4 F'4 | G'4 A'4 B'4 C'4 |
+}
+}
+  \layout {}
+  \midi {}
+}

@@ -1,0 +1,73 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpeumprh47\render C:\Users\Navid\AppData\Local\Temp\tmpeumprh47\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpeumprh47'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:7: error: not a note name: is
+e'4 f'
+      is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:41: error: not a note name: is
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'
+                                        is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:73: error: not a note name: is
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'
+                                                                        is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:107: error: not a note name: is
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'
+                                                                                                          is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:141: error: not a note name: is
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'
+                                                                                                                                            is4 g'4 a'4 |
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:19: warning: barcheck failed at: 1/4
+e'4 f'is4 g'4 a'4 
+                  | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:57: warning: barcheck failed at: 1/2
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 
+                                                        | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:77: warning: barcheck failed at: 3/4
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 
+                                                                            | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+[8]
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:153: warning: barcheck failed at: 1/4
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 
+                                                                                                                                                        |
+
+Preprocessing graphical objects...
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:19: warning: barcheck failed at: 1/4
+e'4 f'is4 g'4 a'4 
+                  | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:57: warning: barcheck failed at: 1/2
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 
+                                                        | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:77: warning: barcheck failed at: 3/4
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 
+                                                                            | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpeumprh47/render.ly:10:153: warning: barcheck failed at: 1/4
+e'4 f'is4 g'4 a'4 | b'4 c'4 d'4 e'4 | f'is4 g'4 a'4 b'4 | c'4 d'4 e'4 f'is4 | g'4 a'4 b'4 c'4 | d'4 e'4 f'is4 g'4 | a'4 b'4 c'4 d'4 | e'4 f'is4 g'4 a'4 
+                                                                                                                                                        |
+
+MIDI output to `render.mid'...
+Finding the ideal number of pages...
+Fitting music on 1 page...
+Drawing systems...
+Converting to `render.pdf'...
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpeumprh47\\render.ly"
+

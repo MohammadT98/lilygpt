@@ -1,0 +1,20 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpcmg8d__b\render C:\Users\Navid\AppData\Local\Temp\tmpcmg8d__b\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpcmg8d__b'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpcmg8d__b/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpcmg8d__b/render.ly:13:3: error: syntax error, unexpected \layout
+  
+  \layout {}
+
+C:/Users/Navid/AppData/Local/Temp/tmpcmg8d__b/render.ly:15:2: error: syntax error, unexpected end of input
+}
+ 
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpcmg8d__b\\render.ly"
+
