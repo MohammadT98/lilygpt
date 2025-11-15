@@ -1,112 +1,112 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpk277kc5l\render C:\Users\Navid\AppData\Local\Temp\tmpk277kc5l\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpr2efafb1\render C:\Users\Navid\AppData\Local\Temp\tmpr2efafb1\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:9:7: error: wrong type for argument 1.  Expecting string, found 1
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:9:7: error: wrong type for argument 1.  Expecting string, found 1
   \bar
       1 = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:9:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:9:9: error: syntax error, unexpected '='
   \bar1 
         = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:10:7: error: wrong type for argument 1.  Expecting string, found 2
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:10:7: error: wrong type for argument 1.  Expecting string, found 2
   \bar
       2 = { g4 a4 b4 c4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:10:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:10:9: error: syntax error, unexpected '='
   \bar2 
         = { g4 a4 b4 c4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:11:7: error: wrong type for argument 1.  Expecting string, found 3
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:11:7: error: wrong type for argument 1.  Expecting string, found 3
   \bar
       3 = { d4 e4 f4 g4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:11:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:11:9: error: syntax error, unexpected '='
   \bar3 
         = { d4 e4 f4 g4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:12:7: error: wrong type for argument 1.  Expecting string, found 4
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:12:7: error: wrong type for argument 1.  Expecting string, found 4
   \bar
       4 = { a4 b4 c4 d4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:12:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:12:9: error: syntax error, unexpected '='
   \bar4 
         = { a4 b4 c4 d4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:13:7: error: wrong type for argument 1.  Expecting string, found 5
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:13:7: error: wrong type for argument 1.  Expecting string, found 5
   \bar
       5 = { e4 f4 g4 a4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:13:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:13:9: error: syntax error, unexpected '='
   \bar5 
         = { e4 f4 g4 a4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:14:7: error: wrong type for argument 1.  Expecting string, found 6
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:14:7: error: wrong type for argument 1.  Expecting string, found 6
   \bar
       6 = { b4 c4 d4 e4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:14:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:14:9: error: syntax error, unexpected '='
   \bar6 
         = { b4 c4 d4 e4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:15:7: error: wrong type for argument 1.  Expecting string, found 7
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:15:7: error: wrong type for argument 1.  Expecting string, found 7
   \bar
       7 = { f4 g4 a4 b4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:15:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:15:9: error: syntax error, unexpected '='
   \bar7 
         = { f4 g4 a4 b4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:16:7: error: wrong type for argument 1.  Expecting string, found 8
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:16:7: error: wrong type for argument 1.  Expecting string, found 8
   \bar
       8 = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:16:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:16:9: error: syntax error, unexpected '='
   \bar8 
         = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:17:7: error: wrong type for argument 1.  Expecting string, found 1
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:17:7: error: wrong type for argument 1.  Expecting string, found 1
   \bar
       1 | \bar2 | \bar3 | \bar4 | \bar5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:17:15: error: wrong type for argument 1.  Expecting string, found 2
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:17:15: error: wrong type for argument 1.  Expecting string, found 2
   \bar1 | \bar
               2 | \bar3 | \bar4 | \bar5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:17:23: error: wrong type for argument 1.  Expecting string, found 3
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:17:23: error: wrong type for argument 1.  Expecting string, found 3
   \bar1 | \bar2 | \bar
                       3 | \bar4 | \bar5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:17:31: error: wrong type for argument 1.  Expecting string, found 4
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:17:31: error: wrong type for argument 1.  Expecting string, found 4
   \bar1 | \bar2 | \bar3 | \bar
                               4 | \bar5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:17:39: error: wrong type for argument 1.  Expecting string, found 5
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:17:39: error: wrong type for argument 1.  Expecting string, found 5
   \bar1 | \bar2 | \bar3 | \bar4 | \bar
                                       5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:17:47: error: wrong type for argument 1.  Expecting string, found 6
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:17:47: error: wrong type for argument 1.  Expecting string, found 6
   \bar1 | \bar2 | \bar3 | \bar4 | \bar5 | \bar
                                               6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:17:55: error: wrong type for argument 1.  Expecting string, found 7
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:17:55: error: wrong type for argument 1.  Expecting string, found 7
   \bar1 | \bar2 | \bar3 | \bar4 | \bar5 | \bar6 | \bar
                                                       7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:17:63: error: wrong type for argument 1.  Expecting string, found 8
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:17:63: error: wrong type for argument 1.  Expecting string, found 8
   \bar1 | \bar2 | \bar3 | \bar4 | \bar5 | \bar6 | \bar7 | \bar
                                                               8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpk277kc5l/render.ly:4:3: error: errors found, ignoring music expression
+C:/Users/Navid/AppData/Local/Temp/tmpr2efafb1/render.ly:4:3: error: errors found, ignoring music expression
   
   \new Staff {
 
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpk277kc5l\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpr2efafb1\\render.ly"
 

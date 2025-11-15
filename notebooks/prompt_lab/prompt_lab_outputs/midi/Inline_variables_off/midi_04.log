@@ -1,141 +1,141 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp3t6dyc24\render C:\Users\Navid\AppData\Local\Temp\tmp3t6dyc24\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp6q15tlsw\render C:\Users\Navid\AppData\Local\Temp\tmp6q15tlsw\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:9:3: error: unknown escaped string: `\def'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:9:3: error: unknown escaped string: `\def'
   
   \def\seq{c4 d4 e4 f4}
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:9:3: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:9:3: error: string outside of text script or \lyricmode
   
   \def\seq{c4 d4 e4 f4}
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:9:7: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:9:7: error: unknown escaped string: `\seq'
   \def
       \seq{c4 d4 e4 f4}
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:9:7: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:9:7: error: string outside of text script or \lyricmode
   \def
       \seq{c4 d4 e4 f4}
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:3: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:3: error: unknown escaped string: `\seq'
   
   \seq | \seq | \seq | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:3: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:3: error: string outside of text script or \lyricmode
   
   \seq | \seq | \seq | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:10: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:10: error: unknown escaped string: `\seq'
   \seq | 
          \seq | \seq | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:10: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:10: error: string outside of text script or \lyricmode
   \seq | 
          \seq | \seq | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:17: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:17: error: unknown escaped string: `\seq'
   \seq | \seq | 
                 \seq | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:17: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:17: error: string outside of text script or \lyricmode
   \seq | \seq | 
                 \seq | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:24: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:24: error: unknown escaped string: `\seq'
   \seq | \seq | \seq | 
                        \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:24: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:24: error: string outside of text script or \lyricmode
   \seq | \seq | \seq | 
                        \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:31: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:31: error: unknown escaped string: `\seq'
   \seq | \seq | \seq | \seq | 
                               \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:31: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:31: error: string outside of text script or \lyricmode
   \seq | \seq | \seq | \seq | 
                               \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:38: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:38: error: unknown escaped string: `\seq'
   \seq | \seq | \seq | \seq | \seq | 
                                      \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:38: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:38: error: string outside of text script or \lyricmode
   \seq | \seq | \seq | \seq | \seq | 
                                      \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:45: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:45: error: unknown escaped string: `\seq'
   \seq | \seq | \seq | \seq | \seq | \seq | 
                                             \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:45: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:45: error: string outside of text script or \lyricmode
   \seq | \seq | \seq | \seq | \seq | \seq | 
                                             \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:52: error: unknown escaped string: `\seq'
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:52: error: unknown escaped string: `\seq'
   \seq | \seq | \seq | \seq | \seq | \seq | \seq | 
                                                    \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:52: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:52: error: string outside of text script or \lyricmode
   \seq | \seq | \seq | \seq | \seq | \seq | \seq | 
                                                    \seq |
 
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:8: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:8: warning: barcheck failed at: 3/4
   \seq 
        | \seq | \seq | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:22: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:22: warning: barcheck failed at: 1/4
   \seq | \seq | \seq 
                      | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:29: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:29: warning: barcheck failed at: 1/2
   \seq | \seq | \seq | \seq 
                             | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:36: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:36: warning: barcheck failed at: 3/4
   \seq | \seq | \seq | \seq | \seq 
                                    | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:50: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:50: warning: barcheck failed at: 1/4
   \seq | \seq | \seq | \seq | \seq | \seq | \seq 
                                                  | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:57: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:57: warning: barcheck failed at: 1/2
   \seq | \seq | \seq | \seq | \seq | \seq | \seq | \seq 
                                                         |
 
 Preprocessing graphical objects...
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:8: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:8: warning: barcheck failed at: 3/4
   \seq 
        | \seq | \seq | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:22: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:22: warning: barcheck failed at: 1/4
   \seq | \seq | \seq 
                      | \seq | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:29: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:29: warning: barcheck failed at: 1/2
   \seq | \seq | \seq | \seq 
                             | \seq | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:36: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:36: warning: barcheck failed at: 3/4
   \seq | \seq | \seq | \seq | \seq 
                                    | \seq | \seq | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:50: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:50: warning: barcheck failed at: 1/4
   \seq | \seq | \seq | \seq | \seq | \seq | \seq 
                                                  | \seq |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3t6dyc24/render.ly:10:57: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmp6q15tlsw/render.ly:10:57: warning: barcheck failed at: 1/2
   \seq | \seq | \seq | \seq | \seq | \seq | \seq | \seq 
                                                         |
 
@@ -144,5 +144,5 @@ Finding the ideal number of pages...
 Fitting music on 1 page...
 Drawing systems...
 Converting to `render.pdf'...
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp3t6dyc24\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp6q15tlsw\\render.ly"
 

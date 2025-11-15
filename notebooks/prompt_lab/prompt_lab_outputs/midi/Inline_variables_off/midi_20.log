@@ -1,92 +1,92 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpoesbclox\render C:\Users\Navid\AppData\Local\Temp\tmpoesbclox\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp2tqwhwvp\render C:\Users\Navid\AppData\Local\Temp\tmp2tqwhwvp\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpoesbclox'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:9:1: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:9:1: error: unknown escaped string: `\foo'
 
 \foo = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:9:1: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:9:1: error: string outside of text script or \lyricmode
 
 \foo = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:9:6: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:9:6: error: syntax error, unexpected '='
 \foo 
      = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:1: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:1: error: unknown escaped string: `\foo'
 
 \foo | \foo | \foo | \foo | \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:1: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:1: error: string outside of text script or \lyricmode
 
 \foo | \foo | \foo | \foo | \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:8: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:8: error: unknown escaped string: `\foo'
 \foo | 
        \foo | \foo | \foo | \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:8: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:8: error: string outside of text script or \lyricmode
 \foo | 
        \foo | \foo | \foo | \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:15: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:15: error: unknown escaped string: `\foo'
 \foo | \foo | 
               \foo | \foo | \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:15: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:15: error: string outside of text script or \lyricmode
 \foo | \foo | 
               \foo | \foo | \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:22: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:22: error: unknown escaped string: `\foo'
 \foo | \foo | \foo | 
                      \foo | \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:22: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:22: error: string outside of text script or \lyricmode
 \foo | \foo | \foo | 
                      \foo | \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:29: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:29: error: unknown escaped string: `\foo'
 \foo | \foo | \foo | \foo | 
                             \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:29: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:29: error: string outside of text script or \lyricmode
 \foo | \foo | \foo | \foo | 
                             \foo | \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:36: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:36: error: unknown escaped string: `\foo'
 \foo | \foo | \foo | \foo | \foo | 
                                    \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:36: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:36: error: string outside of text script or \lyricmode
 \foo | \foo | \foo | \foo | \foo | 
                                    \foo | \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:43: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:43: error: unknown escaped string: `\foo'
 \foo | \foo | \foo | \foo | \foo | \foo | 
                                           \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:43: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:43: error: string outside of text script or \lyricmode
 \foo | \foo | \foo | \foo | \foo | \foo | 
                                           \foo | \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:50: error: unknown escaped string: `\foo'
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:50: error: unknown escaped string: `\foo'
 \foo | \foo | \foo | \foo | \foo | \foo | \foo | 
                                                  \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:10:50: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:10:50: error: string outside of text script or \lyricmode
 \foo | \foo | \foo | \foo | \foo | \foo | \foo | 
                                                  \foo |
 
-C:/Users/Navid/AppData/Local/Temp/tmpoesbclox/render.ly:4:3: error: errors found, ignoring music expression
+C:/Users/Navid/AppData/Local/Temp/tmp2tqwhwvp/render.ly:4:3: error: errors found, ignoring music expression
   
   \new Staff {
 
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpoesbclox\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp2tqwhwvp\\render.ly"
 

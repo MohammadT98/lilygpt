@@ -1,74 +1,74 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpa_7coz8p\render C:\Users\Navid\AppData\Local\Temp\tmpa_7coz8p\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp9xb5e31i\render C:\Users\Navid\AppData\Local\Temp\tmp9xb5e31i\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:3:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:3:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
 bar
    1 = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:4:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:4:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
 bar
    2 = { g4 a4 b4 c4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:5:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:5:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
 bar
    3 = { d4 e4 f4 g4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:6:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:6:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
 bar
    4 = { a4 b4 c4 d4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:7:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:7:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
 bar
    5 = { e4 f4 g4 a4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:8:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:8:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
 bar
    6 = { b4 c4 d4 e4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:9:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:9:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
 bar
    7 = { f4 g4 a4 b4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:10:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:10:4: error: syntax error, unexpected UNSIGNED, expecting '.' or '='
 bar
    8 = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:18:5: error: wrong type for argument 1.  Expecting string, found 1
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:18:5: error: wrong type for argument 1.  Expecting string, found 1
 \bar
     1 | \bar2 | \bar3 | \bar4 | \bar5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:18:13: error: wrong type for argument 1.  Expecting string, found 2
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:18:13: error: wrong type for argument 1.  Expecting string, found 2
 \bar1 | \bar
             2 | \bar3 | \bar4 | \bar5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:18:21: error: wrong type for argument 1.  Expecting string, found 3
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:18:21: error: wrong type for argument 1.  Expecting string, found 3
 \bar1 | \bar2 | \bar
                     3 | \bar4 | \bar5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:18:29: error: wrong type for argument 1.  Expecting string, found 4
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:18:29: error: wrong type for argument 1.  Expecting string, found 4
 \bar1 | \bar2 | \bar3 | \bar
                             4 | \bar5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:18:37: error: wrong type for argument 1.  Expecting string, found 5
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:18:37: error: wrong type for argument 1.  Expecting string, found 5
 \bar1 | \bar2 | \bar3 | \bar4 | \bar
                                     5 | \bar6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:18:45: error: wrong type for argument 1.  Expecting string, found 6
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:18:45: error: wrong type for argument 1.  Expecting string, found 6
 \bar1 | \bar2 | \bar3 | \bar4 | \bar5 | \bar
                                             6 | \bar7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:18:53: error: wrong type for argument 1.  Expecting string, found 7
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:18:53: error: wrong type for argument 1.  Expecting string, found 7
 \bar1 | \bar2 | \bar3 | \bar4 | \bar5 | \bar6 | \bar
                                                     7 | \bar8 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:18:61: error: wrong type for argument 1.  Expecting string, found 8
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:18:61: error: wrong type for argument 1.  Expecting string, found 8
 \bar1 | \bar2 | \bar3 | \bar4 | \bar5 | \bar6 | \bar7 | \bar
                                                             8 |
 
@@ -89,20 +89,20 @@ Preprocessing graphical objects...
 Interpreting music...
 Preprocessing graphical objects...
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:13:3: warning: skipping zero-duration score
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:13:3: warning: skipping zero-duration score
   
   \new Staff {
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:13:3: warning: to suppress this, consider adding a spacer rest
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:13:3: warning: to suppress this, consider adding a spacer rest
   
   \new Staff {
 
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:13:3: warning: skipping zero-duration score
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:13:3: warning: skipping zero-duration score
   
   \new Staff {
 
-C:/Users/Navid/AppData/Local/Temp/tmpa_7coz8p/render.ly:13:3: warning: to suppress this, consider adding a spacer rest
+C:/Users/Navid/AppData/Local/Temp/tmp9xb5e31i/render.ly:13:3: warning: to suppress this, consider adding a spacer rest
   
   \new Staff {
 
@@ -110,5 +110,5 @@ Finding the ideal number of pages...
 Fitting music on 1 page...
 Drawing systems...
 Converting to `render.pdf'...
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpa_7coz8p\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp9xb5e31i\\render.ly"
 
