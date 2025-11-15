@@ -1,141 +1,141 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpivyj0gn3\render C:\Users\Navid\AppData\Local\Temp\tmpivyj0gn3\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp9pbh4r38\render C:\Users\Navid\AppData\Local\Temp\tmp9pbh4r38\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:54: error: unknown escaped string: `\def'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:54: error: unknown escaped string: `\def'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 
                                                      \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:54: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:54: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 
                                                      \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:59: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:59: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def 
                                                           \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:59: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:59: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def 
                                                           \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:82: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:82: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } 
                                                                                  \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:82: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:82: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } 
                                                                                  \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:91: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:91: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | 
                                                                                           \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:91: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:91: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | 
                                                                                           \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:100: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:100: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | 
                                                                                                    \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:100: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:100: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | 
                                                                                                    \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:109: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:109: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | 
                                                                                                             \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:109: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:109: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | 
                                                                                                             \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:118: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:118: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | 
                                                                                                                      \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:118: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:118: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | 
                                                                                                                      \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:127: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:127: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | 
                                                                                                                               \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:127: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:127: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | 
                                                                                                                               \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:136: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:136: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | 
                                                                                                                                        \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:136: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:136: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | 
                                                                                                                                        \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:145: error: unknown escaped string: `\myseq'
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:145: error: unknown escaped string: `\myseq'
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | 
                                                                                                                                                 \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:145: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:145: error: string outside of text script or \lyricmode
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | 
                                                                                                                                                 \myseq | }
 
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:89: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:89: warning: barcheck failed at: 3/4
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq 
                                                                                         | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:107: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:107: warning: barcheck failed at: 1/4
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq 
                                                                                                           | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:116: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:116: warning: barcheck failed at: 1/2
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq 
                                                                                                                    | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:125: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:125: warning: barcheck failed at: 3/4
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq 
                                                                                                                             | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:143: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:143: warning: barcheck failed at: 1/4
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq 
                                                                                                                                               | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:152: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:152: warning: barcheck failed at: 1/2
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq 
                                                                                                                                                        | }
 
 Preprocessing graphical objects...
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:89: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:89: warning: barcheck failed at: 3/4
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq 
                                                                                         | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:107: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:107: warning: barcheck failed at: 1/4
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq 
                                                                                                           | \myseq | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:116: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:116: warning: barcheck failed at: 1/2
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq 
                                                                                                                    | \myseq | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:125: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:125: warning: barcheck failed at: 3/4
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq 
                                                                                                                             | \myseq | \myseq | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:143: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:143: warning: barcheck failed at: 1/4
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq 
                                                                                                                                               | \myseq | }
 
-C:/Users/Navid/AppData/Local/Temp/tmpivyj0gn3/render.ly:5:152: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmp9pbh4r38/render.ly:5:152: warning: barcheck failed at: 1/2
 \relative c' {\key c \major \time 4/4 \tempo 4 = 100 \def \myseq { c4 d4 e4 f4 } \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq | \myseq 
                                                                                                                                                        | }
 
@@ -144,5 +144,5 @@ Finding the ideal number of pages...
 Fitting music on 1 page...
 Drawing systems...
 Converting to `render.pdf'...
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpivyj0gn3\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp9pbh4r38\\render.ly"
 

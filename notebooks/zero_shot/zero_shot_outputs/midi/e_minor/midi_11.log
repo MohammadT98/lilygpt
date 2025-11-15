@@ -1,24 +1,24 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpw4z_xtmp\render C:\Users\Navid\AppData\Local\Temp\tmpw4z_xtmp\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpxkucuznt\render C:\Users\Navid\AppData\Local\Temp\tmpxkucuznt\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpw4z_xtmp'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmpw4z_xtmp/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpxkucuznt'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpxkucuznt/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmpw4z_xtmp/render.ly:10:42: error: not a note name: is
+C:/Users/Navid/AppData/Local/Temp/tmpxkucuznt/render.ly:10:42: error: not a note name: is
 e'4 fis'4 g'4 a'4 | b'4 c''4 d'4 e'4 | f'
                                          is'4 g'4 a'4 b'4 | c''4 d'4 e'4 fis'4 | g'4 a'4 b'4 c''4 | d'4 e'4 fis'4 g'4 | a'4 b'4 c''4 d'4 | e'4 fis'4 g'4 a'4 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpw4z_xtmp/render.ly:10:44: error: syntax error, unexpected '\''
+C:/Users/Navid/AppData/Local/Temp/tmpxkucuznt/render.ly:10:44: error: syntax error, unexpected '\''
 e'4 fis'4 g'4 a'4 | b'4 c''4 d'4 e'4 | f'is
                                            '4 g'4 a'4 b'4 | c''4 d'4 e'4 fis'4 | g'4 a'4 b'4 c''4 | d'4 e'4 fis'4 g'4 | a'4 b'4 c''4 d'4 | e'4 fis'4 g'4 a'4 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpw4z_xtmp/render.ly:4:3: error: errors found, ignoring music expression
+C:/Users/Navid/AppData/Local/Temp/tmpxkucuznt/render.ly:4:3: error: errors found, ignoring music expression
   
   \new Staff {
 
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpw4z_xtmp\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpxkucuznt\\render.ly"
 

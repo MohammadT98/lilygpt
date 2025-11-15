@@ -1,92 +1,92 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmprxts8afm\render C:\Users\Navid\AppData\Local\Temp\tmprxts8afm\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpsllhioej\render C:\Users\Navid\AppData\Local\Temp\tmpsllhioej\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmprxts8afm'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpsllhioej'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:9:3: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:9:3: error: unknown escaped string: `\myBar'
   
   \myBar = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:9:3: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:9:3: error: string outside of text script or \lyricmode
   
   \myBar = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:9:10: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:9:10: error: syntax error, unexpected '='
   \myBar 
          = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:3: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:3: error: unknown escaped string: `\myBar'
   
   \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:3: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:3: error: string outside of text script or \lyricmode
   
   \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:12: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:12: error: unknown escaped string: `\myBar'
   \myBar | 
            \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:12: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:12: error: string outside of text script or \lyricmode
   \myBar | 
            \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:21: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:21: error: unknown escaped string: `\myBar'
   \myBar | \myBar | 
                     \myBar | \myBar | \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:21: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:21: error: string outside of text script or \lyricmode
   \myBar | \myBar | 
                     \myBar | \myBar | \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:30: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:30: error: unknown escaped string: `\myBar'
   \myBar | \myBar | \myBar | 
                              \myBar | \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:30: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:30: error: string outside of text script or \lyricmode
   \myBar | \myBar | \myBar | 
                              \myBar | \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:39: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:39: error: unknown escaped string: `\myBar'
   \myBar | \myBar | \myBar | \myBar | 
                                       \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:39: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:39: error: string outside of text script or \lyricmode
   \myBar | \myBar | \myBar | \myBar | 
                                       \myBar | \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:48: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:48: error: unknown escaped string: `\myBar'
   \myBar | \myBar | \myBar | \myBar | \myBar | 
                                                \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:48: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:48: error: string outside of text script or \lyricmode
   \myBar | \myBar | \myBar | \myBar | \myBar | 
                                                \myBar | \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:57: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:57: error: unknown escaped string: `\myBar'
   \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | 
                                                         \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:57: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:57: error: string outside of text script or \lyricmode
   \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | 
                                                         \myBar | \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:66: error: unknown escaped string: `\myBar'
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:66: error: unknown escaped string: `\myBar'
   \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | 
                                                                  \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:10:66: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:10:66: error: string outside of text script or \lyricmode
   \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | \myBar | 
                                                                  \myBar |
 
-C:/Users/Navid/AppData/Local/Temp/tmprxts8afm/render.ly:4:3: error: errors found, ignoring music expression
+C:/Users/Navid/AppData/Local/Temp/tmpsllhioej/render.ly:4:3: error: errors found, ignoring music expression
   
   \new Staff {
 
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmprxts8afm\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpsllhioej\\render.ly"
 
