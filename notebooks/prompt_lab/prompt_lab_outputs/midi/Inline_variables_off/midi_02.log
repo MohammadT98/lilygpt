@@ -1,145 +1,145 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpgbf6g6g7\render C:\Users\Navid\AppData\Local\Temp\tmpgbf6g6g7\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpkkpj4_vl\render C:\Users\Navid\AppData\Local\Temp\tmpkkpj4_vl\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:5:1: error: unknown escaped string: `\def'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:5:1: error: unknown escaped string: `\def'
 
 \def \phraseA { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:5:1: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:5:1: error: string outside of text script or \lyricmode
 
 \def \phraseA { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:5:6: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:5:6: error: unknown escaped string: `\phraseA'
 \def 
      \phraseA { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:5:6: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:5:6: error: string outside of text script or \lyricmode
 \def 
      \phraseA { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:3: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:3: error: unknown escaped string: `\phraseA'
   
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:3: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:3: error: string outside of text script or \lyricmode
   
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:14: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:14: error: unknown escaped string: `\phraseA'
   \phraseA | 
              \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:14: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:14: error: string outside of text script or \lyricmode
   \phraseA | 
              \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:25: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:25: error: unknown escaped string: `\phraseA'
   \phraseA | \phraseA | 
                         \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:25: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:25: error: string outside of text script or \lyricmode
   \phraseA | \phraseA | 
                         \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:36: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:36: error: unknown escaped string: `\phraseA'
   \phraseA | \phraseA | \phraseA | 
                                    \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:36: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:36: error: string outside of text script or \lyricmode
   \phraseA | \phraseA | \phraseA | 
                                    \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:47: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:47: error: unknown escaped string: `\phraseA'
   \phraseA | \phraseA | \phraseA | \phraseA | 
                                               \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:47: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:47: error: string outside of text script or \lyricmode
   \phraseA | \phraseA | \phraseA | \phraseA | 
                                               \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:58: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:58: error: unknown escaped string: `\phraseA'
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | 
                                                          \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:58: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:58: error: string outside of text script or \lyricmode
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | 
                                                          \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:69: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:69: error: unknown escaped string: `\phraseA'
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | 
                                                                     \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:69: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:69: error: string outside of text script or \lyricmode
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | 
                                                                     \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:80: error: unknown escaped string: `\phraseA'
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:80: error: unknown escaped string: `\phraseA'
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | 
                                                                                \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:80: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:80: error: string outside of text script or \lyricmode
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | 
                                                                                \phraseA |
 
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:8:3: warning: mid-measure time signature without \partial
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:8:3: warning: mid-measure time signature without \partial
   
   \time 4/4
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:12: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:12: warning: barcheck failed at: 3/4
   \phraseA 
            | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:34: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:34: warning: barcheck failed at: 1/4
   \phraseA | \phraseA | \phraseA 
                                  | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:45: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:45: warning: barcheck failed at: 1/2
   \phraseA | \phraseA | \phraseA | \phraseA 
                                             | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:56: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:56: warning: barcheck failed at: 3/4
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA 
                                                        | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:78: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:78: warning: barcheck failed at: 1/4
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA 
                                                                              | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:89: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:89: warning: barcheck failed at: 1/2
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA 
                                                                                         |
 
 Preprocessing graphical objects...
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:12: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:12: warning: barcheck failed at: 3/4
   \phraseA 
            | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:34: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:34: warning: barcheck failed at: 1/4
   \phraseA | \phraseA | \phraseA 
                                  | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:45: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:45: warning: barcheck failed at: 1/2
   \phraseA | \phraseA | \phraseA | \phraseA 
                                             | \phraseA | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:56: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:56: warning: barcheck failed at: 3/4
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA 
                                                        | \phraseA | \phraseA | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:78: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:78: warning: barcheck failed at: 1/4
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA 
                                                                              | \phraseA |
 
-C:/Users/Navid/AppData/Local/Temp/tmpgbf6g6g7/render.ly:10:89: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpkkpj4_vl/render.ly:10:89: warning: barcheck failed at: 1/2
   \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA | \phraseA 
                                                                                         |
 
@@ -148,5 +148,5 @@ Finding the ideal number of pages...
 Fitting music on 1 page...
 Drawing systems...
 Converting to `render.pdf'...
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpgbf6g6g7\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpkkpj4_vl\\render.ly"
 

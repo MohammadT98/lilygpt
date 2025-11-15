@@ -1,141 +1,141 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp3z02eqve\render C:\Users\Navid\AppData\Local\Temp\tmp3z02eqve\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpl9jl2bwo\render C:\Users\Navid\AppData\Local\Temp\tmpl9jl2bwo\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:9:3: error: unknown escaped string: `\def'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:9:3: error: unknown escaped string: `\def'
   
   \def \motif {c4 d4 e4 f4}
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:9:3: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:9:3: error: string outside of text script or \lyricmode
   
   \def \motif {c4 d4 e4 f4}
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:9:8: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:9:8: error: unknown escaped string: `\motif'
   \def 
        \motif {c4 d4 e4 f4}
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:9:8: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:9:8: error: string outside of text script or \lyricmode
   \def 
        \motif {c4 d4 e4 f4}
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:3: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:3: error: unknown escaped string: `\motif'
   
   \motif | \motif | \motif | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:3: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:3: error: string outside of text script or \lyricmode
   
   \motif | \motif | \motif | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:12: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:12: error: unknown escaped string: `\motif'
   \motif | 
            \motif | \motif | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:12: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:12: error: string outside of text script or \lyricmode
   \motif | 
            \motif | \motif | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:21: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:21: error: unknown escaped string: `\motif'
   \motif | \motif | 
                     \motif | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:21: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:21: error: string outside of text script or \lyricmode
   \motif | \motif | 
                     \motif | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:30: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:30: error: unknown escaped string: `\motif'
   \motif | \motif | \motif | 
                              \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:30: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:30: error: string outside of text script or \lyricmode
   \motif | \motif | \motif | 
                              \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:39: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:39: error: unknown escaped string: `\motif'
   \motif | \motif | \motif | \motif | 
                                       \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:39: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:39: error: string outside of text script or \lyricmode
   \motif | \motif | \motif | \motif | 
                                       \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:48: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:48: error: unknown escaped string: `\motif'
   \motif | \motif | \motif | \motif | \motif | 
                                                \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:48: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:48: error: string outside of text script or \lyricmode
   \motif | \motif | \motif | \motif | \motif | 
                                                \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:57: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:57: error: unknown escaped string: `\motif'
   \motif | \motif | \motif | \motif | \motif | \motif | 
                                                         \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:57: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:57: error: string outside of text script or \lyricmode
   \motif | \motif | \motif | \motif | \motif | \motif | 
                                                         \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:66: error: unknown escaped string: `\motif'
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:66: error: unknown escaped string: `\motif'
   \motif | \motif | \motif | \motif | \motif | \motif | \motif | 
                                                                  \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:66: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:66: error: string outside of text script or \lyricmode
   \motif | \motif | \motif | \motif | \motif | \motif | \motif | 
                                                                  \motif |
 
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:10: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:10: warning: barcheck failed at: 3/4
   \motif 
          | \motif | \motif | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:28: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:28: warning: barcheck failed at: 1/4
   \motif | \motif | \motif 
                            | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:37: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:37: warning: barcheck failed at: 1/2
   \motif | \motif | \motif | \motif 
                                     | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:46: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:46: warning: barcheck failed at: 3/4
   \motif | \motif | \motif | \motif | \motif 
                                              | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:64: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:64: warning: barcheck failed at: 1/4
   \motif | \motif | \motif | \motif | \motif | \motif | \motif 
                                                                | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:73: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:73: warning: barcheck failed at: 1/2
   \motif | \motif | \motif | \motif | \motif | \motif | \motif | \motif 
                                                                         |
 
 Preprocessing graphical objects...
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:10: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:10: warning: barcheck failed at: 3/4
   \motif 
          | \motif | \motif | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:28: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:28: warning: barcheck failed at: 1/4
   \motif | \motif | \motif 
                            | \motif | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:37: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:37: warning: barcheck failed at: 1/2
   \motif | \motif | \motif | \motif 
                                     | \motif | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:46: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:46: warning: barcheck failed at: 3/4
   \motif | \motif | \motif | \motif | \motif 
                                              | \motif | \motif | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:64: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:64: warning: barcheck failed at: 1/4
   \motif | \motif | \motif | \motif | \motif | \motif | \motif 
                                                                | \motif |
 
-C:/Users/Navid/AppData/Local/Temp/tmp3z02eqve/render.ly:10:73: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpl9jl2bwo/render.ly:10:73: warning: barcheck failed at: 1/2
   \motif | \motif | \motif | \motif | \motif | \motif | \motif | \motif 
                                                                         |
 
@@ -144,5 +144,5 @@ Finding the ideal number of pages...
 Fitting music on 1 page...
 Drawing systems...
 Converting to `render.pdf'...
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp3z02eqve\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpl9jl2bwo\\render.ly"
 

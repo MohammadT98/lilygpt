@@ -15,8 +15,8 @@
     "avg": 23.999850000000002
   },
   "stage_times_seconds_avg": {
-    "midi_render": 0.06972759999989649,
-    "eval_midi": 0.03395,
-    "eval_lily": 0.4229200000000001
+    "midi_render": 0.05352066999985254,
+    "eval_midi": 0.039845,
+    "eval_lily": 0.37168
   }
 }

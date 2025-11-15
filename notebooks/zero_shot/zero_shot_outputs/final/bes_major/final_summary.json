@@ -1,7 +1,7 @@
 {
   "count": 20,
   "status_rates": {
-    "ok": 0.9,
+    "ok": 0.95,
     "lily_or_ok": 0.95,
     "failed": 0.0,
     "empty": 0.05
@@ -15,8 +15,8 @@
     "avg": 15.913499999999999
   },
   "stage_times_seconds_avg": {
-    "midi_render": 1.6349900000000002,
-    "eval_midi": 0.18397,
-    "eval_lily": 1.121075
+    "midi_render": 0.061040000000000004,
+    "eval_midi": 0.119735,
+    "eval_lily": 0.88461
   }
 }
