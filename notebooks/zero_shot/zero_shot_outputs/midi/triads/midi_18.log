@@ -1,24 +1,24 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpwviosase\render C:\Users\Navid\AppData\Local\Temp\tmpwviosase\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpitvta46o\render C:\Users\Navid\AppData\Local\Temp\tmpitvta46o\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpwviosase'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmpwviosase/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpitvta46o'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpitvta46o/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmpwviosase/render.ly:16:1: error: syntax error, unexpected '}'
+C:/Users/Navid/AppData/Local/Temp/tmpitvta46o/render.ly:16:1: error: syntax error, unexpected '}'
 
 }
 
-C:/Users/Navid/AppData/Local/Temp/tmpwviosase/render.ly:4:3: error: errors found, ignoring music expression
+C:/Users/Navid/AppData/Local/Temp/tmpitvta46o/render.ly:4:3: error: errors found, ignoring music expression
   
   \new Staff {
 
-C:/Users/Navid/AppData/Local/Temp/tmpwviosase/render.ly:19:2: error: syntax error, unexpected end of input, expecting '}'
+C:/Users/Navid/AppData/Local/Temp/tmpitvta46o/render.ly:19:2: error: syntax error, unexpected end of input, expecting '}'
 }
  
 
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpwviosase\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpitvta46o\\render.ly"
 

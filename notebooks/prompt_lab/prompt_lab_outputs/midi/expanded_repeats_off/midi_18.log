@@ -1,20 +1,20 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp3_f1i_qm\render C:\Users\Navid\AppData\Local\Temp\tmp3_f1i_qm\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp2pxdz5f9\render C:\Users\Navid\AppData\Local\Temp\tmp2pxdz5f9\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp3_f1i_qm'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmp3_f1i_qm/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp2pxdz5f9'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp2pxdz5f9/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmp3_f1i_qm/render.ly:9:11: error: syntax error, unexpected UNSIGNED, expecting SCM_IDENTIFIER or SCM_TOKEN or STRING or SYMBOL
+C:/Users/Navid/AppData/Local/Temp/tmp2pxdz5f9/render.ly:9:11: error: syntax error, unexpected UNSIGNED, expecting SCM_IDENTIFIER or SCM_TOKEN or STRING or SYMBOL
   \repeat 
           2 {
 
-C:/Users/Navid/AppData/Local/Temp/tmp3_f1i_qm/render.ly:4:3: error: errors found, ignoring music expression
+C:/Users/Navid/AppData/Local/Temp/tmp2pxdz5f9/render.ly:4:3: error: errors found, ignoring music expression
   
   \new Staff {
 
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp3_f1i_qm\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp2pxdz5f9\\render.ly"
 

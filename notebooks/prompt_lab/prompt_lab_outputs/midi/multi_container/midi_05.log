@@ -1,171 +1,171 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpu6w0_9zo\render C:\Users\Navid\AppData\Local\Temp\tmpu6w0_9zo\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpekymsnac\render C:\Users\Navid\AppData\Local\Temp\tmpekymsnac\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpekymsnac'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:25: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:25: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c
                         5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:50: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:50: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c
                                                  5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:53: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:53: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d
                                                     5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:75: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:75: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c
                                                                           5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:78: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:78: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d
                                                                              5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:81: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:81: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e
                                                                                 5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:100: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:100: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c
                                                                                                    5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:103: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:103: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d
                                                                                                       5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:106: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:106: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e
                                                                                                          5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:109: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:109: error: not a duration
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f
                                                                                                             5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:19: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:19: error: not a duration
 e4 f4 g4 a4 | b4 c
                   5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:22: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:22: error: not a duration
 e4 f4 g4 a4 | b4 c5 d
                      5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:25: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:25: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e
                         5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:44: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:44: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c
                                            5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:47: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:47: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d
                                               5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:50: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:50: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e
                                                  5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:53: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:53: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f
                                                     5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:67: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:67: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c
                                                                   5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:72: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:72: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d
                                                                        5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:75: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:75: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e
                                                                           5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:78: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:78: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f
                                                                              5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:81: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:81: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g
                                                                                 5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:92: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:92: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c
                                                                                            5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:95: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:95: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d
                                                                                               5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:100: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:100: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e
                                                                                                    5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:103: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:103: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f
                                                                                                       5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:106: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:106: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g
                                                                                                          5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:109: error: not a duration
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:109: error: not a duration
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a
                                                                                                             5 |
 
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:27: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:27: warning: barcheck failed at: 3/4
 c4 d4 e4 f4 | g4 a4 b4 c5 
                           | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:55: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:55: warning: barcheck failed at: 1/4
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 
                                                       | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:83: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:83: warning: barcheck failed at: 1/2
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 
                                                                                   | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:13:1: warning: mid-measure time signature without \partial
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:13:1: warning: mid-measure time signature without \partial
 
 \time 4/4
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:27: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:27: warning: barcheck failed at: 3/4
 e4 f4 g4 a4 | b4 c5 d5 e5 
                           | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
 [8]
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:69: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:69: warning: barcheck failed at: 1/2
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 
                                                                     | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
 [16]
 Preprocessing graphical objects...
 Interpreting music...
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:27: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:27: warning: barcheck failed at: 3/4
 c4 d4 e4 f4 | g4 a4 b4 c5 
                           | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:55: warning: barcheck failed at: 1/4
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:55: warning: barcheck failed at: 1/4
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 
                                                       | e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:9:83: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:9:83: warning: barcheck failed at: 1/2
 c4 d4 e4 f4 | g4 a4 b4 c5 | d4 e4 f4 g4 | a4 b4 c5 d5 | e4 f4 g4 a4 | b4 c5 d5 e5 
                                                                                   | f4 g4 a4 b4 | c5 d5 e5 f5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:27: warning: barcheck failed at: 3/4
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:27: warning: barcheck failed at: 3/4
 e4 f4 g4 a4 | b4 c5 d5 e5 
                           | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
-C:/Users/Navid/AppData/Local/Temp/tmpu6w0_9zo/render.ly:15:69: warning: barcheck failed at: 1/2
+C:/Users/Navid/AppData/Local/Temp/tmpekymsnac/render.ly:15:69: warning: barcheck failed at: 1/2
 e4 f4 g4 a4 | b4 c5 d5 e5 | f4 g4 a4 b4 | c5 d5 e5 f5 | g4 a4 b4 c5 
                                                                     | d5 e5 f5 g5 | a4 b4 c5 d5 | e5 f5 g5 a5 |
 
@@ -174,5 +174,5 @@ Finding the ideal number of pages...
 Fitting music on 1 page...
 Drawing systems...
 Converting to `render.pdf'...
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpu6w0_9zo\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpekymsnac\\render.ly"
 

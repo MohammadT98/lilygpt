@@ -1,5 +1,5 @@
 {
-  "count": 80,
+  "count": 100,
   "status_rates": {
     "ok": 0.9,
     "lily_or_ok": 0.9,
@@ -7,16 +7,16 @@
     "empty": 0.0
   },
   "tokens": {
-    "total": 186404,
+    "total": 233005,
     "avg": 2330.05
   },
   "gen_time_seconds": {
-    "total": 1078.364,
+    "total": 1347.955,
     "avg": 13.47955
   },
   "stage_times_seconds_avg": {
-    "midi_render": 0.48549368499975765,
-    "eval_midi": 0.24268,
-    "eval_lily": 1.0654275
+    "midi_render": 0.4124611419998125,
+    "eval_midi": 0.222964,
+    "eval_lily": 1.059191
   }
 }

@@ -1,92 +1,92 @@
-[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmprjgixm_v\render C:\Users\Navid\AppData\Local\Temp\tmprjgixm_v\render.ly
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp9szhsl2a\render C:\Users\Navid\AppData\Local\Temp\tmp9szhsl2a\render.ly
 returncode: 1
 
 STDOUT:
 
 
 STDERR:
-Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v'
-Processing `C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly'
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly'
 Parsing...
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:9:1: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:9:1: error: unknown escaped string: `\barSeq'
 
 \barSeq = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:9:1: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:9:1: error: string outside of text script or \lyricmode
 
 \barSeq = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:9:9: error: syntax error, unexpected '='
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:9:9: error: syntax error, unexpected '='
 \barSeq 
         = { c4 d4 e4 f4 }
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:1: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:1: error: unknown escaped string: `\barSeq'
 
 \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:1: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:1: error: string outside of text script or \lyricmode
 
 \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:11: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:11: error: unknown escaped string: `\barSeq'
 \barSeq | 
           \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:11: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:11: error: string outside of text script or \lyricmode
 \barSeq | 
           \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:21: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:21: error: unknown escaped string: `\barSeq'
 \barSeq | \barSeq | 
                     \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:21: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:21: error: string outside of text script or \lyricmode
 \barSeq | \barSeq | 
                     \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:31: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:31: error: unknown escaped string: `\barSeq'
 \barSeq | \barSeq | \barSeq | 
                               \barSeq | \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:31: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:31: error: string outside of text script or \lyricmode
 \barSeq | \barSeq | \barSeq | 
                               \barSeq | \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:41: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:41: error: unknown escaped string: `\barSeq'
 \barSeq | \barSeq | \barSeq | \barSeq | 
                                         \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:41: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:41: error: string outside of text script or \lyricmode
 \barSeq | \barSeq | \barSeq | \barSeq | 
                                         \barSeq | \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:51: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:51: error: unknown escaped string: `\barSeq'
 \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | 
                                                   \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:51: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:51: error: string outside of text script or \lyricmode
 \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | 
                                                   \barSeq | \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:61: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:61: error: unknown escaped string: `\barSeq'
 \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | 
                                                             \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:61: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:61: error: string outside of text script or \lyricmode
 \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | 
                                                             \barSeq | \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:71: error: unknown escaped string: `\barSeq'
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:71: error: unknown escaped string: `\barSeq'
 \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | 
                                                                       \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:10:71: error: string outside of text script or \lyricmode
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:10:71: error: string outside of text script or \lyricmode
 \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | \barSeq | 
                                                                       \barSeq |
 
-C:/Users/Navid/AppData/Local/Temp/tmprjgixm_v/render.ly:4:3: error: errors found, ignoring music expression
+C:/Users/Navid/AppData/Local/Temp/tmp9szhsl2a/render.ly:4:3: error: errors found, ignoring music expression
   
   \new Staff {
 
-fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmprjgixm_v\\render.ly"
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp9szhsl2a\\render.ly"
 
