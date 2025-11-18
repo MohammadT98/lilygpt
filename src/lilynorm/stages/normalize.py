@@ -36,12 +36,12 @@ def debug_print(label: str, content: str, separator: bool = True):
 # ─────────────────────────────────────────────────────────────
 @dataclass
 class ParseOptions:
-    expand_relative: bool = False
+    expand_relative: bool = True
     inline_variables: bool = True              # recursive & cycle-safe
     expand_music_functions: bool = True
     resolve_transpose: bool = True
     expand_repeat_unfold: bool = True          # nested-tolerant
-    normalize_tuplets: bool = False             # \times → \tuplet, spacing, dedupe
+    normalize_tuplets: bool = True             # \times → \tuplet, spacing, dedupe
     normalize_drums: bool = True               # in \drummode { ... }
     normalize_whitespace: bool = False
     preserve_linebreaks: bool = True
@@ -699,13 +699,13 @@ except Exception:  # pragma: no cover
         keep_engraving: bool = False
         strip_scheme_blocks: bool = True
         strip_comments: bool = True
-        normalize_whitespace: bool = True
-        expand_relative: bool = False
+        normalize_whitespace: bool = False
+        expand_relative: bool = True
         inline_variables: bool = True
         expand_music_functions: bool = True
         resolve_transpose: bool = True 
         expand_repeat_unfold: bool = True
-        normalize_tuplets: bool = False  
+        normalize_tuplets: bool = True  
         normalize_drums: bool = True
         preserve_linebreaks: bool = True
         canonicalize_chord_brackets: bool = True
@@ -765,7 +765,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     onoff("expand-relative", "expand_relative", True)
     onoff("inline-variables", "inline_variables", True)
     onoff("expand-music-functions", "expand_music_functions", True)
-    onoff("resolve-transpose", "resolve_transpose", False)
+    onoff("resolve-transpose", "resolve_transpose", True)
     onoff("expand-repeat-unfold", "expand_repeat_unfold", True)
     onoff("normalize-tuplets", "normalize_tuplets", True)
     onoff("normalize-drums", "normalize_drums", True)
