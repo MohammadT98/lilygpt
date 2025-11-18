@@ -92,6 +92,52 @@ def _remove_with_blocks(src: str) -> Tuple[str, int]:
         i = close_idx + 1
     return ("".join(out), removed)
 
+def _strip_lyricmode_assignments(text: str) -> Tuple[str, int]:
+    """
+    Replace `Name = \\lyricmode { ... }` blocks with empty assignments.
+    Keeps the left-hand side so references remain valid.
+    """
+    removed = 0
+    while True:
+        m = RE_LYRIC_ASSIGN.search(text)
+        if not m:
+            break
+        open_idx = m.end() - 1
+        close_idx = _grab_balanced(text, open_idx, '{', '}')
+        if close_idx == -1:
+            break
+        prefix = m.group(1)
+        text = text[:m.start()] + prefix + "{}" + text[close_idx + 1 :]
+        removed += 1
+    return text, removed
+
+def _strip_inline_lyricmode(text: str) -> Tuple[str, int]:
+    """
+    Remove standalone `\\lyricmode { ... }` blocks (e.g., under \\new Lyrics).
+    """
+    removed = 0
+    i = 0
+    out: list[str] = []
+    while True:
+        m = RE_LYRIC_INLINE.search(text, i)
+        if not m:
+            out.append(text[i:])
+            break
+        start = m.start()
+        open_idx = m.end() - 1
+        close_idx = _grab_balanced(text, open_idx, '{', '}')
+        if close_idx == -1:
+            out.append(text[i:m.end()])
+            i = m.end()
+            continue
+        prefix = text[i:start]
+        trimmed = prefix.rstrip(" \t")
+        out.append(trimmed)
+        out.append("{}")
+        removed += 1
+        i = close_idx + 1
+    return "".join(out), removed
+
 # ─────────────────────────────────────────────────────────────
 # Patterns (single-line, non-greedy)
 # ─────────────────────────────────────────────────────────────
@@ -112,6 +158,8 @@ RE_DYNAMICS = re.compile(rf"(?:[-_^]\s*)?\\(?:{DYNAMICS})\b", re.I)
 
 RE_HAIRPINS = re.compile(r"\\[<>!]|\\(?:cresc|decresc|decr|dim|crescendo|diminuendo)\b", re.I)
 RE_ATTACHED_QUOTES = re.compile(r"(?:[-_^]\s*)\"[^\"]*\"")
+RE_LYRIC_ASSIGN = re.compile(r"(?m)(^\s*[A-Za-z_@][\w@]*\s*=\s*)\\lyricmode\s*\{")
+RE_LYRIC_INLINE = re.compile(r"\\lyricmode\s*\{", re.I)
 
 # ─────────────────────────────────────────────────────────────
 # Whitespace + cleanup (safe mode)
@@ -328,7 +376,11 @@ def _strip_inline_patterns(text: str, opts: StripOptions) -> Tuple[str, Dict[str
     text, _ = RE_STRAY_ATTACH.subn("", text)
     text, _ = RE_LONE_ONCE.subn("", text)
 
-    # 6) Collapse whitespace-only assignment blocks robustly
+    # 6) Drop lyricmode blocks (assignments + inline Lyrics contexts)
+    text, _ = _strip_lyricmode_assignments(text)
+    text, _ = _strip_inline_lyricmode(text)
+
+    # 7) Collapse whitespace-only assignment blocks robustly
     text = _collapse_empty_assignment_blocks(text)
     text = RE_EMPTY_BLOCK_LINE.sub("", text)
     text = RE_EMPTY_ASSIGNMENT_LINE.sub("", text)
@@ -338,15 +390,15 @@ def _strip_inline_patterns(text: str, opts: StripOptions) -> Tuple[str, Dict[str
     text = RE_EMPTY_SCORES.sub("", text)
     text = RE_EMPTY_LAYOUT_BLOCK.sub("", text)
 
-    # 7) Optionally drop whole-line empty assignments
+    # 8) Optionally drop whole-line empty assignments
     if DROP_EMPTY_ASSIGNMENTS:
         text = re.sub(r"(?m)^\s*\w+\s*=\s*\{\s*\}\s*$", "", text)
 
-    # 8) Optionally remove spacer-only subvoices (\\{ s2 s4 … })
+    # 9) Optionally remove spacer-only subvoices (\\{ s2 s4 … })
     if PRUNE_SPACER_SUBVOICES:
         text = _prune_spacer_only_subvoices(text)
 
-    # 9) Whitespace compaction (mode)
+    # 10) Whitespace compaction (mode)
     if opts.space_mode == "simple":
         text = _compact_spaces_simple(text)
     else:

@@ -30,8 +30,17 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
-from lilynorm.utils.options import NormOptions
-from lilynorm.stages import preparse, normalize, engrave_strip, tokenize_gpt
+try:
+    from lilynorm.utils.options import NormOptions
+    from lilynorm.stages import preparse, normalize, engrave_strip, tokenize_gpt
+except ModuleNotFoundError:
+    # Allow running the script directly from the repo without installing the package.
+    repo_root = Path(__file__).resolve().parents[1]
+    src_dir = repo_root / "src"
+    if src_dir.exists():
+        sys.path.insert(0, str(src_dir))
+    from lilynorm.utils.options import NormOptions
+    from lilynorm.stages import preparse, normalize, engrave_strip, tokenize_gpt
 
 # Movement files define identifiers such as `Iglobal`, `IIvla`, `IIIobn`, ...
 ROMAN_DEF_RE = re.compile(r"\b[IVX]{1,4}[A-Za-z_-]*\s*=")

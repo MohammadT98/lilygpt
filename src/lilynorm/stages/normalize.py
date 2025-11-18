@@ -330,7 +330,7 @@ def _run_lily_batch(blocks: List[str], lily_cmd: str, *, preserve_linebreaks: bo
     if preamble:
         parts.append(preamble)
     def var_name(idx: int) -> str:
-        return f"music{chr(65 + idx)}"
+        return f"music{idx:04d}"
     var_names = [var_name(i) for i in range(len(blocks))]
     for idx, blk in enumerate(blocks):
         parts.append(f"{var_names[idx]} = \\absolute {{ {blk} }}")
@@ -386,10 +386,10 @@ def _run_lily_batch(blocks: List[str], lily_cmd: str, *, preserve_linebreaks: bo
 # ─────────────────────────────────────────────────────────────
 # Relative expansion (linebreak-aware, but safe)
 # ─────────────────────────────────────────────────────────────
-def expand_relative_with_lily_batched(source: str, lily_cmd: str, *, preserve_linebreaks: bool) -> str:
+def expand_relative_with_lily_batched(source: str, lily_cmd: str, *, preserve_linebreaks: bool) -> Tuple[str, int]:
     blocks = _find_relative_blocks(source)
     if not blocks:
-        return source
+        return source, 0
     language = _detect_note_language(source)
     preamble = f'\\language "{language}"' if language else ""
     expansions = _run_lily_batch(
@@ -399,12 +399,17 @@ def expand_relative_with_lily_batched(source: str, lily_cmd: str, *, preserve_li
         preamble=preamble,
     )
     out, i = [], 0
+    failures = 0
     for (start, end, orig), expanded in zip(blocks, expansions):
         out.append(source[i:start])
-        out.append(expanded if expanded is not None else orig)
+        if expanded is None:
+            out.append(orig)
+            failures += 1
+        else:
+            out.append(expanded)
         i = end
     out.append(source[i:])
-    return "".join(out)
+    return "".join(out), failures
 # ─────────────────────────────────────────────────────────────
 # \transpose resolution (batched via Lily)
 # ─────────────────────────────────────────────────────────────
@@ -486,6 +491,31 @@ def _normalize_tuplet_spacing_block(s: str) -> str:
     s = re.sub(r"\\tuplet\s+(\d+)\s*/\s*(\d+)\s*", r"\\tuplet \1/\2 ", s)
     s = re.sub(r"\\tuplet\s+(\d+/\d+)\s*\{", r"\\tuplet \1 {", s)
     return s
+def _dedupe_nested_tuplets_once(s: str) -> Tuple[str, int]:
+    """
+    Remove nested \\tuplet blocks that repeat the same ratio directly inside each other.
+    Operates conservatively so only the transformed tuplets have their braces adjusted.
+    """
+    nested_pat = re.compile(
+        r"(\\tuplet\s+(\d+)\s*/\s*(\d+)\s*\{)\s*(\\tuplet\s+\2\s*/\s*\3\s*\{)",
+        re.I,
+    )
+    changed = 0
+    while True:
+        m = nested_pat.search(s)
+        if not m:
+            break
+        inner_start = m.start(4)
+        inner_lb = s.find("{", inner_start)
+        if inner_lb == -1:
+            break
+        inner_rb = _grab_braces(s, inner_lb)
+        if inner_rb <= inner_lb or inner_rb > len(s):
+            break
+        body = s[inner_lb + 1:inner_rb - 1]
+        s = s[:inner_start] + body + s[inner_rb:]
+        changed += 1
+    return s, changed
 def normalize_tuplets(source: str) -> Tuple[str, int]:
     changed = 0
     s = source
@@ -519,15 +549,10 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
         changed += diff_cnt
         s = s2
     # 3) Dedupe nested identical tuplets
-    nested_pat = re.compile(
-        r"(\\tuplet\s+(\d+)\s*/\s*(\d+)\s*\{)\s*(\\tuplet\s+\2\s*/\s*\3\s*\{)",
-        re.I
-    )
     for _ in range(4):
-        before = s
-        s = nested_pat.sub(r"\1 ", s)
-        s = re.sub(r"\}\s*\}", r"}", s)
-        if s == before:
+        s, dedup_cnt = _dedupe_nested_tuplets_once(s)
+        changed += dedup_cnt
+        if dedup_cnt == 0:
             break
     s = _normalize_tuplet_spacing_block(s)
     return s, changed
@@ -652,12 +677,14 @@ def process_string(src: str, lily_cmd: str, opts: ParseOptions) -> Tuple[str, Pa
         )
         if ok or fail:
             s = s2
+            report.lily_failures += fail
             debug_print("Music functions expanded", f"ok={ok}, fail={fail}")
     if opts.expand_relative:
         rel_count = len(_find_relative_blocks(s))
         if rel_count:
-            s = expand_relative_with_lily_batched(s, lily_cmd=lily_cmd, preserve_linebreaks=opts.preserve_linebreaks)
+            s, rel_fail = expand_relative_with_lily_batched(s, lily_cmd=lily_cmd, preserve_linebreaks=opts.preserve_linebreaks)
             report.relative_blocks = rel_count
+            report.lily_failures += rel_fail
             debug_print("Relative expanded", f"blocks={rel_count}")
     if opts.resolve_transpose:
         s2, ok, fail = resolve_transpose_with_lily_batched(s, lily_cmd=lily_cmd, preserve_linebreaks=opts.preserve_linebreaks)
