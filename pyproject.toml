@@ -7,6 +7,9 @@ name = "lilynorm"
 version = "0.1.0"
 description = "LilyPond normalization + tokenization pipeline"
 requires-python = ">=3.10"
+dependencies = [
+    "transformers>=4.40",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]          # we use the src/ layout
