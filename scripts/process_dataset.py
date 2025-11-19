@@ -26,6 +26,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import shutil
 import sys
 from pathlib import Path
 from typing import TextIO
@@ -49,6 +50,12 @@ NOTE_RE = re.compile(r"\b(?:do|re|mi|fa|sol|la|si|[a-g])[',#isbf]*\d", re.I)
 FIGURE_ASSIGN_RE = re.compile(r"(?sm)^[ \t]*[\w@]+\s*=\s*\\figuremode\s*\{.*?\}\s*")
 FIGURE_INLINE_RE = re.compile(r"\\figuremode\b")
 VOICE_ASSIGN_RE = re.compile(r"(?m)^([IVX]{1,4}[A-Za-z0-9_-]*)\s*=")
+VERSION_DECL_RE = re.compile(r"\\version\s+\"([^\"]+)\"", re.I)
+LANGUAGE_DECL_RE = re.compile(r"\\language\s+\"([^\"]+)\"", re.I)
+VARIABILI_INCLUDE_RE = re.compile(r"\\include\s+\"([^\"]*variabili[^\"]*)\"", re.I)
+RELATIVE_LANG_RE = re.compile(r"\\relative\s+([^\s{]+)", re.I)
+ITALIAN_SOLFEGE = ("do", "re", "mi", "fa", "sol", "la", "si")
+DEFAULT_VERSION = "2.24.0"
 
 # Filenames to ignore even if the heuristics would otherwise pass.
 NAME_BLACKLIST = (
@@ -68,9 +75,10 @@ NAME_BLACKLIST = (
 
 def should_process(path: Path, text: str) -> bool:
     """Return True if this .ly file contains actual music definitions."""
-    lower = path.name.lower()
-    if any(tag in lower for tag in NAME_BLACKLIST):
-        return False
+    stem = path.stem.lower()
+    for tag in NAME_BLACKLIST:
+        if stem == tag or stem.endswith(f"_{tag}"):
+            return False
     if not ROMAN_DEF_RE.search(text):
         return False
     if not NOTE_RE.search(text):
@@ -131,17 +139,107 @@ def extract_music_assignments(text: str) -> list[str]:
     return [name for name, _, _ in find_voice_blocks(text)]
 
 
+def _infer_language_from_music(text: str) -> str | None:
+    """Heuristic: guess italiano if \\relative uses solfege tokens."""
+    for match in RELATIVE_LANG_RE.finditer(text):
+        token = match.group(1).strip().lower().strip(",;'\"")
+        if any(token.startswith(solfege) for solfege in ITALIAN_SOLFEGE):
+            return "italiano"
+    return None
+
+
+def _read_header_metadata(work_dir: Path) -> tuple[str | None, str | None, str | None]:
+    """Extract version, language, and variabili include from sibling header files."""
+    version = language = variabili_include = None
+    for header in sorted(work_dir.glob("*header*.ly")):
+        try:
+            text = header.read_text(encoding="utf-8", errors="ignore")
+        except OSError:
+            continue
+        if version is None:
+            match = VERSION_DECL_RE.search(text)
+            if match:
+                version = match.group(1)
+        if language is None:
+            match = LANGUAGE_DECL_RE.search(text)
+            if match:
+                language = match.group(1)
+        if variabili_include is None:
+            match = VARIABILI_INCLUDE_RE.search(text)
+            if match:
+                variabili_include = match.group(1)
+        if version and language and variabili_include:
+            break
+    return version, language, variabili_include
+
+
+def _ensure_preamble(
+    text: str,
+    *,
+    src_path: Path,
+    header_version: str | None,
+    header_language: str | None,
+    variabili_include: str | None,
+) -> str:
+    """Guarantee that \\version, \\language and macro includes exist."""
+    additions: list[str] = []
+
+    if not VERSION_DECL_RE.search(text):
+        version = header_version
+        if version is None:
+            var_path = src_path.parent / "variabili.ly"
+            if var_path.exists():
+                match = VERSION_DECL_RE.search(var_path.read_text(encoding="utf-8", errors="ignore"))
+                if match:
+                    version = match.group(1)
+        if version is None:
+            version = DEFAULT_VERSION
+        additions.append(f'\\version "{version}"')
+
+    if not LANGUAGE_DECL_RE.search(text):
+        language = header_language or _infer_language_from_music(text)
+        if language:
+            additions.append(f'\\language "{language}"')
+
+    if variabili_include and not VARIABILI_INCLUDE_RE.search(text):
+        additions.append(f'\\include "{variabili_include}"')
+    elif variabili_include is None:
+        var_candidate = src_path.parent / "variabili.ly"
+        if var_candidate.exists() and not VARIABILI_INCLUDE_RE.search(text):
+            additions.append('\\include "variabili.ly"')
+
+    if not additions:
+        return text
+
+    stripped = text.lstrip("\ufeff\n")
+    prefix = "\n".join(additions) + "\n\n"
+    return prefix + stripped
+
+
+def _copy_variabili_files(input_root: Path, output_root: Path) -> None:
+    """Mirror every variabili.ly file so \\include statements keep working."""
+    for src in input_root.rglob("variabili.ly"):
+        rel = src.relative_to(input_root)
+        dest = output_root / rel
+        if dest.exists():
+            continue
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="Normalize a LilyPond dataset.")
     ap.add_argument("--input", required=True, help="Root directory containing the raw dataset.")
+    DEFAULT_NORMALIZED_OUT = "data/normalized_dataset"
+    DEFAULT_TOKENIZED_OUT = "data/tokenized_dataset"
     ap.add_argument(
         "--normalized-out",
-        default="data/normalized_dataset",
+        default=DEFAULT_NORMALIZED_OUT,
         help="Destination root for normalized .ly files (default: data/normalized_dataset).",
     )
     ap.add_argument(
         "--tokenized-out",
-        default="data/tokenized_dataset",
+        default=DEFAULT_TOKENIZED_OUT,
         help="Destination root for GPT-token files (default: data/tokenized_dataset).",
     )
     ap.add_argument(
@@ -171,7 +269,7 @@ def main() -> int:
     )
     args = ap.parse_args()
 
-    log_dir = Path("data/logs").expanduser()
+    log_dir = Path("data/single_voice/logs" if args.single_voice_only else "data/logs").expanduser()
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "process_dataset.log"
 
@@ -189,8 +287,17 @@ def main() -> int:
             print(f"[dataset] input folder not found: {input_root}", file=sys.stderr)
             return 2
 
-        norm_root = Path(args.normalized_out).expanduser().resolve()
-        tok_root = Path(args.tokenized_out).expanduser().resolve()
+        normalized_out = args.normalized_out
+        tokenized_out = args.tokenized_out
+        if args.single_voice_only:
+            single_base = Path("data/single_voice")
+            if normalized_out == DEFAULT_NORMALIZED_OUT:
+                normalized_out = str(single_base / "normalized_dataset")
+            if tokenized_out == DEFAULT_TOKENIZED_OUT:
+                tokenized_out = str(single_base / "tokenized_dataset")
+
+        norm_root = Path(normalized_out).expanduser().resolve()
+        tok_root = Path(tokenized_out).expanduser().resolve()
         opts = NormOptions()
         processed = 0
         skipped = 0
@@ -216,6 +323,15 @@ def main() -> int:
             except Exception as exc:  # pragma: no cover - defensive
                 print(f"[dataset] ! failed to normalize {rel}: {exc}", file=sys.stderr)
                 continue
+
+            header_version, header_language, variabili_include = _read_header_metadata(src.parent)
+            normalized_text = _ensure_preamble(
+                normalized_text,
+                src_path=src,
+                header_version=header_version,
+                header_language=header_language,
+                variabili_include=variabili_include,
+            )
 
             if not args.keep_figures:
                 normalized_text = FIGURE_ASSIGN_RE.sub("", normalized_text)
@@ -264,6 +380,9 @@ def main() -> int:
                 tok_path.write_text(json.dumps({"input_ids": tok_ids}) + "\n", encoding="utf-8")
 
             processed += 1
+
+        if not args.dry_run:
+            _copy_variabili_files(input_root, norm_root)
 
         print(
             f"[dataset] done. processed={processed} skipped={skipped} "
