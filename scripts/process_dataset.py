@@ -182,38 +182,8 @@ def _ensure_preamble(
     variabili_include: str | None,
 ) -> str:
     """Guarantee that \\version, \\language and macro includes exist."""
-    additions: list[str] = []
-
-    if not VERSION_DECL_RE.search(text):
-        version = header_version
-        if version is None:
-            var_path = src_path.parent / "variabili.ly"
-            if var_path.exists():
-                match = VERSION_DECL_RE.search(var_path.read_text(encoding="utf-8", errors="ignore"))
-                if match:
-                    version = match.group(1)
-        if version is None:
-            version = DEFAULT_VERSION
-        additions.append(f'\\version "{version}"')
-
-    if not LANGUAGE_DECL_RE.search(text):
-        language = header_language or _infer_language_from_music(text)
-        if language:
-            additions.append(f'\\language "{language}"')
-
-    if variabili_include and not VARIABILI_INCLUDE_RE.search(text):
-        additions.append(f'\\include "{variabili_include}"')
-    elif variabili_include is None:
-        var_candidate = src_path.parent / "variabili.ly"
-        if var_candidate.exists() and not VARIABILI_INCLUDE_RE.search(text):
-            additions.append('\\include "variabili.ly"')
-
-    if not additions:
-        return text
-
-    stripped = text.lstrip("\ufeff\n")
-    prefix = "\n".join(additions) + "\n\n"
-    return prefix + stripped
+    # For ML/fine-tuning, remove all LilyPond directives and do not add any preamble.
+    return text
 
 
 def _copy_variabili_files(input_root: Path, output_root: Path) -> None:
@@ -364,14 +334,13 @@ def main() -> int:
                 processed += 1
                 continue
 
-            # Normalized output mirrors source path (.ly extension retained).
+            # Prepend \version directive to every output file (no extra quotes)
             norm_path = norm_root / rel
             norm_path.parent.mkdir(parents=True, exist_ok=True)
-            norm_path.write_text(normalized_text.rstrip() + "\n", encoding="utf-8")
-
-            norm_path = norm_root / rel
-            norm_path.parent.mkdir(parents=True, exist_ok=True)
-            norm_path.write_text(normalized_text.rstrip() + "\n", encoding="utf-8")
+            import re
+            cleaned = re.sub(r'(^|\n)\\version\s+"[^"]+"\s*', '', normalized_text)
+            output_text = '\\version "2.24.4"\n' + cleaned.lstrip() + "\n"
+            norm_path.write_text(output_text, encoding="utf-8")
 
             if not args.skip_tokenize:
                 tok_ids = tokenize_gpt.run(normalized_text, model_name=args.tokenizer_model)
