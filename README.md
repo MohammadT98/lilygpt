@@ -27,7 +27,7 @@ now falls back to adding the repository `src/` directory to `sys.path` when the
 package is not installed:
 
 ```bash
-python -m scripts.process_dataset --input "data/raw/Dataset"
+python -m scripts.process_dataset --input "data/raw"
 ```
 
 If you prefer a traditional virtual environment, activate it and run
