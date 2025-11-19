@@ -14,7 +14,7 @@ LilyPond normalization / tokenization pipeline used for the thesis dataset tooli
 uv pip install -e .
 
 # Run the dataset processor (adjust --input / output paths as needed)
-uv run python -m scripts.process_dataset --input "data/raw/Dataset"
+uv run python -m scripts.process_dataset --input "data/raw"
 ```
 
 `uv run …` keeps the project isolated while still exposing the installed `lilynorm`
@@ -27,7 +27,7 @@ now falls back to adding the repository `src/` directory to `sys.path` when the
 package is not installed:
 
 ```bash
-python -m scripts.process_dataset --input "data/raw/Dataset"
+python -m scripts.process_dataset --input "data/raw"
 ```
 
 If you prefer a traditional virtual environment, activate it and run
