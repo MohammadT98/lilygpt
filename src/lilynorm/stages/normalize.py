@@ -326,11 +326,28 @@ def _unwrap_absolute_layers(seg: str) -> str:
         seg = seg[i+1:j-1].strip()
     return seg
 def _run_lily_batch(blocks: List[str], lily_cmd: str, *, preserve_linebreaks: bool, preamble: str = "") -> List[Optional[str]]:
-    parts = ['\\version "2.24.4"']
+    # Restore \version directive for LilyPond batch expansion (required for parsing)
+    parts = ['\version "2.24.4"']
     if preamble:
         parts.append(preamble)
     def var_name(idx: int) -> str:
-        return f"music{idx:04d}"
+        # LilyPond treats digits/underscores/hyphens in certain positions as
+        # separate tokens which can produce syntax errors and empty expansions.
+        # Use a letter-only suffix (base-26 a..z) so variable names are always
+        # valid identifiers in Lily's parser (e.g. musica, musicb, musicaa...).
+        def _letters(n: int) -> str:
+            # convert 0 -> 'a', 1 -> 'b', ..., 25 -> 'z', 26 -> 'aa', etc.
+            if n < 0:
+                return "a"
+            parts = []
+            while True:
+                parts.append(chr(ord('a') + (n % 26)))
+                n = n // 26 - 1
+                if n < 0:
+                    break
+            return "".join(reversed(parts))
+
+        return f"music{_letters(idx)}"
     var_names = [var_name(i) for i in range(len(blocks))]
     for idx, blk in enumerate(blocks):
         parts.append(f"{var_names[idx]} = \\absolute {{ {blk} }}")
