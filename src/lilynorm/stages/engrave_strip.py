@@ -283,7 +283,48 @@ class StripOptions:
             space_mode=space_mode,
         )
 
-def _eat_after_keyword(s: str, kw_re: re.Pattern) -> Tuple[str, int]:
+def _skip_markup_expression(s: str, idx: int) -> int:
+    """Skip a LilyPond markup expression beginning at idx."""
+    i = idx
+    L = len(s)
+    while i < L:
+        ch = s[i]
+        if ch in " \t\r\n":
+            i += 1
+            continue
+        if ch == '{':
+            end = _grab_balanced(s, i, '{', '}')
+            return end + 1 if end != -1 else L
+        if ch == '"':
+            i += 1
+            escaped = False
+            while i < L:
+                curr = s[i]
+                i += 1
+                if curr == '"' and not escaped:
+                    break
+                escaped = (curr == "\\") and not escaped
+            continue
+        if ch == '\\':
+            i += 1
+            while i < L and (s[i].isalnum() or s[i] in "_-"):
+                i += 1
+            continue
+        if ch == '#':
+            i += 1
+            while i < L and not s[i].isspace():
+                i += 1
+            continue
+        # bare token
+        start = i
+        while i < L and not s[i].isspace() and s[i] not in '{}"':
+            i += 1
+        if i == start:
+            i += 1
+    return i
+
+
+def _eat_after_keyword(s: str, kw_re: re.Pattern, *, deep_markup: bool = False) -> Tuple[str, int]:
     removed = 0
     i = 0
     out = []
@@ -297,6 +338,11 @@ def _eat_after_keyword(s: str, kw_re: re.Pattern) -> Tuple[str, int]:
         # skip only spaces/tabs (preserve newlines)
         while j < len(s) and s[j] in " \t":
             j += 1
+
+        if deep_markup:
+            i = _skip_markup_expression(s, j)
+            removed += 1
+            continue
 
         # {block}
         if j < len(s) and s[j] == '{':
@@ -347,7 +393,7 @@ def _strip_inline_patterns(text: str, opts: StripOptions) -> Tuple[str, Dict[str
 
     # 2) Markups / Marks — eat their argument; handle attached forms too
     if opts.remove_markups:
-        text, nmk = _eat_after_keyword(text, RE_MARKUP)
+        text, nmk = _eat_after_keyword(text, RE_MARKUP, deep_markup=True)
         counts["markups"] += nmk
     if opts.remove_marks:
         text, nmark = _eat_after_keyword(text, RE_MARK)
