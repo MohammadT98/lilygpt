@@ -1,95 +1,17 @@
-Example1:
-\version "2.24.4"
-\language "italiano"
-
-\score {
-  {
-    R1
-    r4 fad''16 mi''16 fad''16 sol''16
-    la''8[ si''8 la''8. sol''16 ]
-    fad''8 re''8
-    sol''4 ~ sol''8[ sol''8 fa''8. fa''16 ]
-    fa''8[ mi''16 re''16 mi''8. mi''16 ]
-    la''16 sol''16 fa''16 mi''16
-    re''8 sol''16 fa''16
-    mi''8[ mi''8 la''8. mi''16 ]
-    fad''!8 sol''16 la''16 fad''8. sol''16
-    sol''4 r4 r2
-
-    R1*3
-
-    r4 r8 la''8
-    re''8 mi''16 fad''16
-    sol''8 fad''16 sol''16
-    mi''8[ mi''8 la''8. la''16 ]
-    sol''16 la''16 fad''16 sol''16
-    mi''8 la''16 sol''16
-    fad''4 r4 r2
-
-    R1*2
-
-    r4 sol''4 ~ sol''8
-  }
-}
-
-Example2:
-\version "2.24.4"
-\language "italiano"
-
-\score {
-  {
-    re'4 fad'4 la'4 re'4
-
-    re''8[ dod''16 si'16 la'16 sol'16 fad'16 mi'16 ]
-    re'16 mi'16 fad'16 re'16 la'16 si'16 dod''16 la'16
-
-    re''8[ dod''16 si'16 la'16 sol'16 fad'16 mi'16 ]
-    re'16 mi'16 fad'16 re'16 la'16 si'16 dod''16 la'16
-
-    re''4 re'4
-
-    la''16 si''16 la''16 fad''16 la''16 si''16 la''16 fad''16
-    sol''16 la''16 sol''16 mi''16 sol''16 la''16 sol''16 mi''16
-    fad''16 sol''16 fad''16 re''16 fad''16 sol''16 fad''16 re''16
-    mi''16 fad''16 mi''16 dod''16 mi''16 fad''16
-  }
-}
-
-Example3:
-\version "2.24.4"
-\language "italiano"
-
-\score {
-  {
-    R2.*11
-
-    sol''8 sol''8 sol''8 sol''8 si''8 sol''8
-    fad''8 fad''8 fad''8 fad''8 si''8 fad''8
-
-    R2.*13
-
-    re''8 re''8 re''8 re''8 fad''8 re''8
-    dod''8 dod''8 dod''8 dod''8 fad''8 dod''8
-
-    dod''!8 dod''8 dod''8 dod''8 fad''8 dod''8
-
-    si'8 si'8 si'8 si'8 mi''8 si'8
-    si'8 si'8 si'8 si'8 mi''8 si'8
-    lad'8 dod''8 dod''8 dod''8 mi''8 dod''8
-
-    re''8 si'8 si'8 si'8 fad''8 re''8
-    dod''8 lad'8 lad'8 lad'8
-
-    re''8 si'8 si'8 si'8 fad''8 re''8
-    dod''8 lad'8 lad'8 lad'8
-  }
-}
-
-Write a LilyPond passage consisting only of triads (3-note chords), not single notes.
-Every event must be a triad written using LilyPond chord brackets < >.
-Each triad must contain exactly three notes with one shared duration.
-Always use \language "italiano" and Italian note names (do re mi fa sol la si, dod, reb, lad…).
-Output LilyPond code only.
-Do not use \relative anywhere.
+Write LilyPond code only.
 Put \version "2.24.4" on the first line.
-Pay attention to examples but do not copy them.
+Then write exactly one top-level music block enclosed in { ... } (no other top-level music).
+At the start of that block, include exactly these directives, in this order and with no blank lines or comments between them:
+\clef treble
+\key c \major
+\time 4/4
+\tempo 4 = 100
+Do not use \relative anywhere.
+
+Write only triads: every sounded event must be a chord with exactly three simultaneous notes, using LilyPond chord syntax < ... > and explicit durations (4), e.g., <c' e' g'>4.
+Use only LilyPond pitch names; every note must include an octave mark (e.g., c', d', e', f').
+Use only notes diatonic to the declared key; if an accidental is required, use `is`/`es` (e.g., fis', bes').
+Keep all chord tones within the inclusive range c'..c'' (all three notes of each triad must satisfy this).
+Write exactly 8 bars, each bar containing exactly four quarter-note triads, separated by |, and end the last bar with |.
+
+No single notes, no rests, no chords with fewer or more than three notes, no arpeggios, no ties (~), no slurs ( ), no articulations, no dynamics, no tuplets, no transpositions, no variables/macros, no music functions, no text/markup, no << >> or \\ voices, no \paper, no \header, no \layout, no \score, and nothing before or after the single block.
