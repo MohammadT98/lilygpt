@@ -1,0 +1,148 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpmxjh5ulo\render C:\Users\Navid\AppData\Local\Temp\tmpmxjh5ulo\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:6: error: syntax error, unexpected SYMBOL
+    <
+     do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:6: error: not a note name: do
+    <
+     do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:9: error: not a note name: mi
+    <do 
+        mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:12: error: not a note name: sol
+    <do mi 
+           sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:15: error: syntax error, unexpected >
+    <do mi sol
+              >4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:19: error: not a note name: re
+    <do mi sol>4 <
+                  re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:22: error: not a note name: fa
+    <do mi sol>4 <re 
+                     fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:25: error: not a note name: la
+    <do mi sol>4 <re fa 
+                        la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:27: error: syntax error, unexpected >
+    <do mi sol>4 <re fa la
+                          >4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:31: error: not a note name: mi
+    <do mi sol>4 <re fa la>4 <
+                              mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:34: error: not a note name: sol
+    <do mi sol>4 <re fa la>4 <mi 
+                                 sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:38: error: not a note name: si
+    <do mi sol>4 <re fa la>4 <mi sol 
+                                     si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:40: error: syntax error, unexpected >
+    <do mi sol>4 <re fa la>4 <mi sol si
+                                       >4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:44: error: not a note name: fa
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <
+                                           fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:47: error: not a note name: la
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa 
+                                              la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:50: error: not a note name: do
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la 
+                                                 do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:52: error: syntax error, unexpected >
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do
+                                                   >4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:56: error: not a note name: sol
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <
+                                                       sol si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:60: error: not a note name: si
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol 
+                                                           si re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:63: error: not a note name: re
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si 
+                                                              re>4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:65: error: syntax error, unexpected >
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re
+                                                                >4 <la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:69: error: not a note name: la
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <
+                                                                    la do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:72: error: not a note name: do
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la 
+                                                                       do mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:75: error: not a note name: mi
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do 
+                                                                          mi>4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:77: error: syntax error, unexpected >
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi
+                                                                            >4 <si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:81: error: not a note name: si
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <
+                                                                                si re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:84: error: not a note name: re
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si 
+                                                                                   re fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:87: error: not a note name: fa
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re 
+                                                                                      fa>4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:89: error: syntax error, unexpected >
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa
+                                                                                        >4 <do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:93: error: not a note name: do
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <
+                                                                                            do mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:96: error: not a note name: mi
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do 
+                                                                                               mi sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:99: error: not a note name: sol
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi 
+                                                                                                  sol>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:6:102: error: syntax error, unexpected >
+    <do mi sol>4 <re fa la>4 <mi sol si>4 <fa la do>4 <sol si re>4 <la do mi>4 <si re fa>4 <do mi sol
+                                                                                                     >4
+
+C:/Users/Navid/AppData/Local/Temp/tmpmxjh5ulo/render.ly:5:3: error: errors found, ignoring music expression
+  
+  {
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpmxjh5ulo\\render.ly"
+

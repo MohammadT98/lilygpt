@@ -1,0 +1,22 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpv9zotygt\render C:\Users\Navid\AppData\Local\Temp\tmpv9zotygt\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpv9zotygt'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpv9zotygt/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpv9zotygt/render.ly:7:3: error: Spurious expression in \score
+  
+  {
+
+Interpreting music...
+warning: skipping zero-duration score
+warning: to suppress this, consider adding a spacer rest
+Interpreting music...
+warning: skipping zero-duration score
+warning: to suppress this, consider adding a spacer rest
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpv9zotygt\\render.ly"
+

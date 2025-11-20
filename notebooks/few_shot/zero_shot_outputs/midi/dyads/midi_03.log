@@ -1,0 +1,260 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp5ugdnab0\render C:\Users\Navid\AppData\Local\Temp\tmp5ugdnab0\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:6: error: syntax error, unexpected SYMBOL
+    <
+     do mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:6: error: not a note name: do
+    <
+     do mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:9: error: not a note name: mi
+    <do 
+        mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:15: error: not a note name: re
+    <do mi>4 <
+              re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:18: error: not a note name: sol
+    <do mi>4 <re 
+                 sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:25: error: not a note name: fa
+    <do mi>4 <re sol>4 <
+                        fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:28: error: not a note name: la
+    <do mi>4 <re sol>4 <fa 
+                           la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:34: error: not a note name: sol
+    <do mi>4 <re sol>4 <fa la>4 <
+                                 sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:6:38: error: not a note name: do
+    <do mi>4 <re sol>4 <fa la>4 <sol 
+                                     do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:7:6: error: not a note name: mi
+    <
+     mi sol>8 <mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:7:9: error: not a note name: sol
+    <mi 
+        sol>8 <mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:7:16: error: not a note name: mi
+    <mi sol>8 <
+               mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:7:19: error: not a note name: sol
+    <mi sol>8 <mi 
+                  sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:7:26: error: not a note name: re
+    <mi sol>8 <mi sol>8 <
+                         re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:7:29: error: not a note name: la
+    <mi sol>8 <mi sol>8 <re 
+                            la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:7:35: error: not a note name: re
+    <mi sol>8 <mi sol>8 <re la>8 <
+                                  re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:7:38: error: not a note name: la
+    <mi sol>8 <mi sol>8 <re la>8 <re 
+                                     la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:8:6: error: not a note name: do
+    <
+     do mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:8:9: error: not a note name: mi
+    <do 
+        mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:8:15: error: not a note name: re
+    <do mi>4 <
+              re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:8:18: error: not a note name: sol
+    <do mi>4 <re 
+                 sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:8:25: error: not a note name: fa
+    <do mi>4 <re sol>4 <
+                        fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:8:28: error: not a note name: la
+    <do mi>4 <re sol>4 <fa 
+                           la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:8:34: error: not a note name: sol
+    <do mi>4 <re sol>4 <fa la>4 <
+                                 sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:8:38: error: not a note name: do
+    <do mi>4 <re sol>4 <fa la>4 <sol 
+                                     do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:9:6: error: not a note name: mi
+    <
+     mi sol>8 <mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:9:9: error: not a note name: sol
+    <mi 
+        sol>8 <mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:9:16: error: not a note name: mi
+    <mi sol>8 <
+               mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:9:19: error: not a note name: sol
+    <mi sol>8 <mi 
+                  sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:9:26: error: not a note name: re
+    <mi sol>8 <mi sol>8 <
+                         re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:9:29: error: not a note name: la
+    <mi sol>8 <mi sol>8 <re 
+                            la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:9:35: error: not a note name: re
+    <mi sol>8 <mi sol>8 <re la>8 <
+                                  re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:9:38: error: not a note name: la
+    <mi sol>8 <mi sol>8 <re la>8 <re 
+                                     la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:10:6: error: not a note name: do
+    <
+     do fa>2 <re la>2
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:10:9: error: not a note name: fa
+    <do 
+        fa>2 <re la>2
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:10:15: error: not a note name: re
+    <do fa>2 <
+              re la>2
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:10:18: error: not a note name: la
+    <do fa>2 <re 
+                 la>2
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:11:6: error: not a note name: do
+    <
+     do mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:11:9: error: not a note name: mi
+    <do 
+        mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:11:15: error: not a note name: re
+    <do mi>4 <
+              re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:11:18: error: not a note name: sol
+    <do mi>4 <re 
+                 sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:11:25: error: not a note name: fa
+    <do mi>4 <re sol>4 <
+                        fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:11:28: error: not a note name: la
+    <do mi>4 <re sol>4 <fa 
+                           la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:11:34: error: not a note name: sol
+    <do mi>4 <re sol>4 <fa la>4 <
+                                 sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:11:38: error: not a note name: do
+    <do mi>4 <re sol>4 <fa la>4 <sol 
+                                     do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:12:6: error: not a note name: mi
+    <
+     mi sol>8 <mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:12:9: error: not a note name: sol
+    <mi 
+        sol>8 <mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:12:16: error: not a note name: mi
+    <mi sol>8 <
+               mi sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:12:19: error: not a note name: sol
+    <mi sol>8 <mi 
+                  sol>8 <re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:12:26: error: not a note name: re
+    <mi sol>8 <mi sol>8 <
+                         re la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:12:29: error: not a note name: la
+    <mi sol>8 <mi sol>8 <re 
+                            la>8 <re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:12:35: error: not a note name: re
+    <mi sol>8 <mi sol>8 <re la>8 <
+                                  re la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:12:38: error: not a note name: la
+    <mi sol>8 <mi sol>8 <re la>8 <re 
+                                     la>8
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:13:6: error: not a note name: do
+    <
+     do mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:13:9: error: not a note name: mi
+    <do 
+        mi>4 <re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:13:15: error: not a note name: re
+    <do mi>4 <
+              re sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:13:18: error: not a note name: sol
+    <do mi>4 <re 
+                 sol>4 <fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:13:25: error: not a note name: fa
+    <do mi>4 <re sol>4 <
+                        fa la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:13:28: error: not a note name: la
+    <do mi>4 <re sol>4 <fa 
+                           la>4 <sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:13:34: error: not a note name: sol
+    <do mi>4 <re sol>4 <fa la>4 <
+                                 sol do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:13:38: error: not a note name: do
+    <do mi>4 <re sol>4 <fa la>4 <sol 
+                                     do>4
+
+C:/Users/Navid/AppData/Local/Temp/tmp5ugdnab0/render.ly:5:3: error: errors found, ignoring music expression
+  
+  {
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp5ugdnab0\\render.ly"
+

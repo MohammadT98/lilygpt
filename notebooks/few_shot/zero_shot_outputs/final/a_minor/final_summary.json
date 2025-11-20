@@ -1,0 +1,22 @@
+{
+  "count": 5,
+  "status_rates": {
+    "ok": 1.0,
+    "lily_or_ok": 1.0,
+    "failed": 0.0,
+    "empty": 0.0
+  },
+  "tokens": {
+    "total": 14061,
+    "avg": 2812.2
+  },
+  "gen_time_seconds": {
+    "total": 75.074,
+    "avg": 15.0148
+  },
+  "stage_times_seconds_avg": {
+    "midi_render": 1.41608,
+    "eval_midi": 0.28816,
+    "eval_lily": 1.20204
+  }
+}
