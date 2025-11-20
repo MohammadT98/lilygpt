@@ -1,0 +1,116 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpzoz3g3f5\render C:\Users\Navid\AppData\Local\Temp\tmpzoz3g3f5\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:6:6: error: syntax error, unexpected SYMBOL
+    <
+     do'' re'' mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:6:6: error: not a note name: do
+    <
+     do'' re'' mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:6:11: error: not a note name: re
+    <do'' 
+          re'' mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:6:16: error: not a note name: mi
+    <do'' re'' 
+               mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:7:6: error: not a note name: sol
+    <
+     sol'' la'' si''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:7:12: error: not a note name: la
+    <sol'' 
+           la'' si''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:7:17: error: not a note name: si
+    <sol'' la'' 
+                si''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:8:6: error: not a note name: la
+    <
+     la'' si'' re''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:8:11: error: not a note name: si
+    <la'' 
+          si'' re''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:8:16: error: not a note name: re
+    <la'' si'' 
+               re''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:9:6: error: not a note name: fa
+    <
+     fa'' mi'' re''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:9:11: error: not a note name: mi
+    <fa'' 
+          mi'' re''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:9:16: error: not a note name: re
+    <fa'' mi'' 
+               re''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:10:6: error: not a note name: do
+    <
+     do'' fa'' la''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:10:11: error: not a note name: fa
+    <do'' 
+          fa'' la''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:10:16: error: not a note name: la
+    <do'' fa'' 
+               la''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:11:6: error: not a note name: sol
+    <
+     sol'' si'' mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:11:12: error: not a note name: si
+    <sol'' 
+           si'' mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:11:17: error: not a note name: mi
+    <sol'' si'' 
+                mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:12:6: error: not a note name: re
+    <
+     re'' mi'' sol''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:12:11: error: not a note name: mi
+    <re'' 
+          mi'' sol''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:12:16: error: not a note name: sol
+    <re'' mi'' 
+               sol''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:13:6: error: not a note name: do
+    <
+     do'' re'' mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:13:11: error: not a note name: re
+    <do'' 
+          re'' mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:13:16: error: not a note name: mi
+    <do'' re'' 
+               mi''>4
+
+C:/Users/Navid/AppData/Local/Temp/tmpzoz3g3f5/render.ly:5:3: error: errors found, ignoring music expression
+  
+  {
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpzoz3g3f5\\render.ly"
+

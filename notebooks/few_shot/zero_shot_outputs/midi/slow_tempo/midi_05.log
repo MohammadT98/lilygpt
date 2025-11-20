@@ -1,0 +1,41 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp1nvs1a5p\render C:\Users\Navid\AppData\Local\Temp\tmp1nvs1a5p\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp1nvs1a5p'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp1nvs1a5p/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmp1nvs1a5p/render.ly:5:1: error: syntax error, unexpected \tempo
+
+\tempo 4 = 60
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmp1nvs1a5p/render.ly:22:5: warning: barcheck failed at: 3/8
+    
+    R4. \bar "|"
+
+[8]
+C:/Users/Navid/AppData/Local/Temp/tmp1nvs1a5p/render.ly:26:5: warning: barcheck failed at: 3/4
+    
+    R4. \bar "|"
+
+Preprocessing graphical objects...
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmp1nvs1a5p/render.ly:22:5: warning: barcheck failed at: 3/8
+    
+    R4. \bar "|"
+
+C:/Users/Navid/AppData/Local/Temp/tmp1nvs1a5p/render.ly:26:5: warning: barcheck failed at: 3/4
+    
+    R4. \bar "|"
+
+MIDI output to `render.mid'...
+Finding the ideal number of pages...
+Fitting music on 1 page...
+Drawing systems...
+Converting to `render.pdf'...
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp1nvs1a5p\\render.ly"
+

@@ -1,0 +1,42 @@
+[
+  {
+    "run": 1,
+    "elapsed_seconds": 6.825,
+    "tokens_used": 1827,
+    "model": "openai/gpt-oss-20b:fireworks-ai",
+    "temperature": 0.7,
+    "prompt_file": "..\\..\\configs\\prompts\\zero_shot.txt"
+  },
+  {
+    "run": 2,
+    "elapsed_seconds": 7.482,
+    "tokens_used": 2038,
+    "model": "openai/gpt-oss-20b:fireworks-ai",
+    "temperature": 0.7,
+    "prompt_file": "..\\..\\configs\\prompts\\zero_shot.txt"
+  },
+  {
+    "run": 3,
+    "elapsed_seconds": 7.269,
+    "tokens_used": 1974,
+    "model": "openai/gpt-oss-20b:fireworks-ai",
+    "temperature": 0.7,
+    "prompt_file": "..\\..\\configs\\prompts\\zero_shot.txt"
+  },
+  {
+    "run": 4,
+    "elapsed_seconds": 7.162,
+    "tokens_used": 1766,
+    "model": "openai/gpt-oss-20b:fireworks-ai",
+    "temperature": 0.7,
+    "prompt_file": "..\\..\\configs\\prompts\\zero_shot.txt"
+  },
+  {
+    "run": 5,
+    "elapsed_seconds": 10.623,
+    "tokens_used": 2076,
+    "model": "openai/gpt-oss-20b:fireworks-ai",
+    "temperature": 0.7,
+    "prompt_file": "..\\..\\configs\\prompts\\zero_shot.txt"
+  }
+]

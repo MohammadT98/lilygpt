@@ -1,0 +1,64 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmptxh8qbqk\render C:\Users\Navid\AppData\Local\Temp\tmptxh8qbqk\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:5:1: error: syntax error, unexpected \tempo
+
+\tempo 4 = 160
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:14:39: warning: barcheck failed at: 5/8
+    r4 r8 do''16 re''16 mi''16 fa''16 
+                                      | sol''8 la''8 si''8 r4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:14:63: warning: barcheck failed at: 1/4
+    r4 r8 do''16 re''16 mi''16 fa''16 | sol''8 la''8 si''8 r4 
+                                                              |
+
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:21:48: warning: barcheck failed at: 1/16
+    la''8 sol''16 fa''16 mi''16 re''8 do''8 r4 
+                                               |
+
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:24:40: warning: barcheck failed at: 11/16
+    r4 r8 si''16 la''16 sol''16 fa''16 
+                                       | mi''8 re''8 do''8 r4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:24:63: warning: barcheck failed at: 5/16
+    r4 r8 si''16 la''16 sol''16 fa''16 | mi''8 re''8 do''8 r4 
+                                                              |
+
+Preprocessing graphical objects...
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:14:39: warning: barcheck failed at: 5/8
+    r4 r8 do''16 re''16 mi''16 fa''16 
+                                      | sol''8 la''8 si''8 r4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:14:63: warning: barcheck failed at: 1/4
+    r4 r8 do''16 re''16 mi''16 fa''16 | sol''8 la''8 si''8 r4 
+                                                              |
+
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:21:48: warning: barcheck failed at: 1/16
+    la''8 sol''16 fa''16 mi''16 re''8 do''8 r4 
+                                               |
+
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:24:40: warning: barcheck failed at: 11/16
+    r4 r8 si''16 la''16 sol''16 fa''16 
+                                       | mi''8 re''8 do''8 r4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmptxh8qbqk/render.ly:24:63: warning: barcheck failed at: 5/16
+    r4 r8 si''16 la''16 sol''16 fa''16 | mi''8 re''8 do''8 r4 
+                                                              |
+
+MIDI output to `render.mid'...
+Finding the ideal number of pages...
+Fitting music on 1 page...
+Drawing systems...
+Converting to `render.pdf'...
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmptxh8qbqk\\render.ly"
+

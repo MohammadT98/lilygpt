@@ -1,0 +1,273 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpr_lo3i99\render C:\Users\Navid\AppData\Local\Temp\tmpr_lo3i99\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:7:12: error: wrong type for argument 1.  Expecting pitch, found "fa"
+      \key 
+           fa \major
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:7: error: not a note name: fad
+      
+      fad1 | re4 la4 re4 la4 | sol4 la4 sol4 la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:14: error: not a note name: re
+      fad1 | 
+             re4 la4 re4 la4 | sol4 la4 sol4 la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:18: error: not a note name: la
+      fad1 | re4 
+                 la4 re4 la4 | sol4 la4 sol4 la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:22: error: not a note name: re
+      fad1 | re4 la4 
+                     re4 la4 | sol4 la4 sol4 la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:26: error: not a note name: la
+      fad1 | re4 la4 re4 
+                         la4 | sol4 la4 sol4 la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:32: error: not a note name: sol
+      fad1 | re4 la4 re4 la4 | 
+                               sol4 la4 sol4 la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:37: error: not a note name: la
+      fad1 | re4 la4 re4 la4 | sol4 
+                                    la4 sol4 la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:41: error: not a note name: sol
+      fad1 | re4 la4 re4 la4 | sol4 la4 
+                                        sol4 la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:46: error: not a note name: la
+      fad1 | re4 la4 re4 la4 | sol4 la4 sol4 
+                                             la4 | fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:52: error: not a note name: fad
+      fad1 | re4 la4 re4 la4 | sol4 la4 sol4 la4 | 
+                                                   fad2 | 
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:9: error: not a note name: fad
+        
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:14: error: not a note name: la
+        fad4 
+             la4 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:18: error: not a note name: mi
+        fad4 la4 
+                 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:22: error: not a note name: re
+        fad4 la4 mi4 
+                     re4 | sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:28: error: not a note name: sol
+        fad4 la4 mi4 re4 | 
+                           sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:33: error: not a note name: la
+        fad4 la4 mi4 re4 | sol4 
+                                la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:37: error: not a note name: si
+        fad4 la4 mi4 re4 | sol4 la4 
+                                    si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:41: error: not a note name: re
+        fad4 la4 mi4 re4 | sol4 la4 si4 
+                                        re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:47: error: not a note name: fad
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | 
+                                              fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:52: error: not a note name: re
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | fad4 
+                                                   re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:56: error: not a note name: mi
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 
+                                                       mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:60: error: not a note name: fa
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 mi4 
+                                                           fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:66: error: not a note name: sol
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | 
+                                                                 sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:71: error: not a note name: la
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 
+                                                                      la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:75: error: not a note name: si
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 
+                                                                          si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:13:79: error: not a note name: re
+        fad4 la4 mi4 re4 | sol4 la4 si4 re4 | fad4 re4 mi4 fa4 | sol4 la4 si4 
+                                                                              re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:9: error: not a note name: re
+        
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:13: error: not a note name: re
+        re4 
+            re4 la4 la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:17: error: not a note name: la
+        re4 re4 
+                la4 la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:21: error: not a note name: la
+        re4 re4 la4 
+                    la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:27: error: not a note name: sol
+        re4 re4 la4 la4 | 
+                          sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:32: error: not a note name: sol
+        re4 re4 la4 la4 | sol4 
+                               sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:37: error: not a note name: la
+        re4 re4 la4 la4 | sol4 sol4 
+                                    la4 la4 | fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:41: error: not a note name: la
+        re4 re4 la4 la4 | sol4 sol4 la4 
+                                        la4 | fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:47: error: not a note name: fad
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | 
+                                              fad4 re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:52: error: not a note name: re
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | fad4 
+                                                   re4 mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:56: error: not a note name: mi
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | fad4 re4 
+                                                       mi4 re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:60: error: not a note name: re
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 
+                                                           re4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:66: error: not a note name: sol
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | 
+                                                                 sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:71: error: not a note name: la
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 
+                                                                      la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:75: error: not a note name: si
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 la4 
+                                                                          si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:17:79: error: not a note name: re
+        re4 re4 la4 la4 | sol4 sol4 la4 la4 | fad4 re4 mi4 re4 | sol4 la4 si4 
+                                                                              re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:9: error: not a note name: la
+        
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:13: error: not a note name: si
+        la4 
+            si4 la4 si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:17: error: not a note name: la
+        la4 si4 
+                la4 si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:21: error: not a note name: si
+        la4 si4 la4 
+                    si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:27: error: not a note name: sol
+        la4 si4 la4 si4 | 
+                          sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:32: error: not a note name: la
+        la4 si4 la4 si4 | sol4 
+                               la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:36: error: not a note name: sol
+        la4 si4 la4 si4 | sol4 la4 
+                                   sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:41: error: not a note name: la
+        la4 si4 la4 si4 | sol4 la4 sol4 
+                                        la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:47: error: not a note name: fad
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | 
+                                              fad4 re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:52: error: not a note name: re
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | fad4 
+                                                   re4 mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:56: error: not a note name: mi
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | fad4 re4 
+                                                       mi4 fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:60: error: not a note name: fa
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 
+                                                           fa4 | sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:66: error: not a note name: sol
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | 
+                                                                 sol4 la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:71: error: not a note name: la
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 
+                                                                      la4 si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:75: error: not a note name: si
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 
+                                                                          si4 re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:21:79: error: not a note name: re
+        la4 si4 la4 si4 | sol4 la4 sol4 la4 | fad4 re4 mi4 fa4 | sol4 la4 si4 
+                                                                              re4 |
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:24:7: error: not a note name: fad
+      
+      fad2 | re1 | \bar "|."
+
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:24:14: error: not a note name: re
+      fad2 | 
+             re1 | \bar "|."
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:57: warning: barcheck failed at: 1/2
+      fad1 | re4 la4 re4 la4 | sol4 la4 sol4 la4 | fad2 
+                                                        | 
+
+[8][16]
+Preprocessing graphical objects...
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpr_lo3i99/render.ly:10:57: warning: barcheck failed at: 1/2
+      fad1 | re4 la4 re4 la4 | sol4 la4 sol4 la4 | fad2 
+                                                        | 
+
+MIDI output to `render.mid'...
+Finding the ideal number of pages...
+Fitting music on 1 page...
+Drawing systems...
+Converting to `render.pdf'...
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpr_lo3i99\\render.ly"
+

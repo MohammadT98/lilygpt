@@ -1,0 +1,276 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmp8efnmfxi\render C:\Users\Navid\AppData\Local\Temp\tmp8efnmfxi\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:6:10: error: wrong type for argument 1.  Expecting pitch, found "sol"
+    \key 
+         sol \major
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:10:5: error: not a note name: sol
+    
+    sol'4 la'4 si'4 re''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:10:8: error: syntax error, unexpected '\''
+    sol
+       '4 la'4 si'4 re''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:10:11: error: not a note name: la
+    sol'4 
+          la'4 si'4 re''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:10:16: error: not a note name: si
+    sol'4 la'4 
+               si'4 re''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:10:21: error: not a note name: re
+    sol'4 la'4 si'4 
+                    re''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:11:5: error: not a note name: re
+    
+    re''8 mi''16 fa''16 sol''8 sol''8 la''8. sol''16
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:11:11: error: not a note name: mi
+    re''8 
+          mi''16 fa''16 sol''8 sol''8 la''8. sol''16
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:11:18: error: not a note name: fa
+    re''8 mi''16 
+                 fa''16 sol''8 sol''8 la''8. sol''16
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:11:25: error: not a note name: sol
+    re''8 mi''16 fa''16 
+                        sol''8 sol''8 la''8. sol''16
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:11:32: error: not a note name: sol
+    re''8 mi''16 fa''16 sol''8 
+                               sol''8 la''8. sol''16
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:11:39: error: not a note name: la
+    re''8 mi''16 fa''16 sol''8 sol''8 
+                                      la''8. sol''16
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:11:46: error: not a note name: sol
+    re''8 mi''16 fa''16 sol''8 sol''8 la''8. 
+                                             sol''16
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:11:49: error: syntax error, unexpected '\''
+    re''8 mi''16 fa''16 sol''8 sol''8 la''8. sol
+                                                ''16
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:12:5: error: not a note name: sol
+    
+    sol''4 r4 r4 r4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:5: error: not a note name: re
+    
+    re''8 re''8 re''8 re''8 sol''8 la''8 re''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:7: error: syntax error, unexpected '\''
+    re
+      ''8 re''8 re''8 re''8 sol''8 la''8 re''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:11: error: not a note name: re
+    re''8 
+          re''8 re''8 re''8 sol''8 la''8 re''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:17: error: not a note name: re
+    re''8 re''8 
+                re''8 re''8 sol''8 la''8 re''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:23: error: not a note name: re
+    re''8 re''8 re''8 
+                      re''8 sol''8 la''8 re''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:29: error: not a note name: sol
+    re''8 re''8 re''8 re''8 
+                            sol''8 la''8 re''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:36: error: not a note name: la
+    re''8 re''8 re''8 re''8 sol''8 
+                                   la''8 re''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:42: error: not a note name: re
+    re''8 re''8 re''8 re''8 sol''8 la''8 
+                                         re''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:13:48: error: not a note name: sol
+    re''8 re''8 re''8 re''8 sol''8 la''8 re''8 
+                                               sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:15:5: error: not a note name: la
+    
+    la''4 si''4 la''4 sol''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:15:11: error: not a note name: si
+    la''4 
+          si''4 la''4 sol''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:15:17: error: not a note name: la
+    la''4 si''4 
+                la''4 sol''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:15:23: error: not a note name: sol
+    la''4 si''4 la''4 
+                      sol''4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:16:5: error: not a note name: la
+    
+    la''8 si''8 la''8 sol''8 fa''8 sol''8 la''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:16:11: error: not a note name: si
+    la''8 
+          si''8 la''8 sol''8 fa''8 sol''8 la''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:16:17: error: not a note name: la
+    la''8 si''8 
+                la''8 sol''8 fa''8 sol''8 la''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:16:23: error: not a note name: sol
+    la''8 si''8 la''8 
+                      sol''8 fa''8 sol''8 la''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:16:30: error: not a note name: fa
+    la''8 si''8 la''8 sol''8 
+                             fa''8 sol''8 la''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:16:36: error: not a note name: sol
+    la''8 si''8 la''8 sol''8 fa''8 
+                                   sol''8 la''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:16:43: error: not a note name: la
+    la''8 si''8 la''8 sol''8 fa''8 sol''8 
+                                          la''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:16:49: error: not a note name: sol
+    la''8 si''8 la''8 sol''8 fa''8 sol''8 la''8 
+                                                sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:17:5: error: not a note name: re
+    
+    re''4 r4 r4 r4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:5: error: not a note name: sol
+    
+    sol''8 sol''8 sol''8 sol''8 si''8 sol''8 fa''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:8: error: syntax error, unexpected '\''
+    sol
+       ''8 sol''8 sol''8 sol''8 si''8 sol''8 fa''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:12: error: not a note name: sol
+    sol''8 
+           sol''8 sol''8 sol''8 si''8 sol''8 fa''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:19: error: not a note name: sol
+    sol''8 sol''8 
+                  sol''8 sol''8 si''8 sol''8 fa''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:26: error: not a note name: sol
+    sol''8 sol''8 sol''8 
+                         sol''8 si''8 sol''8 fa''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:33: error: not a note name: si
+    sol''8 sol''8 sol''8 sol''8 
+                                si''8 sol''8 fa''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:39: error: not a note name: sol
+    sol''8 sol''8 sol''8 sol''8 si''8 
+                                      sol''8 fa''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:46: error: not a note name: fa
+    sol''8 sol''8 sol''8 sol''8 si''8 sol''8 
+                                             fa''8 sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:18:52: error: not a note name: sol
+    sol''8 sol''8 sol''8 sol''8 si''8 sol''8 fa''8 
+                                                   sol''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:20:5: error: not a note name: re
+    
+    re''8 re''8 re''8 re''8 re''8 re''8 re''8 re''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:20:11: error: not a note name: re
+    re''8 
+          re''8 re''8 re''8 re''8 re''8 re''8 re''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:20:17: error: not a note name: re
+    re''8 re''8 
+                re''8 re''8 re''8 re''8 re''8 re''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:20:23: error: not a note name: re
+    re''8 re''8 re''8 
+                      re''8 re''8 re''8 re''8 re''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:20:29: error: not a note name: re
+    re''8 re''8 re''8 re''8 
+                            re''8 re''8 re''8 re''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:20:35: error: not a note name: re
+    re''8 re''8 re''8 re''8 re''8 
+                                  re''8 re''8 re''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:20:41: error: not a note name: re
+    re''8 re''8 re''8 re''8 re''8 re''8 
+                                        re''8 re''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:20:47: error: not a note name: re
+    re''8 re''8 re''8 re''8 re''8 re''8 re''8 
+                                              re''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:21:5: error: not a note name: sol
+    
+    sol''8 dod''8 sol''8 dod''8 sol''8 dod''8 sol''8 dod''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:21:12: error: not a note name: dod
+    sol''8 
+           dod''8 sol''8 dod''8 sol''8 dod''8 sol''8 dod''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:21:19: error: not a note name: sol
+    sol''8 dod''8 
+                  sol''8 dod''8 sol''8 dod''8 sol''8 dod''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:21:26: error: not a note name: dod
+    sol''8 dod''8 sol''8 
+                         dod''8 sol''8 dod''8 sol''8 dod''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:21:33: error: not a note name: sol
+    sol''8 dod''8 sol''8 dod''8 
+                                sol''8 dod''8 sol''8 dod''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:21:40: error: not a note name: dod
+    sol''8 dod''8 sol''8 dod''8 sol''8 
+                                       dod''8 sol''8 dod''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:21:47: error: not a note name: sol
+    sol''8 dod''8 sol''8 dod''8 sol''8 dod''8 
+                                              sol''8 dod''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:21:54: error: not a note name: dod
+    sol''8 dod''8 sol''8 dod''8 sol''8 dod''8 sol''8 
+                                                     dod''8
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:22:5: error: not a note name: re
+    
+    re''4 r4 r4 r4
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:23:5: error: not a note name: sol
+    
+    sol''2 r2
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:23:8: error: syntax error, unexpected '\''
+    sol
+       ''2 r2
+
+C:/Users/Navid/AppData/Local/Temp/tmp8efnmfxi/render.ly:5:3: error: errors found, ignoring music expression
+  
+  \new Staff {
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmp8efnmfxi\\render.ly"
+
