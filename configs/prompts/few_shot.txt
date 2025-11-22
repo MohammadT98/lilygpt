@@ -85,11 +85,17 @@ Example3:
   }
 }
 
-Write a LilyPond passage consisting only of triads (3-note chords), not single notes.
-Every event must be a triad written using LilyPond chord brackets < >.
-Each triad must contain exactly three notes with one shared duration.
+Write a LilyPond passage with exactly two voices, using the structure:
+<< { ... } \\ { ... } >>.
+
+The music must be as detailed and expressive as the examples you see.
 Always use \language "italiano" and Italian note names (do re mi fa sol la si, dod, reb, lad…).
+Use \time 3/4.
 Output LilyPond code only.
 Do not use \relative anywhere.
 Put \version "2.24.4" on the first line.
-Pay attention to examples but do not copy them.
+Pay attention to the examples but do not copy them.
+
+
+
+

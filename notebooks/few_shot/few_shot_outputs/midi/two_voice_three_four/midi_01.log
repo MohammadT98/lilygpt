@@ -1,0 +1,38 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpeay07z_4\render C:\Users\Navid\AppData\Local\Temp\tmpeay07z_4\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpeay07z_4'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpeay07z_4/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpeay07z_4/render.ly:20:7: warning: Unattached BeamEvent
+      
+      [do'' re'' mi'']4 r4 r4
+
+C:/Users/Navid/AppData/Local/Temp/tmpeay07z_4/render.ly:7:3: error: Spurious expression in \score
+  
+  <<
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpeay07z_4/render.ly:6:3: warning: skipping zero-duration score
+  
+  \time 3/4
+
+C:/Users/Navid/AppData/Local/Temp/tmpeay07z_4/render.ly:6:3: warning: to suppress this, consider adding a spacer rest
+  
+  \time 3/4
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpeay07z_4/render.ly:6:3: warning: skipping zero-duration score
+  
+  \time 3/4
+
+C:/Users/Navid/AppData/Local/Temp/tmpeay07z_4/render.ly:6:3: warning: to suppress this, consider adding a spacer rest
+  
+  \time 3/4
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpeay07z_4\\render.ly"
+

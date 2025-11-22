@@ -1,0 +1,46 @@
+[lilypond_failed] cmd: C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe -dno-point-and-click -o C:\Users\Navid\AppData\Local\Temp\tmpbyi6j8ch\render C:\Users\Navid\AppData\Local\Temp\tmpbyi6j8ch\render.ly
+returncode: 1
+
+STDOUT:
+
+
+STDERR:
+Changing working directory to: `C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch'
+Processing `C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly'
+Parsing...
+C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly:7:3: error: Spurious expression in \score
+  
+  \time 4/4
+
+C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly:11:7: warning: Unattached SlurEvent
+      
+      ( sol''4 re''8 mi''8. fa''16 sol''8 ) r4
+
+C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly:22:7: warning: Unattached AbsoluteDynamicEvent
+      
+      \p \grace{re,} sol,4 re,4 mi,4 fa,4
+
+C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly:8:3: error: Spurious expression in \score
+  
+  <<
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly:6:3: warning: skipping zero-duration score
+  
+  \key sol \major
+
+C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly:6:3: warning: to suppress this, consider adding a spacer rest
+  
+  \key sol \major
+
+Interpreting music...
+C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly:6:3: warning: skipping zero-duration score
+  
+  \key sol \major
+
+C:/Users/Navid/AppData/Local/Temp/tmpbyi6j8ch/render.ly:6:3: warning: to suppress this, consider adding a spacer rest
+  
+  \key sol \major
+
+fatal error: failed files: "C:\\Users\\Navid\\AppData\\Local\\Temp\\tmpbyi6j8ch\\render.ly"
+
