@@ -1,26 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-r"""
-Batch-normalize a folder of LilyPond sources that follow the baroquemusic.it layout.
-
-Dataset layout (per work folder):
-    variabili.ly                            - shared macros / tweaks
-    vivaldi_..._header.ly                   - top-level include (paper, language, includes movements)
-    vivaldi_..._format.ly                   - empty @macro placeholders
-    vivaldi_..._allegro.ly                  - movement files defining I*/II*/III* macros with music
-    vivaldi_..._violino1.ly, ...            - part wrappers (only \score <<\I...>>)
-
-The music lives inside the movement files where identifiers start with roman numerals
-(`Iobn`, `IIvla`, ...).  This script walks the dataset, finds those files automatically,
-runs the existing normalization pipeline (preparse -> normalize -> engrave strip),
-and writes the normalized results to a mirroring directory structure.
-
-Usage:
-    python scripts/process_dataset.py \\
-        --input data/raw/Dataset \\
-        --normalized-out data/normalized_dataset
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -43,6 +20,11 @@ except ModuleNotFoundError:
     from lilynorm.utils.options import NormOptions
     from lilynorm.stages import preparse, normalize, engrave_strip, tokenize_gpt
 
+
+# ---------------------------------------------------------------------------
+# Regexes and constants
+# ---------------------------------------------------------------------------
+
 # Movement files define identifiers such as `Iglobal`, `IIvla`, `IIIobn`, ...
 ROMAN_DEF_RE = re.compile(r"\b[IVX]{1,4}[A-Za-z_-]*\s*=")
 # Notes in Italian or English spelling followed by a duration (e.g., sol'8, bes4, c16).
@@ -54,6 +36,7 @@ VERSION_DECL_RE = re.compile(r"\\version\s+\"([^\"]+)\"", re.I)
 LANGUAGE_DECL_RE = re.compile(r"\\language\s+\"([^\"]+)\"", re.I)
 VARIABILI_INCLUDE_RE = re.compile(r"\\include\s+\"([^\"]*variabili[^\"]*)\"", re.I)
 RELATIVE_LANG_RE = re.compile(r"\\relative\s+([^\s{]+)", re.I)
+
 ITALIAN_SOLFEGE = ("do", "re", "mi", "fa", "sol", "la", "si")
 DEFAULT_VERSION = "2.24.0"
 
@@ -73,16 +56,28 @@ NAME_BLACKLIST = (
 )
 
 
+DEFAULT_NORMALIZED_OUT = "data/normalized_dataset"
+DEFAULT_TOKENIZED_OUT = "data/tokenized_dataset"
+
+
+# ---------------------------------------------------------------------------
+# Core helpers
+# ---------------------------------------------------------------------------
+
 def should_process(path: Path, text: str) -> bool:
     """Return True if this .ly file contains actual music definitions."""
     stem = path.stem.lower()
+
     for tag in NAME_BLACKLIST:
         if stem == tag or stem.endswith(f"_{tag}"):
             return False
+
     if not ROMAN_DEF_RE.search(text):
         return False
+
     if not NOTE_RE.search(text):
         return False
+
     return True
 
 
@@ -121,16 +116,21 @@ def find_voice_blocks(text: str) -> list[tuple[str, int, int]]:
     """Return (name, start_index, end_index) slices for musical assignment blocks."""
     matches = list(VOICE_ASSIGN_RE.finditer(text))
     blocks: list[tuple[str, int, int]] = []
+
     for idx, match in enumerate(matches):
         name = match.group(1)
+        # Voices are heuristically detected by names ending in 'n' / 'N'
         if not name.endswith(("n", "N")):
             continue
+
         start = match.start()
         body_start = match.end()
         end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
         body = text[body_start:end]
+
         if NOTE_RE.search(body):
             blocks.append((name, start, end))
+
     return blocks
 
 
@@ -150,26 +150,34 @@ def _infer_language_from_music(text: str) -> str | None:
 
 def _read_header_metadata(work_dir: Path) -> tuple[str | None, str | None, str | None]:
     """Extract version, language, and variabili include from sibling header files."""
-    version = language = variabili_include = None
+    version: str | None = None
+    language: str | None = None
+    variabili_include: str | None = None
+
     for header in sorted(work_dir.glob("*header*.ly")):
         try:
             text = header.read_text(encoding="utf-8", errors="ignore")
         except OSError:
             continue
+
         if version is None:
             match = VERSION_DECL_RE.search(text)
             if match:
                 version = match.group(1)
+
         if language is None:
             match = LANGUAGE_DECL_RE.search(text)
             if match:
                 language = match.group(1)
+
         if variabili_include is None:
             match = VARIABILI_INCLUDE_RE.search(text)
             if match:
                 variabili_include = match.group(1)
+
         if version and language and variabili_include:
             break
+
     return version, language, variabili_include
 
 
@@ -181,8 +189,11 @@ def _ensure_preamble(
     header_language: str | None,
     variabili_include: str | None,
 ) -> str:
-    """Guarantee that \\version, \\language and macro includes exist."""
-    # For ML/fine-tuning, remove all LilyPond directives and do not add any preamble.
+    """Guarantee that \\version, \\language and macro includes exist.
+
+    For ML/fine-tuning, remove all LilyPond directives and do not add any preamble.
+    Currently this function is intentionally a no-op to preserve the existing behavior.
+    """
     return text
 
 
@@ -197,49 +208,73 @@ def _copy_variabili_files(input_root: Path, output_root: Path) -> None:
         shutil.copy2(src, dest)
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser(description="Normalize a LilyPond dataset.")
-    ap.add_argument("--input", required=True, help="Root directory containing the raw dataset.")
-    DEFAULT_NORMALIZED_OUT = "data/normalized_dataset"
-    DEFAULT_TOKENIZED_OUT = "data/tokenized_dataset"
-    ap.add_argument(
+# ---------------------------------------------------------------------------
+# CLI construction
+# ---------------------------------------------------------------------------
+
+def build_arg_parser() -> argparse.ArgumentParser:
+    """Build and return the argument parser for this script."""
+    parser = argparse.ArgumentParser(description="Normalize a LilyPond dataset.")
+
+    parser.add_argument(
+        "--input",
+        required=True,
+        help="Root directory containing the raw dataset.",
+    )
+    parser.add_argument(
         "--normalized-out",
         default=DEFAULT_NORMALIZED_OUT,
-        help="Destination root for normalized .ly files (default: data/normalized_dataset).",
+        help="Destination root for normalized .ly files "
+             "(default: data/normalized_dataset).",
     )
-    ap.add_argument(
+    parser.add_argument(
         "--tokenized-out",
         default=DEFAULT_TOKENIZED_OUT,
-        help="Destination root for GPT-token files (default: data/tokenized_dataset).",
+        help="Destination root for GPT-token files "
+             "(default: data/tokenized_dataset).",
     )
-    ap.add_argument(
+    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Scan and report which files would be processed without writing output.",
     )
-    ap.add_argument(
+    parser.add_argument(
         "--keep-figures",
         action="store_true",
         help="Preserve basso-figure (`\\figuremode`) blocks in normalized output.",
     )
-    ap.add_argument(
+    parser.add_argument(
         "--skip-tokenize",
         action="store_true",
         help="Do not produce GPT token files.",
     )
-    ap.add_argument(
+    parser.add_argument(
         "--single-voice-only",
         action="store_true",
         help="Filter outputs to files containing exactly one voice assignment.",
     )
-    ap.add_argument(
+    parser.add_argument(
         "--tokenizer-model",
         default=tokenize_gpt.DEFAULT_MODEL_NAME,
-        help="HuggingFace tokenizer to use for GPT tokenization (default: EleutherAI/gpt-neox-20b).",
+        help=(
+            "HuggingFace tokenizer to use for GPT tokenization "
+            "(default: EleutherAI/gpt-neox-20b)."
+        ),
     )
-    args = ap.parse_args()
 
-    log_dir = Path("data/single_voice/logs" if args.single_voice_only else "data/logs").expanduser()
+    return parser
+
+
+# ---------------------------------------------------------------------------
+# Main dataset processing
+# ---------------------------------------------------------------------------
+
+def main() -> int:
+    args = build_arg_parser().parse_args()
+
+    log_dir = Path(
+        "data/single_voice/logs" if args.single_voice_only else "data/logs"
+    ).expanduser()
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "process_dataset.log"
 
@@ -268,7 +303,9 @@ def main() -> int:
 
         norm_root = Path(normalized_out).expanduser().resolve()
         tok_root = Path(tokenized_out).expanduser().resolve()
+
         opts = NormOptions()
+
         processed = 0
         skipped = 0
         trimmed_multi_voice = 0
@@ -282,6 +319,7 @@ def main() -> int:
         for src in ly_files:
             rel = src.relative_to(input_root)
             text = src.read_text(encoding="utf-8", errors="ignore")
+
             if not should_process(src, text):
                 skipped += 1
                 continue
@@ -291,10 +329,15 @@ def main() -> int:
             try:
                 normalized_text = normalize_file(src, opts)
             except Exception as exc:  # pragma: no cover - defensive
-                print(f"[dataset] ! failed to normalize {rel}: {exc}", file=sys.stderr)
+                print(
+                    f"[dataset] ! failed to normalize {rel}: {exc}",
+                    file=sys.stderr,
+                )
                 continue
 
-            header_version, header_language, variabili_include = _read_header_metadata(src.parent)
+            header_version, header_language, variabili_include = _read_header_metadata(
+                src.parent
+            )
             normalized_text = _ensure_preamble(
                 normalized_text,
                 src_path=src,
@@ -303,12 +346,17 @@ def main() -> int:
                 variabili_include=variabili_include,
             )
 
+            # Strip figuremode if requested
             if not args.keep_figures:
                 normalized_text = FIGURE_ASSIGN_RE.sub("", normalized_text)
                 normalized_text = FIGURE_INLINE_RE.sub("", normalized_text)
-                normalized_text = normalized_text.replace("<figure>", "").replace("</figure>", "")
+                normalized_text = normalized_text.replace("<figure>", "").replace(
+                    "</figure>", ""
+                )
 
             selected_voice = None
+
+            # Optionally keep only a single voice
             if args.single_voice_only:
                 voice_blocks = find_voice_blocks(normalized_text)
                 if not voice_blocks:
@@ -318,11 +366,13 @@ def main() -> int:
                         "due to --single-voice-only"
                     )
                     continue
+
                 selected_voice, block_start, block_end = voice_blocks[0]
                 prefix = normalized_text[:block_start]
                 normalized_text = (
                     prefix + normalized_text[block_start:block_end]
                 ).rstrip() + "\n"
+
                 if len(voice_blocks) > 1:
                     trimmed_multi_voice += 1
                     print(
@@ -337,16 +387,24 @@ def main() -> int:
             # Prepend \version directive to every output file (no extra quotes)
             norm_path = norm_root / rel
             norm_path.parent.mkdir(parents=True, exist_ok=True)
-            import re
-            cleaned = re.sub(r'(^|\n)\\version\s+"[^"]+"\s*', '', normalized_text)
+
+            # Remove existing \version declarations, then add \version "2.24.4"
+            cleaned = re.sub(r'(^|\n)\\version\s+"[^"]+"\s*', "", normalized_text)
             output_text = '\\version "2.24.4"\n' + cleaned.lstrip() + "\n"
             norm_path.write_text(output_text, encoding="utf-8")
 
+            # Tokenization output
             if not args.skip_tokenize:
-                tok_ids = tokenize_gpt.run(normalized_text, model_name=args.tokenizer_model)
+                tok_ids = tokenize_gpt.run(
+                    normalized_text,
+                    model_name=args.tokenizer_model,
+                )
                 tok_path = tok_root / rel.with_suffix(".tokens.json")
                 tok_path.parent.mkdir(parents=True, exist_ok=True)
-                tok_path.write_text(json.dumps({"input_ids": tok_ids}) + "\n", encoding="utf-8")
+                tok_path.write_text(
+                    json.dumps({"input_ids": tok_ids}) + "\n",
+                    encoding="utf-8",
+                )
 
             processed += 1
 
@@ -360,10 +418,12 @@ def main() -> int:
             + (
                 ""
                 if not args.single_voice_only
-                else f" single_voice_trimmed={trimmed_multi_voice} single_voice_skipped={single_voice_missing}"
+                else f" single_voice_trimmed={trimmed_multi_voice}"
+                     f" single_voice_skipped={single_voice_missing}"
             )
         )
         return 0
+
     finally:
         if log_file is not None:
             log_file.flush()

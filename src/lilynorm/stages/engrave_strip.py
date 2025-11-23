@@ -1,105 +1,191 @@
 from __future__ import annotations
+
 import re
 import sys
 from dataclasses import dataclass
 from typing import Tuple, List, Dict, Iterable
 
-DROP_EMPTY_ASSIGNMENTS = False      
-PRUNE_SPACER_SUBVOICES = True       
-DEFAULT_SPACE_MODE = "safe"         
+
+# ---------------------------------------------------------------------------
+# Configuration flags
+# ---------------------------------------------------------------------------
+
+# If enabled, drop assignments that resolve to empty blocks (e.g. foo = {}).
+DROP_EMPTY_ASSIGNMENTS = False
+
+# If enabled, remove spacer-only subvoices (e.g. "\\\\ { s1 s1 }").
+PRUNE_SPACER_SUBVOICES = True
+
+# Controls whitespace compaction strategy ("safe" or "simple").
+DEFAULT_SPACE_MODE = "safe"
 
 
-def _grab_balanced(text: str, start: int, open_char: str = '{', close_char: str = '}') -> int:
+# ---------------------------------------------------------------------------
+# Core helpers
+# ---------------------------------------------------------------------------
+
+def _grab_balanced(
+    text: str,
+    start: int,
+    open_char: str = "{",
+    close_char: str = "}",
+) -> int:
+    """
+    Given an index `start` pointing at an opening brace (or other delimiter),
+    return the index of the matching closing delimiter, handling nested pairs.
+
+    Returns -1 if the text ends before a matching closing char is found.
+    """
     depth = 1
-    i = start + 1
-    L = len(text)
-    while i < L:
-        c = text[i]
-        if c == open_char:
+    index = start + 1
+    length = len(text)
+
+    while index < length:
+        char = text[index]
+        if char == open_char:
             depth += 1
-        elif c == close_char:
+        elif char == close_char:
             depth -= 1
             if depth == 0:
-                return i
-        i += 1
-    return -1 
+                return index
+        index += 1
+
+    return -1
+
 
 def _remove_block_directive(src: str, directive: str) -> Tuple[str, int]:
-    pat = re.compile(rf"\\{directive}\s*\{{", re.M)
-    removed = 0
-    out, i = [], 0
+    """
+    Remove top-level \\<directive> { ... } blocks from the given LilyPond source.
+
+    Returns a tuple of (new_source, removed_count).
+    """
+    pattern = re.compile(rf"\\{directive}\s*\{{", re.M)
+    removed_count = 0
+    output_parts: List[str] = []
+    search_start = 0
+
     while True:
-        m = pat.search(src, i)
-        if not m:
-            out.append(src[i:]); break
-        out.append(src[i:m.start()])
-        open_idx = m.end() - 1
-        close_idx = _grab_balanced(src, open_idx, '{', '}')
-        if close_idx == -1:   
-            out.append(src[m.start():m.end()])
-            i = m.end()
+        match = pattern.search(src, search_start)
+        if not match:
+            output_parts.append(src[search_start:])
+            break
+
+        output_parts.append(src[search_start:match.start()])
+
+        brace_open_index = match.end() - 1
+        brace_close_index = _grab_balanced(src, brace_open_index, "{", "}")
+
+        # If we cannot find a matching closing brace, keep the directive as-is.
+        if brace_close_index == -1:
+            output_parts.append(src[match.start():match.end()])
+            search_start = match.end()
             continue
-        removed += 1
-        i = close_idx + 1
-    return ("".join(out), removed)
+
+        removed_count += 1
+        search_start = brace_close_index + 1
+
+    return "".join(output_parts), removed_count
+
 
 def _remove_with_blocks(src: str) -> Tuple[str, int]:
-    pat = re.compile(r"\\with\s*\{", re.M)
-    removed = 0
-    out, i = [], 0
+    """
+    Remove \\with { ... } blocks from the given LilyPond source.
+
+    Returns a tuple of (new_source, removed_count).
+    """
+    pattern = re.compile(r"\\with\s*\{", re.M)
+    removed_count = 0
+    output_parts: List[str] = []
+    search_start = 0
+
     while True:
-        m = pat.search(src, i)
-        if not m:
-            out.append(src[i:]); break
-        out.append(src[i:m.start()])
-        open_idx = m.end() - 1
-        close_idx = _grab_balanced(src, open_idx, '{', '}')
-        if close_idx == -1:
-            out.append(src[m.start():m.end()])
-            i = m.end()
+        match = pattern.search(src, search_start)
+        if not match:
+            output_parts.append(src[search_start:])
+            break
+
+        output_parts.append(src[search_start:match.start()])
+
+        brace_open_index = match.end() - 1
+        brace_close_index = _grab_balanced(src, brace_open_index, "{", "}")
+
+        # If we cannot find a matching closing brace, keep the original text.
+        if brace_close_index == -1:
+            output_parts.append(src[match.start():match.end()])
+            search_start = match.end()
             continue
-        removed += 1
-        i = close_idx + 1
-    return ("".join(out), removed)
+
+        removed_count += 1
+        search_start = brace_close_index + 1
+
+    return "".join(output_parts), removed_count
+
 
 def _strip_lyricmode_assignments(text: str) -> Tuple[str, int]:
-    removed = 0
+    """
+    Replace `name = \\lyricmode { ... }` with `name = {}` (empty block),
+    preserving the assignment prefix and structure.
+
+    Returns (new_text, removed_count).
+    """
+    removed_count = 0
+
     while True:
-        m = RE_LYRIC_ASSIGN.search(text)
-        if not m:
+        match = RE_LYRIC_ASSIGN.search(text)
+        if not match:
             break
-        open_idx = m.end() - 1
-        close_idx = _grab_balanced(text, open_idx, '{', '}')
-        if close_idx == -1:
+
+        brace_open_index = match.end() - 1
+        brace_close_index = _grab_balanced(text, brace_open_index, "{", "}")
+        if brace_close_index == -1:
             break
-        prefix = m.group(1)
-        text = text[:m.start()] + prefix + "{}" + text[close_idx + 1 :]
-        removed += 1
-    return text, removed
+
+        prefix = match.group(1)
+        text = text[:match.start()] + prefix + "{}" + text[brace_close_index + 1 :]
+        removed_count += 1
+
+    return text, removed_count
+
 
 def _strip_inline_lyricmode(text: str) -> Tuple[str, int]:
-    removed = 0
-    i = 0
-    out: list[str] = []
+    """
+    Replace inline `\\lyricmode { ... }` with `{}` while preserving
+    surrounding whitespace as much as possible.
+
+    Returns (new_text, removed_count).
+    """
+    removed_count = 0
+    search_start = 0
+    output_parts: List[str] = []
+
     while True:
-        m = RE_LYRIC_INLINE.search(text, i)
-        if not m:
-            out.append(text[i:])
+        match = RE_LYRIC_INLINE.search(text, search_start)
+        if not match:
+            output_parts.append(text[search_start:])
             break
-        start = m.start()
-        open_idx = m.end() - 1
-        close_idx = _grab_balanced(text, open_idx, '{', '}')
-        if close_idx == -1:
-            out.append(text[i:m.end()])
-            i = m.end()
+
+        literal_start = match.start()
+        brace_open_index = match.end() - 1
+        brace_close_index = _grab_balanced(text, brace_open_index, "{", "}")
+        if brace_close_index == -1:
+            output_parts.append(text[search_start:match.end()])
+            search_start = match.end()
             continue
-        prefix = text[i:start]
-        trimmed = prefix.rstrip(" \t")
-        out.append(trimmed)
-        out.append("{}")
-        removed += 1
-        i = close_idx + 1
-    return "".join(out), removed
+
+        prefix = text[search_start:literal_start]
+        trimmed_prefix = prefix.rstrip(" \t")
+        output_parts.append(trimmed_prefix)
+        output_parts.append("{}")
+
+        removed_count += 1
+        search_start = brace_close_index + 1
+
+    return "".join(output_parts), removed_count
+
+
+# ---------------------------------------------------------------------------
+# Regex definitions
+# ---------------------------------------------------------------------------
 
 RE_OVERRIDES = [
     re.compile(r"(?:\\once\s+)?\\override\b[^\n\r{}]*", re.I),
@@ -107,18 +193,27 @@ RE_OVERRIDES = [
     re.compile(r"(?:\\once\s+)?(?:[-_^]\s*)?\\tweak\b[^\n\r{}]*", re.I),
     re.compile(r"(?:\\once\s+)?\\shape\b[^\n\r{}]*", re.I),
     re.compile(r"(?:\\once\s+)?\\(?:undo\s+)?omit\b[^\s{}]+", re.I),
-    re.compile(r"(?:\\once\s+)?\\(?:hideNotes|magnifyStaff|teeny|tiny|small|large|huge)\b(?:[^\S\n][^\n\r{}]*)?"),
+    re.compile(
+        r"(?:\\once\s+)?\\(?:hideNotes|magnifyStaff|teeny|tiny|small|large|huge)\b"
+        r"(?:[^\S\n][^\n\r{}]*)?"
+    ),
 ]
 
 RE_MARKUP = re.compile(r"(?:[-_^]\s*)?\\markup\b", re.I)
-RE_MARK   = re.compile(r"(?:[-_^]\s*)?\\mark\b",   re.I)
+RE_MARK = re.compile(r"(?:[-_^]\s*)?\\mark\b", re.I)
 
-DYNAMICS = ("ppppp|pppp|ppp|pp|p|mp|mf|f|ff|fff|ffff|fffff|fp|sf|sfz|sffz|rfz|fz|sfp|sff|sfpp|sfzp")
+DYNAMICS = (
+    "ppppp|pppp|ppp|pp|p|mp|mf|f|ff|fff|ffff|fffff|fp|sf|sfz|sffz|rfz|fz|sfp|sff|sfpp|sfzp"
+)
 RE_DYNAMICS = re.compile(rf"(?:[-_^]\s*)?\\(?:{DYNAMICS})\b", re.I)
 
-RE_HAIRPINS = re.compile(r"\\[<>!]|\\(?:cresc|decresc|decr|dim|crescendo|diminuendo)\b", re.I)
+RE_HAIRPINS = re.compile(
+    r"\\[<>!]|\\(?:cresc|decresc|decr|dim|crescendo|diminuendo)\b", re.I
+)
 RE_ATTACHED_QUOTES = re.compile(r"(?:[-_^]\s*)\"[^\"]*\"")
-RE_LYRIC_ASSIGN = re.compile(r"(?m)(^\s*[A-Za-z_@][\w@]*\s*=\s*)\\lyricmode\s*\{")
+RE_LYRIC_ASSIGN = re.compile(
+    r"(?m)(^\s*[A-Za-z_@][\w@]*\s*=\s*)\\lyricmode\s*\{"
+)
 RE_LYRIC_INLINE = re.compile(r"\\lyricmode\s*\{", re.I)
 
 HSPACE = re.compile(r"[ \t]+")
@@ -127,100 +222,178 @@ RE_STRAY_ATTACH = re.compile(
 )
 RE_LONE_ONCE = re.compile(r"(?m)\\once\b(?:[ \t]+(?=$|[\r\n}])|[ \t]*(?!\\))")
 RE_SPACE_BEFORE_CLOSER = re.compile(r"[ \t]+(?=[)\]}])")
-RE_SPACE_AFTER_OPENER  = re.compile(r"(?<=[({\[])[ \t]+")
-RE_SPACE_BEFORE_PUNCT  = re.compile(r"[ \t]+(?=[,;:|>])")
-RE_NOTE_OCTAVE_SPACE   = re.compile(r"(?i)(?<=\b[a-gr])\s+(?=[',])")
-RE_MULTI_BLANKS        = re.compile(r"\n{3,}")
+RE_SPACE_AFTER_OPENER = re.compile(r"(?<=[({\[])[ \t]+")
+RE_SPACE_BEFORE_PUNCT = re.compile(r"[ \t]+(?=[,;:|>])")
+RE_NOTE_OCTAVE_SPACE = re.compile(r"(?i)(?<=\b[a-gr])\s+(?=[',])")
+RE_MULTI_BLANKS = re.compile(r"\n{3,}")
 
-RE_ASSIGN_OPEN = re.compile(r"(?m)^(\s*\w+\s*=\s*)\{\s*$") 
+RE_ASSIGN_OPEN = re.compile(r"(?m)^(\s*\w+\s*=\s*)\{\s*$")
 RE_EMPTY_BLOCK_LINE = re.compile(r"(?m)^\s*\{\s*\}\s*$")
-RE_EMPTY_ASSIGNMENT_LINE = re.compile(r"(?m)^\s*[A-Za-z_@][\w@]*\s*=\s*(?:\{\s*\})?\s*$")
+RE_EMPTY_ASSIGNMENT_LINE = re.compile(
+    r"(?m)^\s*[A-Za-z_@][\w@]*\s*=\s*(?:\{\s*\})?\s*$"
+)
 RE_INLINE_EMPTY_BRACES = re.compile(r"(?<=\s)\{\s*\}(?=\s)")
 RE_INCLUDE_TAG = re.compile(r"(?m)^\s*<<\s*\\\s*@\w+\b.*?>>\s*$")
 RE_REPEATED_INCLUDE = re.compile(r"(<<\s*\\\s*@\w+\b.*?>>\s*)+", re.S)
-RE_EMPTY_SCORES = re.compile(r"(?ms)^\\score\s*\{\s*\{\s*\}\s*(?:\\layout\s*\{.*?\}\s*)?\}\s*$")
+RE_EMPTY_SCORES = re.compile(
+    r"(?ms)^\\score\s*\{\s*\{\s*\}\s*(?:\\layout\s*\{.*?\}\s*)?\}\s*$"
+)
 RE_EMPTY_LAYOUT_BLOCK = re.compile(r"(?ms)^\\layout\s*\{\s*\}$")
 
+
 def _collapse_empty_assignment_blocks(text: str) -> str:
-    i = 0
-    out = []
-    L = len(text)
-    while i < L:
-        m = RE_ASSIGN_OPEN.search(text, i)
-        if not m:
-            out.append(text[i:]); break
-        out.append(text[i:m.start()])
-        prefix = m.group(1) 
-        brace_open_pos = m.end() - 1
-        close_idx = _grab_balanced(text, brace_open_pos, '{', '}')
-        if close_idx == -1:
-            line_end = text.find("\n", m.end())
-            if line_end == -1: line_end = L
-            out.append(text[m.start():line_end])
-            i = line_end
+    """
+    Normalize empty assignment blocks like:
+
+        foo = {
+        }
+
+    into a compact single line:
+
+        foo = {}
+    """
+    index = 0
+    output_parts: List[str] = []
+    length = len(text)
+
+    while index < length:
+        match = RE_ASSIGN_OPEN.search(text, index)
+        if not match:
+            output_parts.append(text[index:])
+            break
+
+        output_parts.append(text[index:match.start()])
+
+        assignment_prefix = match.group(1)
+        brace_open_index = match.end() - 1
+        brace_close_index = _grab_balanced(text, brace_open_index, "{", "}")
+
+        if brace_close_index == -1:
+            # Could not find closing brace; keep up to line end intact.
+            line_end_index = text.find("\n", match.end())
+            if line_end_index == -1:
+                line_end_index = length
+            output_parts.append(text[match.start():line_end_index])
+            index = line_end_index
             continue
-        inner = text[brace_open_pos+1:close_idx]
-        if inner.strip() == "":
-            out.append(f"{prefix}{{}}\n")
-            j = close_idx + 1
-            if j < L and text[j] == "\n":
-                j += 1
-            i = j
+
+        inner_content = text[brace_open_index + 1:brace_close_index]
+        if inner_content.strip() == "":
+            # Replace with `foo = {}\n`, skipping possible trailing newline.
+            output_parts.append(f"{assignment_prefix}{{}}\n")
+            next_index = brace_close_index + 1
+            if next_index < length and text[next_index] == "\n":
+                next_index += 1
+            index = next_index
         else:
-            out.append(text[m.start():close_idx+1])
-            i = close_idx + 1
-    return "".join(out)
+            output_parts.append(text[match.start():brace_close_index + 1])
+            index = brace_close_index + 1
+
+    return "".join(output_parts)
+
 
 RE_SPACER_ONLY_SUBVOICE = re.compile(
     r"(?sx)"
-    r"(\\\\\{)"                        
-    r"\s*(?:s[0-9.']*(?:\s+|$))+"       
-    r"\s*(\})"                          
+    r"(\\\\\{)"                        # subvoice start
+    r"\s*(?:s[0-9.']*(?:\s+|$))+"       # one or more spacer durations
+    r"\s*(\})"                          # closing brace
 )
 
+
 def _prune_spacer_only_subvoices(text: str) -> str:
-    prev = None
-    while prev != text:
-        prev = text
-        text = RE_SPACER_ONLY_SUBVOICE.sub("", text)
-    return text
+    """
+    Remove subvoices that contain only spacer rests (s1, s2., etc.).
+    Repeats until no more matches are found.
+    """
+    previous = None
+    current = text
+
+    while previous != current:
+        previous = current
+        current = RE_SPACER_ONLY_SUBVOICE.sub("", current)
+
+    return current
+
 
 def _compact_spaces_safe(text: str) -> str:
+    """
+    Compact whitespace conservatively, preserving line structure and avoiding
+    overly aggressive changes that might make diffs hard to read.
+    """
     lines = text.splitlines()
-    text = "\n".join(HSPACE.sub(" ", ln).strip() for ln in lines)
-    text = RE_SPACE_BEFORE_CLOSER.sub("", text)
-    text = RE_SPACE_AFTER_OPENER.sub("", text)
-    text = RE_SPACE_BEFORE_PUNCT.sub("", text)
-    text = RE_NOTE_OCTAVE_SPACE.sub("", text)
-    text = RE_MULTI_BLANKS.sub("\n\n", text).strip() + "\n"
-    return text
+    compacted = "\n".join(HSPACE.sub(" ", line).strip() for line in lines)
+
+    compacted = RE_SPACE_BEFORE_CLOSER.sub("", compacted)
+    compacted = RE_SPACE_AFTER_OPENER.sub("", compacted)
+    compacted = RE_SPACE_BEFORE_PUNCT.sub("", compacted)
+    compacted = RE_NOTE_OCTAVE_SPACE.sub("", compacted)
+    compacted = RE_MULTI_BLANKS.sub("\n\n", compacted).strip() + "\n"
+
+    return compacted
+
 
 def _compact_spaces_simple(text: str) -> str:
+    """
+    Compact whitespace in a simpler way:
+    - Replace 2+ spaces/tabs with a single space
+    - Strip trailing spaces
+    - Preserve line structure
+    """
     lines = text.splitlines()
-    lines = [re.sub(r"[ \t]{2,}", " ", ln).rstrip() for ln in lines]
-    return "\n".join(lines).strip() + "\n"
+    normalized_lines = [
+        re.sub(r"[ \t]{2,}", " ", line).rstrip() for line in lines
+    ]
+    return "\n".join(normalized_lines).strip() + "\n"
 
+
+# Categories used by StripOptions
 CATEGORIES = ("overrides", "markups", "marks", "dynamics", "hairpins", "quotes")
+
+
+# ---------------------------------------------------------------------------
+# Options and configuration
+# ---------------------------------------------------------------------------
 
 @dataclass
 class StripOptions:
+    """
+    Configuration for which engraving-related constructs to remove from
+    LilyPond source, and which spacing mode to apply.
+    """
     remove_overrides: bool = True
-    remove_markups:   bool = True
-    remove_marks:     bool = True
-    remove_dynamics:  bool = True
-    remove_hairpins:  bool = True
-    remove_quotes:    bool = True
-    space_mode:       str  = DEFAULT_SPACE_MODE 
+    remove_markups: bool = True
+    remove_marks: bool = True
+    remove_dynamics: bool = True
+    remove_hairpins: bool = True
+    remove_quotes: bool = True
+    space_mode: str = DEFAULT_SPACE_MODE  # "safe" or "simple"
 
     @classmethod
-    def from_sets(cls, remove: Iterable[str], keep: Iterable[str], *, space_mode: str = DEFAULT_SPACE_MODE) -> "StripOptions":
-        flags = {k: True for k in CATEGORIES}
-        for k in remove:
-            if k in flags:
-                flags[k] = True
-        for k in keep:
-            if k in flags:
-                flags[k] = False
+    def from_sets(
+        cls,
+        remove: Iterable[str],
+        keep: Iterable[str],
+        *,
+        space_mode: str = DEFAULT_SPACE_MODE,
+    ) -> StripOptions:
+        """
+        Construct StripOptions from category names in `remove` and `keep`.
+
+        NOTE: As implemented, categories default to True, and entries in
+        `keep` are switched off. The `remove` set does not alter this default
+        behavior; it is effectively redundant but preserved to avoid
+        changing semantics.
+        """
+        flags = {name: True for name in CATEGORIES}
+
+        for name in remove:
+            if name in flags:
+                flags[name] = True  # intentionally left as-is (no-op)
+
+        for name in keep:
+            if name in flags:
+                flags[name] = False
+
         return cls(
             remove_overrides=flags["overrides"],
             remove_markups=flags["markups"],
@@ -231,136 +404,254 @@ class StripOptions:
             space_mode=space_mode,
         )
 
-def _skip_markup_expression(s: str, idx: int) -> int:
-    i = idx
-    L = len(s)
-    while i < L:
-        ch = s[i]
-        if ch in " \t\r\n":
-            i += 1
+
+# ---------------------------------------------------------------------------
+# Markup skipping and keyword removal
+# ---------------------------------------------------------------------------
+
+def _skip_markup_expression(source: str, index: int) -> int:
+    """
+    Starting from `index`, skip over a single markup expression.
+
+    This handles nested braces, quoted strings, commands, and Scheme chunks.
+    Returns the index immediately after the markup expression (or len(source)
+    if it hits the end).
+    """
+    position = index
+    length = len(source)
+
+    while position < length:
+        char = source[position]
+
+        # Skip whitespace
+        if char in " \t\r\n":
+            position += 1
             continue
-        if ch == '{':
-            end = _grab_balanced(s, i, '{', '}')
-            return end + 1 if end != -1 else L
-        if ch == '"':
-            i += 1
+
+        # Block with braces: {...}
+        if char == "{":
+            end_index = _grab_balanced(source, position, "{", "}")
+            return end_index + 1 if end_index != -1 else length
+
+        # Quoted string: "..."
+        if char == '"':
+            position += 1
             escaped = False
-            while i < L:
-                curr = s[i]
-                i += 1
-                if curr == '"' and not escaped:
+            while position < length:
+                current_char = source[position]
+                position += 1
+                if current_char == '"' and not escaped:
                     break
-                escaped = (curr == "\\") and not escaped
+                escaped = (current_char == "\\") and not escaped
             continue
-        if ch == '\\':
-            i += 1
-            while i < L and (s[i].isalnum() or s[i] in "_-"):
-                i += 1
+
+        # Command: \\something
+        if char == "\\":
+            position += 1
+            while (
+                position < length
+                and (source[position].isalnum() or source[position] in "_-")
+            ):
+                position += 1
             continue
-        if ch == '#':
-            i += 1
-            while i < L and not s[i].isspace():
-                i += 1
+
+        # Scheme: #...
+        if char == "#":
+            position += 1
+            while position < length and not source[position].isspace():
+                position += 1
             continue
-        start = i
-        while i < L and not s[i].isspace() and s[i] not in '{}"':
-            i += 1
-        if i == start:
-            i += 1
-    return i
+
+        # Fallback: plain word or token
+        token_start = position
+        while (
+            position < length
+            and not source[position].isspace()
+            and source[position] not in '{}"'
+        ):
+            position += 1
+
+        if position == token_start:
+            position += 1
+
+    return position
 
 
-def _eat_after_keyword(s: str, kw_re: re.Pattern, *, deep_markup: bool = False) -> Tuple[str, int]:
-    removed = 0
-    i = 0
-    out = []
+def _eat_after_keyword(
+    source: str,
+    keyword_regex: re.Pattern,
+    *,
+    deep_markup: bool = False,
+) -> Tuple[str, int]:
+    """
+    Remove content following a keyword pattern (e.g. \\markup, \\mark).
+
+    Behavior:
+      - Search for `keyword_regex` matches in `source`.
+      - After each match, skip surrounding spaces and:
+        * If deep_markup=True, call _skip_markup_expression().
+        * If next char is '{', remove a balanced block.
+        * If next char is '"', remove a quoted string.
+        * Otherwise remove a single token, possibly followed by a quoted string.
+
+    Returns (new_source, removed_count).
+    """
+    removed_count = 0
+    search_start = 0
+    output_parts: List[str] = []
+
     while True:
-        m = kw_re.search(s, i)
-        if not m:
-            out.append(s[i:]); break
-        out.append(s[i:m.start()])
-        j = m.end()
+        match = keyword_regex.search(source, search_start)
+        if not match:
+            output_parts.append(source[search_start:])
+            break
 
-        while j < len(s) and s[j] in " \t":
-            j += 1
+        output_parts.append(source[search_start:match.start()])
+        after_keyword_index = match.end()
 
+        # Skip immediate horizontal whitespace
+        while (
+            after_keyword_index < len(source)
+            and source[after_keyword_index] in " \t"
+        ):
+            after_keyword_index += 1
+
+        # Deep markup mode: delegate to _skip_markup_expression
         if deep_markup:
-            i = _skip_markup_expression(s, j)
-            removed += 1
+            search_start = _skip_markup_expression(source, after_keyword_index)
+            removed_count += 1
             continue
 
-        if j < len(s) and s[j] == '{':
-            end = _grab_balanced(s, j, '{', '}')
-            if end != -1:
-                i = end + 1; removed += 1; continue
+        # Block { ... }
+        if after_keyword_index < len(source) and source[after_keyword_index] == "{":
+            end_index = _grab_balanced(source, after_keyword_index, "{", "}")
+            if end_index != -1:
+                search_start = end_index + 1
+                removed_count += 1
+                continue
 
-        if j < len(s) and s[j] == '"':
-            j2 = j + 1
-            while j2 < len(s) and s[j2] != '"':
-                if s[j2] == '\\' and j2 + 1 < len(s):
-                    j2 += 2
+        # Quoted string "..."
+        if after_keyword_index < len(source) and source[after_keyword_index] == '"':
+            quote_index = after_keyword_index + 1
+            while quote_index < len(source) and source[quote_index] != '"':
+                if source[quote_index] == "\\" and quote_index + 1 < len(source):
+                    quote_index += 2
                 else:
-                    j2 += 1
-            i = (j2 + 1) if j2 < len(s) else len(s)
-            removed += 1; continue
+                    quote_index += 1
+            search_start = (quote_index + 1) if quote_index < len(source) else len(source)
+            removed_count += 1
+            continue
 
-        j2 = j
-        while j2 < len(s) and not s[j2].isspace() and s[j2] not in '{}"':
-            j2 += 1
+        # Single token
+        token_end_index = after_keyword_index
+        while (
+            token_end_index < len(source)
+            and not source[token_end_index].isspace()
+            and source[token_end_index] not in '{}"'
+        ):
+            token_end_index += 1
 
-        k = j2
-        while k < len(s) and s[k] in " \t":
-            k += 1
-        if k < len(s) and s[k] == '"':
-            k2 = k + 1
-            while k2 < len(s) and s[k2] != '"':
-                if s[k2] == '\\' and k2 + 1 < len(s):
-                    k2 += 2
+        # Optional quoted string directly after the token
+        scan_index = token_end_index
+        while scan_index < len(source) and source[scan_index] in " \t":
+            scan_index += 1
+
+        if scan_index < len(source) and source[scan_index] == '"':
+            quote_index = scan_index + 1
+            while quote_index < len(source) and source[quote_index] != '"':
+                if source[quote_index] == "\\" and quote_index + 1 < len(source):
+                    quote_index += 2
                 else:
-                    k2 += 1
-            j2 = (k2 + 1) if k2 < len(s) else len(s)
+                    quote_index += 1
+            token_end_index = (quote_index + 1) if quote_index < len(source) else len(source)
 
-        i = j2
-        removed += 1
-    return ("".join(out), removed)
+        search_start = token_end_index
+        removed_count += 1
 
-def _strip_inline_patterns(text: str, opts: StripOptions) -> Tuple[str, Dict[str, int]]:
-    counts = {"overrides":0, "markups":0, "marks":0, "dynamics":0, "hairpins":0, "quotes":0}
+    return "".join(output_parts), removed_count
 
-    if opts.remove_quotes:
-        text, nq = RE_ATTACHED_QUOTES.subn("", text)
-        counts["quotes"] += nq
 
-    if opts.remove_markups:
-        text, nmk = _eat_after_keyword(text, RE_MARKUP, deep_markup=True)
-        counts["markups"] += nmk
-    if opts.remove_marks:
-        text, nmark = _eat_after_keyword(text, RE_MARK)
-        counts["marks"] += nmark
+# ---------------------------------------------------------------------------
+# Main stripping logic
+# ---------------------------------------------------------------------------
 
-    if opts.remove_overrides:
-        t2, n_with = _remove_with_blocks(text)
-        if n_with: text, counts["overrides"] = t2, counts["overrides"] + n_with
+def _strip_inline_patterns(
+    text: str,
+    options: StripOptions,
+) -> Tuple[str, Dict[str, int]]:
+    """
+    Strip engraving-related patterns (overrides, dynamics, markups, etc.) from
+    LilyPond source according to StripOptions.
+
+    Returns (cleaned_text, removal_counts).
+    """
+    counts: Dict[str, int] = {
+        "overrides": 0,
+        "markups": 0,
+        "marks": 0,
+        "dynamics": 0,
+        "hairpins": 0,
+        "quotes": 0,
+    }
+
+    # Attached quotes like ^"text"
+    if options.remove_quotes:
+        text, removed_quotes = RE_ATTACHED_QUOTES.subn("", text)
+        counts["quotes"] += removed_quotes
+
+    # \\markup and \\mark
+    if options.remove_markups:
+        text, removed_markups = _eat_after_keyword(
+            text,
+            RE_MARKUP,
+            deep_markup=True,
+        )
+        counts["markups"] += removed_markups
+
+    if options.remove_marks:
+        text, removed_marks = _eat_after_keyword(text, RE_MARK)
+        counts["marks"] += removed_marks
+
+    # Overrides and related engraving commands
+    if options.remove_overrides:
+        # Remove \\with { ... } blocks
+        updated_text, removed_with_blocks = _remove_with_blocks(text)
+        if removed_with_blocks:
+            text = updated_text
+            counts["overrides"] += removed_with_blocks
+
+        # Remove layout/paper/header blocks
         for directive in ("layout", "paper", "header"):
-            t2, nblk = _remove_block_directive(text, directive)
-            if nblk: text, counts["overrides"] = t2, counts["overrides"] + nblk
-        for rgx in RE_OVERRIDES:
-            t2, n = rgx.subn("", text)
-            if n: text, counts["overrides"] = t2, counts["overrides"] + n
+            updated_text, removed_blocks = _remove_block_directive(text, directive)
+            if removed_blocks:
+                text = updated_text
+                counts["overrides"] += removed_blocks
 
-    if opts.remove_dynamics:
-        text, ndyn = RE_DYNAMICS.subn("", text)
-        counts["dynamics"] += ndyn
-    if opts.remove_hairpins:
-        text, nhp = RE_HAIRPINS.subn("", text)
-        counts["hairpins"] += nhp
+        # Inline overrides/tweaks/shape/omit...
+        for regex in RE_OVERRIDES:
+            updated_text, removed = regex.subn("", text)
+            if removed:
+                text = updated_text
+                counts["overrides"] += removed
 
+    # Dynamics & hairpins
+    if options.remove_dynamics:
+        text, removed_dynamics = RE_DYNAMICS.subn("", text)
+        counts["dynamics"] += removed_dynamics
+
+    if options.remove_hairpins:
+        text, removed_hairpins = RE_HAIRPINS.subn("", text)
+        counts["hairpins"] += removed_hairpins
+
+    # Clean up stranded attachment markers and lone \\once
     text, _ = RE_STRAY_ATTACH.subn("", text)
     text, _ = RE_LONE_ONCE.subn("", text)
 
+    # Remove lyricmode content
     text, _ = _strip_lyricmode_assignments(text)
     text, _ = _strip_inline_lyricmode(text)
 
+    # Normalize empty assignments and remove empty blocks/assignments
     text = _collapse_empty_assignment_blocks(text)
     text = RE_EMPTY_BLOCK_LINE.sub("", text)
     text = RE_EMPTY_ASSIGNMENT_LINE.sub("", text)
@@ -376,32 +667,58 @@ def _strip_inline_patterns(text: str, opts: StripOptions) -> Tuple[str, Dict[str
     if PRUNE_SPACER_SUBVOICES:
         text = _prune_spacer_only_subvoices(text)
 
-    if opts.space_mode == "simple":
+    # Whitespace compaction
+    if options.space_mode == "simple":
         text = _compact_spaces_simple(text)
     else:
         text = _compact_spaces_safe(text)
 
     return text, counts
 
-def clean_lilypond(src: str, opts: StripOptions) -> Tuple[str, Dict[str,int]]:
-    text, counts = _strip_inline_patterns(src, opts)
+
+def clean_lilypond(src: str, options: StripOptions) -> Tuple[str, Dict[str, int]]:
+    """
+    Entry point for cleaning LilyPond engraving/markup from a source string.
+
+    Returns (cleaned_source, counts_dict).
+    """
+    text, counts = _strip_inline_patterns(src, options)
     return text, counts
+
+
+# ---------------------------------------------------------------------------
+# Integration with lilynorm NormOptions
+# ---------------------------------------------------------------------------
 
 try:
     from lilynorm.utils.options import NormOptions
 except Exception:
-    class NormOptions:
+    class NormOptions:  # type: ignore[override]
+        """
+        Fallback NormOptions when lilynorm.utils.options is unavailable.
+
+        Only provides the attribute `keep_engraving` used in this module.
+        """
         keep_engraving: bool = True  # default: keep engravings
 
-def run(text: str, opts: "NormOptions") -> str:
+
+def run(text: str, opts: NormOptions) -> str:
+    """
+    Main entry point used by the lilynorm pipeline.
+
+    If opts.keep_engraving is True, the function returns the input unchanged.
+    Otherwise it strips engraving information (overrides, markups, etc.) and
+    compacts the LilyPond source.
+    """
     if getattr(opts, "keep_engraving", True):
         print("[engrave_strip] keeping engravings", file=sys.stderr)
         return text
 
+    # When we are actively stripping engravings, also drop empty assignments.
     global DROP_EMPTY_ASSIGNMENTS
     DROP_EMPTY_ASSIGNMENTS = True
 
-    strip_opts = StripOptions(
+    strip_options = StripOptions(
         remove_overrides=True,
         remove_markups=True,
         remove_marks=True,
@@ -411,7 +728,7 @@ def run(text: str, opts: "NormOptions") -> str:
         space_mode=DEFAULT_SPACE_MODE,
     )
 
-    cleaned, counts = clean_lilypond(text, strip_opts)
+    cleaned, counts = clean_lilypond(text, strip_options)
     print(
         f"[engrave_strip] overrides:{counts['overrides']} "
         f"markups:{counts['markups']} marks:{counts['marks']} "
