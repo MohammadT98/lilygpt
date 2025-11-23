@@ -1,14 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-r"""
-tokenize_gpt — GPT-style tokenizer adapter (defaults to gpt-oss-20b).
-
-This module is intentionally lightweight: it loads a Hugging Face tokenizer once
-and exposes a `run(text, model_name=None)` function that returns the list of token IDs.
-
-Dependencies:
-    transformers
-"""
 
 from __future__ import annotations
 
@@ -16,31 +5,24 @@ import functools
 from typing import Iterable, List, Optional
 
 try:
-    from transformers import AutoTokenizer  # type: ignore
-except ImportError as exc:  # pragma: no cover - handled at runtime
+    from transformers import AutoTokenizer 
+except ImportError as exc: 
     raise RuntimeError(
         "transformers is required for GPT tokenization. "
         "Install it with `pip install transformers`."
     ) from exc
 
-
-# Use an open tokenizer by default; override with --tokenizer-model if needed.
 DEFAULT_MODEL_NAME = "EleutherAI/gpt-neox-20b"
-
 
 @functools.lru_cache(maxsize=4)
 def _load_tokenizer(model_name: str):
     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=True)
-    # Ensure pad token exists (some GPT tokenizers lack it)
     if tokenizer.pad_token is None and tokenizer.eos_token is not None:
         tokenizer.pad_token = tokenizer.eos_token
     return tokenizer
 
 
 def run(text: str, *, model_name: Optional[str] = None) -> List[int]:
-    """
-    Tokenize `text` with the requested GPT tokenizer and return token IDs.
-    """
     name = model_name or DEFAULT_MODEL_NAME
     tokenizer = _load_tokenizer(name)
     encoded = tokenizer(
