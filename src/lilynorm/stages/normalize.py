@@ -1,12 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-r"""
-Standalone LilyPond preprocessor / normalizer (lossless, Lily-backed where needed).
-Usage examples (Windows):
-  py -3 lilynorm_standalone.py --in "C:\Users\Navid\Desktop\13.ly" --out "C:\Users\Navid\Desktop\13.expanded.ly" --debug --report
-  py -3 lilynorm_standalone.py --in "C:\Users\Navid\Desktop\13.ly" --no-expand-relative --expand-repeat-unfold --report
-If --out is omitted, the expanded text is written to stdout.
-"""
 import re
 import sys
 import os
@@ -18,9 +9,7 @@ from pathlib import Path
 from typing import Optional, List, Tuple, Dict, Set
 from dataclasses import dataclass, asdict, field, fields
 import argparse
-# ===== Optional default LilyPond path (Windows fallback) =====
 DEFAULT_LILYPOND_PATH = r"C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe"
-# ===== DEBUG FLAG (also set via --debug) =====
 DEBUG = False
 def debug_print(label: str, content: str, separator: bool = True):
     if not DEBUG:
@@ -31,18 +20,15 @@ def debug_print(label: str, content: str, separator: bool = True):
     print(content, file=sys.stderr)
     if separator:
         print("=" * 80 + "\n", file=sys.stderr)
-# ─────────────────────────────────────────────────────────────
-# Public parser options & report (lossless parser)
-# ─────────────────────────────────────────────────────────────
 @dataclass
 class ParseOptions:
     expand_relative: bool = True
-    inline_variables: bool = True              # recursive & cycle-safe
+    inline_variables: bool = True              
     expand_music_functions: bool = True
     resolve_transpose: bool = True
-    expand_repeat_unfold: bool = True          # nested-tolerant
-    normalize_tuplets: bool = True             # \times → \tuplet, spacing, dedupe
-    normalize_drums: bool = True               # in \drummode { ... }
+    expand_repeat_unfold: bool = True          
+    normalize_tuplets: bool = True             
+    normalize_drums: bool = True               
     normalize_whitespace: bool = False
     preserve_linebreaks: bool = True
     canonicalize_chord_brackets: bool = True
@@ -58,9 +44,7 @@ class ParseReport:
     drum_blocks_normalized: int = 0
     lily_failures: int = 0
     notes: List[str] = field(default_factory=list)
-# ─────────────────────────────────────────────────────────────
-# Balanced helpers
-# ─────────────────────────────────────────────────────────────
+
 def _grab_braces(s: str, i: int) -> int:
     depth, j = 1, i + 1
     while j < len(s) and depth > 0:
@@ -83,9 +67,7 @@ def _grab_angles(s: str, i: int) -> int:
         else:
             j += 1
     return j if depth == 0 else len(s)
-# ─────────────────────────────────────────────────────────────
-# LilyPond availability
-# ─────────────────────────────────────────────────────────────
+
 def _ok(cmd: str) -> bool:
     try:
         r = subprocess.run([cmd, "--version"], capture_output=True, text=True, timeout=5)
@@ -104,9 +86,7 @@ def resolve_lily_cmd() -> str:
     if os.path.isfile(DEFAULT_LILYPOND_PATH) and _ok(DEFAULT_LILYPOND_PATH):
         return DEFAULT_LILYPOND_PATH
     return "lilypond"
-# ─────────────────────────────────────────────────────────────
-# \relative detection
-# ─────────────────────────────────────────────────────────────
+
 RE_RELATIVE_BLK = re.compile(
     r"\\relative\b(?:\s+[^\s{}%]+)?(?:\s*(?:%[^\n]*\n|\s))*\{",
     re.I,
@@ -128,7 +108,7 @@ def _detect_note_language(source: str) -> Optional[str]:
         return m.group(1)
     for m in RE_RELATIVE_TOKEN.finditer(source):
         token = m.group(1).strip().lower()
-        token = token.strip(",;'\"")  # remove octave modifiers
+        token = token.strip(",;'\"")  
         for sol in ITALIAN_SOLFEGE:
             if token.startswith(sol):
                 return "italiano"
@@ -145,9 +125,7 @@ def _find_relative_blocks(source: str) -> List[Tuple[int, int, str]]:
         blocks.append((m.start(), rb, source[m.start():rb]))
         i = rb
     return blocks
-# ─────────────────────────────────────────────────────────────
-# Variable inlining (music-only; conservative, NOW RECURSIVE)
-# ─────────────────────────────────────────────────────────────
+
 RE_ASSIGN = re.compile(r"(^|[^\w-])([A-Za-z][\w-]*)\s*=\s*", re.M)
 def _collect_named_music(source: str) -> Dict[str, str]:
     env: Dict[str, str] = {}
@@ -217,9 +195,7 @@ def _inline_named_music_recursive(source: str, env: Dict[str, str], *, max_passe
             return s2, total
         s = s2
     return s, total
-# ─────────────────────────────────────────────────────────────
-# Music-function (Scheme) definitions and calls
-# ─────────────────────────────────────────────────────────────
+
 RE_DMF_HEADER = re.compile(
     r"(^|[\n;])\s*([A-Za-z][\w-]*)\s*=\s*#\(\s*define-music-function\b",
     re.S
@@ -287,9 +263,7 @@ def _find_function_calls(source: str, func_names: List[str]) -> List[Tuple[int,i
         calls.append((start, end, source[start:end]))
         i = end
     return calls
-# ─────────────────────────────────────────────────────────────
-# Cosmetic helpers (used only AFTER extraction)
-# ─────────────────────────────────────────────────────────────
+
 def _normalize_line_keep_newlines(seg: str) -> str:
     seg = seg.replace("\r\n", "\n").replace("\r", "\n")
     lines = seg.split("\n")
@@ -313,9 +287,7 @@ def _canonicalize_chord_brackets(s: str) -> str:
     s = re.sub(r"<\s+", "<", s)
     s = re.sub(r"\s+>", ">", s)
     return s
-# ─────────────────────────────────────────────────────────────
-# LilyPond expansion (generic)
-# ─────────────────────────────────────────────────────────────
+
 def _unwrap_absolute_layers(seg: str) -> str:
     seg = seg.strip()
     while seg.startswith("\\absolute"):
@@ -326,17 +298,12 @@ def _unwrap_absolute_layers(seg: str) -> str:
         seg = seg[i+1:j-1].strip()
     return seg
 def _run_lily_batch(blocks: List[str], lily_cmd: str, *, preserve_linebreaks: bool, preamble: str = "") -> List[Optional[str]]:
-    # Restore \version directive for LilyPond batch expansion (required for parsing)
     parts = ['\version "2.24.4"']
     if preamble:
         parts.append(preamble)
     def var_name(idx: int) -> str:
-        # LilyPond treats digits/underscores/hyphens in certain positions as
-        # separate tokens which can produce syntax errors and empty expansions.
-        # Use a letter-only suffix (base-26 a..z) so variable names are always
-        # valid identifiers in Lily's parser (e.g. musica, musicb, musicaa...).
+
         def _letters(n: int) -> str:
-            # convert 0 -> 'a', 1 -> 'b', ..., 25 -> 'z', 26 -> 'aa', etc.
             if n < 0:
                 return "a"
             parts = []
@@ -400,9 +367,7 @@ def _run_lily_batch(blocks: List[str], lily_cmd: str, *, preserve_linebreaks: bo
             block_text = re.sub(r"[ \t]+", " ", block_text).strip()
         results[idx] = block_text
     return results
-# ─────────────────────────────────────────────────────────────
-# Relative expansion (linebreak-aware, but safe)
-# ─────────────────────────────────────────────────────────────
+
 def expand_relative_with_lily_batched(source: str, lily_cmd: str, *, preserve_linebreaks: bool) -> Tuple[str, int]:
     blocks = _find_relative_blocks(source)
     if not blocks:
@@ -427,9 +392,7 @@ def expand_relative_with_lily_batched(source: str, lily_cmd: str, *, preserve_li
         i = end
     out.append(source[i:])
     return "".join(out), failures
-# ─────────────────────────────────────────────────────────────
-# \transpose resolution (batched via Lily)
-# ─────────────────────────────────────────────────────────────
+
 RE_TRANSPOSE = re.compile(r"\\transpose\s+([^\s{}]+)\s+([^\s{}]+)\s*\{", re.I)
 def _find_transpose_blocks(source: str) -> List[Tuple[int, int, str]]:
     blocks = []
@@ -461,9 +424,7 @@ def resolve_transpose_with_lily_batched(source: str, lily_cmd: str, *, preserve_
         i = end
     out.append(source[i:])
     return "".join(out), ok, fail
-# ─────────────────────────────────────────────────────────────
-# \repeat unfold N { ... } (safe linearization, nested-tolerant)
-# ─────────────────────────────────────────────────────────────
+
 RE_REPEAT_UNFOLD = re.compile(r"\\repeat\s+unfold\s+(\d+)\s*\{", re.I)
 def _expand_repeat_unfold_once(source: str) -> Tuple[str, int]:
     i = 0
@@ -499,9 +460,7 @@ def expand_repeat_unfold(source: str, *, max_passes: int = 8) -> Tuple[str, int]
             return s2, total
         s = s2
     return s, total
-# ─────────────────────────────────────────────────────────────
-# Tuplet normalization
-# ─────────────────────────────────────────────────────────────
+
 RE_TIMES = re.compile(r"\\times\s+(\d+)\s*/\s*(\d+)\s*\{", re.I)
 RE_TUPLET = re.compile(r"\\tuplet\s+(\d+)\s*/\s*(\d+)(?:\s+\d+)?\s*\{", re.I)
 def _normalize_tuplet_spacing_block(s: str) -> str:
@@ -536,7 +495,6 @@ def _dedupe_nested_tuplets_once(s: str) -> Tuple[str, int]:
 def normalize_tuplets(source: str) -> Tuple[str, int]:
     changed = 0
     s = source
-    # 1) \times a/b -> \tuplet a/b
     i = 0
     out = []
     last = 0
@@ -547,7 +505,7 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
         start = m.start()
         lb = m.end() - 1
         rb = _grab_braces(s, lb)
-        body = s[lb:rb]  # includes braces
+        body = s[lb:rb]  
         ratio = f"{m.group(1)}/{m.group(2)}"
         out.append(s[last:start])
         out.append(f"\\tuplet {ratio} {body}")
@@ -556,7 +514,6 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
         last = rb
     out.append(s[last:])
     s = "".join(out)
-    # 2) \tuplet 3/2 8 { … } -> \tuplet 3/2 { … }
     def _kill_opt_dur(m: re.Match) -> str:
         a, b = m.group(1), m.group(2)
         return f"\\tuplet {a}/{b} {{"
@@ -565,7 +522,6 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
         diff_cnt = len(list(re.finditer(r"\\tuplet\s+\d+\s*/\s*\d+\s+\d+\s*\{", s)))
         changed += diff_cnt
         s = s2
-    # 3) Dedupe nested identical tuplets
     for _ in range(4):
         s, dedup_cnt = _dedupe_nested_tuplets_once(s)
         changed += dedup_cnt
@@ -573,9 +529,6 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
             break
     s = _normalize_tuplet_spacing_block(s)
     return s, changed
-# ─────────────────────────────────────────────────────────────
-# Drum/percussion normalization inside \drummode { … }
-# ─────────────────────────────────────────────────────────────
 RE_DRUMMODE = re.compile(r"\\drummode\s*\{", re.I)
 DRUM_MAP = {
     "bd": "bd", "bassdrum": "bd", "kick": "bd",
@@ -620,7 +573,7 @@ def normalize_drummode(source: str) -> Tuple[str, int]:
         start = m.start()
         lb = m.end() - 1
         rb = _grab_braces(source, lb)
-        body = source[lb:rb]  # includes braces
+        body = source[lb:rb]  
         norm_body, _cnt = _normalize_drums_in_block(body)
         if norm_body != body:
             changed_blocks += 1
@@ -630,9 +583,7 @@ def normalize_drummode(source: str) -> Tuple[str, int]:
         last = rb
     out.append(source[last:])
     return "".join(out), changed_blocks
-# ─────────────────────────────────────────────────────────────
-# High-level: expand Scheme music-function calls
-# ─────────────────────────────────────────────────────────────
+
 def expand_music_functions_with_lily(source: str, lily_cmd: str, *, preserve_linebreaks: bool) -> Tuple[str, int, int]:
     func_names = _collect_music_function_names(source)
     if not func_names:
@@ -656,30 +607,14 @@ def expand_music_functions_with_lily(source: str, lily_cmd: str, *, preserve_lin
         i = end
     out.append(source[i:])
     return "".join(out), ok, fail
-# ─────────────────────────────────────────────────────────────
-# Global whitespace normalization (optional)
-# ─────────────────────────────────────────────────────────────
+
 def normalize_whitespace(source: str) -> str:
     s = source.replace("\r\n", "\n").replace("\r", "\n")
     lines = s.split("\n")
     lines = [re.sub(r"[ \t]+", " ", ln).strip() for ln in lines]
     return "\n".join(lines).strip()
-# ─────────────────────────────────────────────────────────────
-# Orchestrator
-# ─────────────────────────────────────────────────────────────
+
 def process_string(src: str, lily_cmd: str, opts: ParseOptions) -> Tuple[str, ParseReport]:
-    r"""
-    Lossless parser pipeline:
-      - (optional) inline variables (music only; recursive)
-      - (optional) expand Scheme music functions (\name ...)
-      - (optional) expand \relative via Lily
-      - (optional) resolve \transpose via Lily
-      - (optional) expand \repeat unfold
-      - (optional) normalize tuplets (\times -> \tuplet, spacing, dedupe)
-      - (optional) normalize drummode tokens inside \drummode { ... }
-      - (optional) whitespace cosmetics
-      - (optional) chord bracket canonicalization (cosmetic)
-    """
     report = ParseReport(notes=[])
     s = src
     if opts.inline_variables:
@@ -733,9 +668,7 @@ def process_string(src: str, lily_cmd: str, opts: ParseOptions) -> Tuple[str, Pa
     if opts.canonicalize_chord_brackets:
         s = _canonicalize_chord_brackets(s)
     return s, report
-# ─────────────────────────────────────────────────────────────
-# Pipeline adapter: run(text, opts) -> str
-# ─────────────────────────────────────────────────────────────
+
 try:
     from lilynorm.utils.options import NormOptions  # type: ignore
 except Exception:  # pragma: no cover
@@ -755,19 +688,11 @@ except Exception:  # pragma: no cover
         canonicalize_chord_brackets: bool = True
 
 def _map_options(o: "NormOptions") -> ParseOptions:
-    """
-    Map shared pipeline NormOptions → ParseOptions consumed here.
-    Missing attributes fall back to the ParseOptions defaults.
-    """
     defaults = _DEFAULT_PARSE_OPTIONS
     values = {f.name: getattr(o, f.name, getattr(defaults, f.name)) for f in fields(ParseOptions)}
     return ParseOptions(**values)
 
 def run(text: str, opts: "NormOptions") -> str:
-    r"""
-    Stage-2 entry point used by the CLI pipeline. Returns normalized LilyPond text.
-    Falls back gracefully when LilyPond is unavailable.
-    """
     lily_cmd = resolve_lily_cmd()
     parse_opts = _map_options(opts)
 
@@ -790,9 +715,7 @@ def run(text: str, opts: "NormOptions") -> str:
         f"lily_fail:{report.lily_failures}"
     )
     return out
-# ─────────────────────────────────────────────────────────────
-# CLI
-# ─────────────────────────────────────────────────────────────
+
 def build_arg_parser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(description="Standalone LilyPond lossless normalizer.")
     p.add_argument("--in", dest="inp", required=True, help="Input .ly file path")
@@ -800,7 +723,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--lily", dest="lily", default=None, help="Path to lilypond executable (auto-detected if omitted)")
     p.add_argument("--debug", action="store_true", help="Enable debug prints to stderr")
     p.add_argument("--report", action="store_true", help="Print a JSON summary report to stderr")
-    # Stage toggles (defaults match ParseOptions)
     def onoff(flag: str, dest: str, default: bool):
         if default:
             p.add_argument(f"--no-{flag}", dest=dest, action="store_false", help=f"Disable {flag.replace('-', ' ')}")
@@ -849,7 +771,6 @@ def main() -> int:
         out_path.write_text(expanded, encoding="utf-8")
         print(f"Wrote: {out_path}", file=sys.stderr)
     else:
-        # write to stdout
         sys.stdout.write(expanded)
     if args.report:
         try:
