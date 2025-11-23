@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 r"""
 engrave_strip.py — Remove engravings/markups/dynamics from LilyPond text (order-safe).
@@ -22,7 +21,6 @@ Defaults strip everything; customize with --keep / --remove / --keep-all.
 from __future__ import annotations
 import re
 import sys
-import argparse
 from dataclasses import dataclass
 from typing import Tuple, List, Dict, Iterable
 
@@ -32,9 +30,6 @@ from typing import Tuple, List, Dict, Iterable
 DROP_EMPTY_ASSIGNMENTS = False      # keep `Name = {}` by default
 PRUNE_SPACER_SUBVOICES = True       # remove \\{ s2 s4 … } subvoices
 DEFAULT_SPACE_MODE = "safe"         # 'safe' or 'simple'
-
-# Hardcoded input path for CLI mode (pipeline use calls run(text, opts))
-INPUT_PATH = r"C:\Users\Navid\Desktop\00.ly"
 
 # ─────────────────────────────────────────────────────────────
 # Balanced-block helpers (for { … } scans)
@@ -457,70 +452,6 @@ def clean_lilypond(src: str, opts: StripOptions) -> Tuple[str, Dict[str,int]]:
     return text, counts
 
 # ─────────────────────────────────────────────────────────────
-# CLI
-# ─────────────────────────────────────────────────────────────
-def parse_args(argv: List[str] | None = None) -> argparse.Namespace:
-    p = argparse.ArgumentParser(description="Optionally strip engraving/markup/dynamics from LilyPond.")
-    grp = p.add_mutually_exclusive_group()
-    grp.add_argument("--keep-all",   action="store_true", help="Keep everything (strip nothing).")
-    grp.add_argument("--remove-all", action="store_true", help="Remove all categories (default).")
-
-    p.add_argument("--keep",   nargs="+", choices=CATEGORIES, default=[],
-                   help="Keep these categories (override default removal).")
-    p.add_argument("--remove", nargs="+", choices=CATEGORIES, default=[],
-                   help="Remove ONLY these categories (others are kept).")
-    p.add_argument("--show-report", action="store_true", help="Print removal counts to stderr.")
-    p.add_argument("--space-mode", choices=("safe","simple"), default=DEFAULT_SPACE_MODE,
-                   help="Whitespace compaction: 'safe' (default) or 'simple' (collapse runs to one space).")
-    p.add_argument("--drop-empty-assignments", action="store_true",
-                   help="Remove lines like 'Name = {}' after collapsing.")
-    p.add_argument("--keep-spacer-subvoices", action="store_true",
-                   help="Do not prune \\{ s… } spacer-only subvoices.")
-    return p.parse_args(argv)
-
-def _opts_from_args(ns: argparse.Namespace) -> StripOptions:
-    global DROP_EMPTY_ASSIGNMENTS, PRUNE_SPACER_SUBVOICES
-    if ns.drop_empty_assignments:
-        DROP_EMPTY_ASSIGNMENTS = True
-    if ns.keep_spacer_subvoices:
-        PRUNE_SPACER_SUBVOICES = False
-
-    if ns.keep_all:
-        return StripOptions.from_sets(remove=[], keep=CATEGORIES, space_mode=ns.space_mode)
-    if ns.remove:
-        keep_set = [c for c in CATEGORIES if c not in ns.remove]
-        return StripOptions.from_sets(remove=ns.remove, keep=keep_set, space_mode=ns.space_mode)
-    if ns.keep:
-        return StripOptions.from_sets(remove=CATEGORIES, keep=ns.keep, space_mode=ns.space_mode)
-    return StripOptions(space_mode=ns.space_mode)  # default: remove all
-
-def main(argv: List[str] | None = None) -> int:
-    ns = parse_args(argv)
-    opts = _opts_from_args(ns)
-    try:
-        with open(INPUT_PATH, "r", encoding="utf-8") as fh:
-            raw = fh.read()
-    except FileNotFoundError:
-        sys.stderr.write(f"File not found: {INPUT_PATH}\n")
-        return 1
-
-    cleaned, counts = clean_lilypond(raw, opts)
-    sys.stdout.write(cleaned)
-
-    if ns.show_report:
-        report = (
-            f"--- Post-parser report ---\n"
-            f"Overrides removed: {counts['overrides']}\n"
-            f"Markups removed:   {counts['markups']}\n"
-            f"Marks removed:     {counts['marks']}\n"
-            f"Dynamics removed:  {counts['dynamics']}\n"
-            f"Hairpins removed:  {counts['hairpins']}\n"
-            f'Quotes removed:    {counts["quotes"]}\n'
-        )
-        sys.stderr.write(report)
-    return 0
-
-# ─────────────────────────────────────────────────────────────
 # Pipeline adapter: run(text, opts) -> str
 # ─────────────────────────────────────────────────────────────
 try:
@@ -561,6 +492,3 @@ def run(text: str, opts: "NormOptions") -> str:
         file=sys.stderr,
     )
     return cleaned
-
-if __name__ == "__main__":
-    raise SystemExit(main())
