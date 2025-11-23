@@ -389,3 +389,45 @@ def _strip_inline_patterns(text: str, opts: StripOptions) -> Tuple[str, Dict[str
         text = _compact_spaces_safe(text)
 
     return text, counts
+
+# ─────────────────────────────────────────────────────────────
+# Pipeline adapter: run(text, opts) -> str
+# ─────────────────────────────────────────────────────────────
+try:
+    from lilynorm.utils.options import NormOptions
+except Exception:
+    class NormOptions:
+        keep_engraving: bool = True  # default: keep engravings
+
+def run(text: str, opts: "NormOptions") -> str:
+    """
+    Stage-3 entrypoint for CLI pipeline.
+    If opts.keep_engraving=True, return text unchanged.
+    Otherwise strip engravings using default StripOptions.
+    """
+    if getattr(opts, "keep_engraving", True):
+        print("[engrave_strip] keeping engravings", file=sys.stderr)
+        return text
+
+    global DROP_EMPTY_ASSIGNMENTS
+    DROP_EMPTY_ASSIGNMENTS = True
+
+    strip_opts = StripOptions(
+        remove_overrides=True,
+        remove_markups=True,
+        remove_marks=True,
+        remove_dynamics=True,
+        remove_hairpins=True,
+        remove_quotes=True,
+        space_mode=DEFAULT_SPACE_MODE,
+    )
+
+    cleaned, counts = _strip_inline_patterns(text, strip_opts)
+    print(
+        f"[engrave_strip] overrides:{counts['overrides']} "
+        f"markups:{counts['markups']} marks:{counts['marks']} "
+        f"dynamics:{counts['dynamics']} hairpins:{counts['hairpins']} "
+        f"quotes:{counts['quotes']}",
+        file=sys.stderr,
+    )
+    return cleaned
