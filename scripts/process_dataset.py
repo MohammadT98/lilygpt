@@ -258,7 +258,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=tokenize_gpt.DEFAULT_MODEL_NAME,
         help=(
             "HuggingFace tokenizer to use for GPT tokenization "
-            "(default: EleutherAI/gpt-neox-20b)."
+            "(default: openai/gpt-oss-20b)."
         ),
     )
 
@@ -395,14 +395,15 @@ def main() -> int:
 
             # Tokenization output
             if not args.skip_tokenize:
-                tok_ids = tokenize_gpt.run(
+                tok_info = tokenize_gpt.run(
                     normalized_text,
                     model_name=args.tokenizer_model,
+                    # max_length=1024  # override here if you want
                 )
                 tok_path = tok_root / rel.with_suffix(".tokens.json")
                 tok_path.parent.mkdir(parents=True, exist_ok=True)
                 tok_path.write_text(
-                    json.dumps({"input_ids": tok_ids}) + "\n",
+                    json.dumps(tok_info) + "\n",
                     encoding="utf-8",
                 )
 
