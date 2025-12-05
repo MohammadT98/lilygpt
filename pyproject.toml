@@ -26,6 +26,8 @@ classifiers = [
 ]
 dependencies = [
     "transformers>=4.40",
+    "torch>=2.0",
+    "peft>=0.4",
 ]
 
 [project.optional-dependencies]
