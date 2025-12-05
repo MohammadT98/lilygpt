@@ -9,7 +9,7 @@ uv run python -m scripts.process_dataset --input "data/raw"
 
 echo.
 echo === Building Train/Val/Test Splits ===
-uv run python -m lilynorm.stages.build_splits --tokenized-root "data/tokenized_dataset" --output-dir "data/splits"
+uv run python -m lilynorm.stages.splitting.build_splits --tokenized-root "data/tokenized_dataset" --output-dir "data/splits"
 
 popd
 endlocal

@@ -1,13 +1,24 @@
-# python -m lilynorm.stages.build_splits
+# python -m scripts.build_splits
 
 from __future__ import annotations
 
 import argparse
 import json
 import random
+import sys
 from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Any
+
+try:
+    # Import is not needed but helps with type checking
+    pass
+except ModuleNotFoundError:
+    # Allow running the script directly from the repo without installing the package.
+    repo_root = Path(__file__).resolve().parents[1]
+    src_dir = repo_root / "src"
+    if src_dir.exists():
+        sys.path.insert(0, str(src_dir))
 
 
 DEFAULT_TOKENIZED_ROOT = "data/tokenized_dataset"

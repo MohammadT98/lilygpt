@@ -10,7 +10,8 @@ from typing import TextIO
 
 try:
     from lilynorm.utils.options import NormOptions
-    from lilynorm.stages import preparse, normalize, engrave_strip, tokenize_gpt
+    from lilynorm.stages import preprocessing
+    from lilynorm.stages import tokenization as tokenize_gpt
 except ModuleNotFoundError:
     # Allow running the script directly from the repo without installing the package.
     repo_root = Path(__file__).resolve().parents[1]
@@ -18,7 +19,9 @@ except ModuleNotFoundError:
     if src_dir.exists():
         sys.path.insert(0, str(src_dir))
     from lilynorm.utils.options import NormOptions
-    from lilynorm.stages import preparse, normalize, engrave_strip, tokenize_gpt
+    from lilynorm.stages import preprocessing
+    from lilynorm.stages import tokenization as tokenize_gpt
+    from lilynorm.stages.splitting import build_splits
 
 
 # ---------------------------------------------------------------------------
@@ -85,9 +88,9 @@ def normalize_file(path: Path, opts: NormOptions) -> str:
     """Run the pipeline stages and return the normalized text."""
     text = path.read_text(encoding="utf-8", errors="ignore")
 
-    stage1 = preparse.run(text, opts)
-    stage2 = normalize.run(stage1, opts)
-    stage3 = engrave_strip.run(stage2, opts)
+    stage1 = preprocessing.preparse.run(text, opts)
+    stage2 = preprocessing.normalize.run(stage1, opts)
+    stage3 = preprocessing.engrave_strip.run(stage2, opts)
     return stage3
 
 
@@ -395,7 +398,7 @@ def main() -> int:
 
             # Tokenization output
             if not args.skip_tokenize:
-                tok_info = tokenize_gpt.run(
+                tok_info = tokenize_gpt.tokenize_gpt.run(
                     normalized_text,
                     model_name=args.tokenizer_model,
                     # max_length=1024  # override here if you want

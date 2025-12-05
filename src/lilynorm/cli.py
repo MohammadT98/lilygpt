@@ -6,7 +6,9 @@ from pathlib import Path
 from typing import Iterable, Optional, Dict, Any, List
 
 from lilynorm.utils.options import NormOptions
-from lilynorm.stages import preparse, normalize, engrave_strip, tokenize_gpt
+from lilynorm.stages import preprocessing as preparse_module
+from lilynorm.stages import preprocessing
+from lilynorm.stages import tokenization as tokenize_gpt
 
 
 # ---------------------------------------------------------------------------
@@ -78,7 +80,7 @@ def process_text(
 
     # --- Stage 1: PREPARSE ---
     print(banner("STAGE 1 | PREPARSE"))
-    preparse_text = preparse.run(text, opts)
+    preparse_text = preprocessing.preparse.run(text, opts)
     if show_stages:
         print(preparse_text.rstrip())
     stage_outputs["preparse"] = preparse_text
@@ -87,7 +89,7 @@ def process_text(
 
     # --- Stage 2: NORMALIZE ---
     print(banner("STAGE 2 | NORMALIZE"))
-    normalized_text = normalize.run(preparse_text, opts)
+    normalized_text = preprocessing.normalize.run(preparse_text, opts)
     if show_stages:
         print(normalized_text.rstrip())
     stage_outputs["normalize"] = normalized_text
@@ -97,7 +99,7 @@ def process_text(
     # --- Stage 3: ENGRAVING (strip or keep) ---
     print(banner("STAGE 3 | ENGRAVING"))
     final_text = (
-        normalized_text if opts.keep_engraving else engrave_strip.run(normalized_text, opts)
+        normalized_text if opts.keep_engraving else preprocessing.engrave_strip.run(normalized_text, opts)
     )
     if show_stages:
         print(final_text.rstrip())
