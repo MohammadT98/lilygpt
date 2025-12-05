@@ -11,8 +11,22 @@ dependencies = [
     "transformers>=4.40",
 ]
 
+[project.optional-dependencies]
+train = [
+    "torch>=2.0",
+    "peft>=0.4",
+    "accelerate>=0.20",
+    "tensorboard>=2.13",
+]
+full = [
+    "torch>=2.0",
+    "peft>=0.4",
+    "accelerate>=0.20",
+    "tensorboard>=2.13",
+]
+
 [tool.setuptools.packages.find]
-where = ["src"]          # we use the src/ layout
+where = ["src"]  
 
 [project.scripts]
-lilynorm = "lilynorm.cli:main"   # gives you a `lilynorm` command
+lilynorm = "lilynorm.cli:main" 
