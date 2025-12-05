@@ -5,8 +5,25 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "lilynorm"
 version = "0.1.0"
-description = "LilyPond normalization + tokenization pipeline"
+description = "LilyPond normalization and GPT fine-tuning pipeline for music score analysis"
+readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Mohammad Torabi", email = "mohamad.torabi76@gmail.com"},
+]
+keywords = ["lilypond", "music", "nlp", "gpt", "fine-tuning", "lora"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
 dependencies = [
     "transformers>=4.40",
 ]
