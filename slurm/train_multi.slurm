@@ -9,6 +9,7 @@
 #SBATCH --mem=96G
 #SBATCH --time=48:00:00
 #SBATCH --partition=allgroups
+#SBATCH --qos=allgroups_qos
 
 set -euo pipefail
 
