@@ -1,28 +1,21 @@
 #!/bin/bash
 #SBATCH --job-name=lilygpt-lora
-#SBATCH --output=logs/slurm-%j.out
-#SBATCH --error=logs/slurm-%j.err
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --partition=allgroups
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --gres=gpu:1
+#SBATCH --gres gpu:a40:1
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
-#SBATCH --partition=gpu
+#SBATCH --output=logs/slurm-%j.out
+#SBATCH --error=logs/slurm-%j.err
 
-# Adjust these based on your cluster configuration:
-# --gres=gpu:a100:1  # for specific GPU type
-# --partition=YOUR_PARTITION_NAME
-# --account=YOUR_ACCOUNT
+set -euo pipefail
 
-module purge
-module load python/3.10  # Adjust to your cluster's Python module
+cd "$SLURM_SUBMIT_DIR"
+mkdir -p logs runs
 
-# Activate virtual environment (adjust path as needed)
-# source /path/to/your/venv/bin/activate
-
-# Or use uv if available on the cluster
-# export PATH="$HOME/.cargo/bin:$PATH"
+# Activate venv (DO NOT load python modules)
+source "$HOME/lilygpt/.venv/bin/activate"
 
 echo "=== Job Info ==="
 echo "Job ID: $SLURM_JOB_ID"
@@ -31,15 +24,10 @@ echo "GPUs: $CUDA_VISIBLE_DEVICES"
 echo "Start time: $(date)"
 echo ""
 
-# Navigate to project directory
-cd $SLURM_SUBMIT_DIR || exit 1
-mkdir -p logs
-
-# Run training
 python -m lilynorm.stages.training.train \
     --train "data/splits/train.jsonl" \
     --val "data/splits/val.jsonl" \
-    --output-dir "data/fine_tuning/checkpoints" \
+    --output-dir "runs/lora_exp1" \
     --batch-size 8 \
     --gradient-accumulation-steps 4 \
     --learning-rate 2e-4 \

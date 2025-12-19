@@ -2,57 +2,60 @@
 #SBATCH --job-name=lilygpt-multi
 #SBATCH --output=logs/slurm-%j.out
 #SBATCH --error=logs/slurm-%j.err
-#SBATCH --nodes=2
-#SBATCH --ntasks-per-node=1
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
 #SBATCH --cpus-per-task=16
-#SBATCH --gres=gpu:4
-#SBATCH --mem=128G
+#SBATCH --gpus=4
+#SBATCH --mem=96G
 #SBATCH --time=48:00:00
-#SBATCH --partition=gpu
+#SBATCH --partition=allgroups
 
-# Multi-GPU training with DeepSpeed or DDP
-# Adjust resource requests based on your cluster
+set -euo pipefail
 
-module purge
-module load python/3.10
-module load cuda/11.8  # Adjust CUDA version as needed
-module load nccl      # For multi-GPU communication
+# Multi-GPU on a single node. Adjust gres/time/mem if needed.
+
+cd "$SLURM_SUBMIT_DIR"
+mkdir -p logs runs
+
+# Activate local venv (already contains torch/peft/accelerate)
+source "$HOME/lilygpt/.venv/bin/activate"
 
 echo "=== Multi-GPU Training Info ==="
 echo "Job ID: $SLURM_JOB_ID"
 echo "Nodes: $SLURM_NODELIST"
-echo "GPUs per node: $(nvidia-smi --list-gpus | wc -l)"
-echo "Total GPUs: $((SLURM_NNODES * SLURM_GPUS_ON_NODE))"
+echo "GPUs per node: $(nvidia-smi --list-gpus 2>/dev/null | wc -l)" || true
+echo "Total GPUs: $SLURM_GPUS_ON_NODE"
 echo "Start time: $(date)"
 echo ""
 
-cd $SLURM_SUBMIT_DIR || exit 1
-mkdir -p logs
-
-# Multi-node training with torchrun/accelerate
-export MASTER_ADDR=$(scontrol show hostnames $SLURM_JOB_NODELIST | head -n 1)
+export MASTER_ADDR=$(hostname)
 export MASTER_PORT=29500
-export WORLD_SIZE=$((SLURM_NNODES * SLURM_GPUS_ON_NODE))
+export WORLD_SIZE=$SLURM_GPUS_ON_NODE
 
-# Using accelerate for multi-GPU (recommended)
+# Ensure accelerate uses the GPUs allocated by SLURM
+export CUDA_VISIBLE_DEVICES=${CUDA_VISIBLE_DEVICES:-0,1,2,3}
+
 accelerate launch \
     --multi_gpu \
     --num_processes=$WORLD_SIZE \
-    --num_machines=$SLURM_NNODES \
-    --machine_rank=$SLURM_NODEID \
-    --main_process_ip=$MASTER_ADDR \
-    --main_process_port=$MASTER_PORT \
+    --num_machines=1 \
+    --mixed_precision=bf16 \
     -m lilynorm.stages.training.train \
     --train "data/splits/train.jsonl" \
     --val "data/splits/val.jsonl" \
-    --output-dir "data/fine_tuning/checkpoints_multigpu" \
+    --output-dir "runs/lora_multigpu" \
     --batch-size 4 \
     --gradient-accumulation-steps 8 \
     --learning-rate 2e-4 \
     --epochs 3 \
-    --bf16 \
+    --max-length 1024 \
+    --lora-r 8 \
+    --lora-alpha 32 \
+    --lora-dropout 0.1 \
     --save-steps 250 \
-    --eval-steps 250
+    --eval-steps 250 \
+    --logging-steps 10 \
+    --warmup-steps 100
 
 echo ""
 echo "End time: $(date)"
