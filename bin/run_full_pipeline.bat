@@ -2,7 +2,7 @@
 REM Run normalization + tokenization + splitting
 
 setlocal
-pushd "%~dp0"
+pushd "%~dp0\.."
 
 echo === Normalizing + Tokenizing Dataset ===
 uv run python -m scripts.process_dataset --input "data/raw"
