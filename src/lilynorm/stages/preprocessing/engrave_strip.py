@@ -197,10 +197,20 @@ RE_OVERRIDES = [
         r"(?:\\once\s+)?\\(?:hideNotes|magnifyStaff|teeny|tiny|small|large|huge)\b"
         r"(?:[^\S\n][^\n\r{}]*)?"
     ),
+        # Slur/tie style toggles commonly used with \\once
+        re.compile(r"(?:\\once\s+)?\\(?:slurDashed|slurSolid|tieDashed|tieSolid)\b", re.I),
+        # Match variants like: \change Staff, \change Staff = "down", \change Staff = #'up
+    # Stem, slur, tie, beam directions and other visual overrides
+    re.compile(r"(?:\\once\s+)?\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b", re.I),
+    # Match variants like: \change Staff, \change Staff = "down", \change Staff = #'up
+    re.compile(r"\\change\s+Staff(?:\s*=\s*(?:\"[^\"]*\"|#'?[A-Za-z]+))?", re.I),
 ]
 
 RE_MARKUP = re.compile(r"(?:[-_^]\s*)?\\markup\b", re.I)
 RE_MARK = re.compile(r"(?:[-_^]\s*)?\\mark\b", re.I)
+
+# Performance instructions (soli, tutti, etc.) - treated as markup
+RE_PERFORMANCE_MARKS = re.compile(r"\\(?:soli|tu|solo|tutti)\b", re.I)
 
 DYNAMICS = (
     "ppppp|pppp|ppp|pp|p|mp|mf|f|ff|fff|ffff|fffff|fp|sf|sfz|sffz|rfz|fz|sfp|sff|sfpp|sfzp"
@@ -220,7 +230,8 @@ HSPACE = re.compile(r"[ \t]+")
 RE_STRAY_ATTACH = re.compile(
     r"(?m)([-_^])(?=\s*(?:$|[\r\n]|[,;:|)}\]]|(?!(?:\\|\"|\{|\<|\>|\!|[a-gris][',]*))))"
 )
-RE_LONE_ONCE = re.compile(r"(?m)\\once\b(?:[ \t]+(?=$|[\r\n}])|[ \t]*(?!\\))")
+# Remove stray \once tokens that are not followed by a Lily command
+RE_LONE_ONCE = re.compile(r"(?m)\\once\b(?:[ \t]+(?=$|[\r\n}%])|[ \t]*(?!\\[A-Za-z]))")
 RE_SPACE_BEFORE_CLOSER = re.compile(r"[ \t]+(?=[)\]}])")
 RE_SPACE_AFTER_OPENER = re.compile(r"(?<=[({\[])[ \t]+")
 RE_SPACE_BEFORE_PUNCT = re.compile(r"[ \t]+(?=[,;:|>])")
@@ -232,7 +243,7 @@ RE_EMPTY_BLOCK_LINE = re.compile(r"(?m)^\s*\{\s*\}\s*$")
 RE_EMPTY_ASSIGNMENT_LINE = re.compile(
     r"(?m)^\s*[A-Za-z_@][\w@]*\s*=\s*(?:\{\s*\})?\s*$"
 )
-RE_INLINE_EMPTY_BRACES = re.compile(r"(?<=\s)\{\s*\}(?=\s)")
+RE_INLINE_EMPTY_BRACES = re.compile(r"\{\s*\}")
 RE_INCLUDE_TAG = re.compile(r"(?m)^\s*<<\s*\\\s*@\w+\b.*?>>\s*$")
 RE_REPEATED_INCLUDE = re.compile(r"(<<\s*\\\s*@\w+\b.*?>>\s*)+", re.S)
 RE_EMPTY_SCORES = re.compile(
@@ -611,6 +622,10 @@ def _strip_inline_patterns(
     if options.remove_marks:
         text, removed_marks = _eat_after_keyword(text, RE_MARK)
         counts["marks"] += removed_marks
+        
+        # Also remove performance marks like \soli, \tu, etc.
+        text, removed_perf = RE_PERFORMANCE_MARKS.subn("", text)
+        counts["marks"] += removed_perf
 
     # Overrides and related engraving commands
     if options.remove_overrides:
