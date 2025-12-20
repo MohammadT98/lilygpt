@@ -11,16 +11,18 @@
 #SBATCH --error=logs/20b-train-%j.err
 
 set -euo pipefail
+
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs runs
+
 source "$HOME/lilygpt/.venv/bin/activate"
 
-# (Optional but helpful for fragmentation issues)
+# Helps CUDA fragmentation on long jobs
 export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 
 python -m lilynorm.stages.training.train \
   --train "data/splits/train.jsonl" \
-  --val   "data/splits/val.jsonl" \
+  --val "data/splits/val.jsonl" \
   --model-name "openai/gpt-oss-20b" \
   --output-dir "runs/20b_lora_a40_2g" \
   --epochs 3 \
