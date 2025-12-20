@@ -253,6 +253,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Do not produce GPT token files.",
     )
     parser.add_argument(
+        "--mirror-variabili",
+        action="store_true",
+        help=(
+            "Mirror variabili.ly files into normalized output so \\include continues to work. "
+            "By default variabili.ly is NOT mirrored to keep training data clean."
+        ),
+    )
+    parser.add_argument(
         "--single-voice-only",
         action="store_true",
         help="Filter outputs to files containing exactly one voice assignment.",
@@ -413,7 +421,9 @@ def main() -> int:
 
             processed += 1
 
-        if not args.dry_run:
+        # Default: do NOT mirror variabili.ly into normalized output.
+        # Only mirror when explicitly requested via --mirror-variabili.
+        if not args.dry_run and args.mirror_variabili:
             _copy_variabili_files(input_root, norm_root)
 
         print(
