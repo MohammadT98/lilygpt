@@ -49,6 +49,7 @@ NAME_BLACKLIST = (
     "header",       # includes + paper setup
     "header_part",
     "score",        # full score layout
+    "variabili",    # variable definitions and engraving macros
     "violino1",
     "violino2",
     "violino3",
