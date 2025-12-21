@@ -53,6 +53,50 @@ def _grab_balanced(
     return -1
 
 
+def _protect_scheme_expressions(text: str) -> Tuple[str, Dict[str, str]]:
+    """
+    Replace #(...) Scheme expressions with placeholders to protect them from regex processing.
+    Handles nested parentheses. Returns (protected_text, mapping_dict).
+    """
+    import hashlib
+    protected = {}
+    result_parts = []
+    i = 0
+    
+    while i < len(text):
+        # Look for #(
+        if i < len(text) - 1 and text[i:i+2] == '#(':
+            # Find the matching closing paren
+            paren_depth = 1
+            j = i + 2
+            while j < len(text) and paren_depth > 0:
+                if text[j] == '(':
+                    paren_depth += 1
+                elif text[j] == ')':
+                    paren_depth -= 1
+                j += 1
+            
+            # Extract the full Scheme expression
+            scheme_expr = text[i:j]
+            # Use SCHEMEX format without underscores (they might get cleaned up by other regexes)
+            key = f"SCHEMEX{hashlib.md5(scheme_expr.encode()).hexdigest()[:8]}X"
+            protected[key] = scheme_expr
+            result_parts.append(key)
+            i = j
+        else:
+            result_parts.append(text[i])
+            i += 1
+    
+    return ''.join(result_parts), protected
+
+
+def _restore_scheme_expressions(text: str, mapping: Dict[str, str]) -> str:
+    """Restore protected Scheme expressions."""
+    for key, original in mapping.items():
+        text = text.replace(key, original)
+    return text
+
+
 def _remove_block_directive(src: str, directive: str) -> Tuple[str, int]:
     """
     Remove top-level \\<directive> { ... } blocks from the given LilyPond source.
@@ -659,7 +703,11 @@ def _strip_inline_patterns(
         counts["hairpins"] += removed_hairpins
 
     # Clean up stranded attachment markers and lone \\once
+    # But first protect Scheme expressions like #(set-default-paper-size "a4")
+    # from having their hyphens removed
+    text, scheme_mapping = _protect_scheme_expressions(text)
     text, _ = RE_STRAY_ATTACH.subn("", text)
+    text = _restore_scheme_expressions(text, scheme_mapping)
     text, _ = RE_LONE_ONCE.subn("", text)
 
     # Remove lyricmode content
