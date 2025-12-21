@@ -53,7 +53,7 @@ class ParseOptions:
     Options controlling which normalization steps are applied.
     """
     expand_relative: bool = True
-    inline_variables: bool = True
+    inline_variables: bool = False  # Disabled - causes syntax corruption in nested variables
     expand_music_functions: bool = True
     resolve_transpose: bool = True
     expand_repeat_unfold: bool = True
