@@ -12,6 +12,7 @@ try:
     from lilynorm.utils.options import NormOptions
     from lilynorm.stages import preprocessing
     from lilynorm.stages import tokenization as tokenize_gpt
+    from lilynorm.utils.formatting import format_full_text, format_example
 except ModuleNotFoundError:
     # Allow running the script directly from the repo without installing the package.
     repo_root = Path(__file__).resolve().parents[1]
@@ -22,6 +23,7 @@ except ModuleNotFoundError:
     from lilynorm.stages import preprocessing
     from lilynorm.stages import tokenization as tokenize_gpt
     from lilynorm.stages.splitting import build_splits
+    from lilynorm.utils.formatting import format_full_text, format_example
 
 
 # ---------------------------------------------------------------------------
@@ -44,12 +46,13 @@ ITALIAN_SOLFEGE = ("do", "re", "mi", "fa", "sol", "la", "si")
 DEFAULT_VERSION = "2.24.0"
 
 # Filenames to ignore even if the heuristics would otherwise pass.
+# Note: "score" is intentionally NOT blacklisted; score files are processed and file_resolver
+# will inline all includes (headers, parts, etc.) to create complete standalone documents.
 NAME_BLACKLIST = (
     "format",       # empty macro placeholders
     "header",       # includes + paper setup
     "header_part",
-    "score",        # full score layout
-    "variabili",    # variable definitions and engraving macros
+    "variabili",    # variable definitions and engraving macros (kept as includes in resolved files)
     "violino1",
     "violino2",
     "violino3",
@@ -76,20 +79,25 @@ def should_process(path: Path, text: str) -> bool:
         if stem == tag or stem.endswith(f"_{tag}"):
             return False
 
-    if not ROMAN_DEF_RE.search(text):
-        return False
+    # Score files are explicitly allowed (file resolution will inline all includes)
+    if stem.endswith("_score") or stem == "score":
+        return True
 
-    if not NOTE_RE.search(text):
-        return False
-
-    return True
+    # All other files (movement files, parts, etc.) are skipped.
+    # They will be inlined into the score via file_resolver.
+    return False
 
 
 def normalize_file(path: Path, opts: NormOptions) -> str:
     """Run the pipeline stages and return the normalized text."""
     text = path.read_text(encoding="utf-8", errors="ignore")
 
-    stage1 = preprocessing.preparse.run(text, opts)
+    # Stage 0: Resolve all \include statements including variabili.ly
+    # (inline everything for training; we need complete, standalone files)
+    stage0 = preprocessing.file_resolver.run(text, path, exclude_variabili=False)
+    
+    # Stages 1-3: Standard preprocessing
+    stage1 = preprocessing.preparse.run(stage0, opts)
     stage2 = preprocessing.normalize.run(stage1, opts)
     stage3 = preprocessing.engrave_strip.run(stage2, opts)
     return stage3
@@ -273,6 +281,23 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "(default: openai/gpt-oss-20b)."
         ),
     )
+    parser.add_argument(
+        "--instruction-format",
+        choices=["none", "plain", "chatml"],
+        default="chatml",
+        help=(
+            "Wrap normalized music with instruction prompts for fine-tuning. "
+            "'none' = no wrapping (baseline); "
+            "'plain' = simple text prefix; "
+            "'chatml' = ChatML format with <|user|>/<|assistant|> tokens. "
+            "(default: chatml)"
+        ),
+    )
+    parser.add_argument(
+        "--instruction",
+        default="Generate LilyPond music notation.",
+        help="Instruction text to prepend when using --instruction-format. (default: 'Generate LilyPond music notation.')",
+    )
 
     return parser
 
@@ -407,11 +432,53 @@ def main() -> int:
 
             # Tokenization output
             if not args.skip_tokenize:
+                # Apply instruction formatting if requested
+                text_to_tokenize = normalized_text
+                prompt_preview = ""
+                prefix_token_count = 0
+                if args.instruction_format != "none":
+                    # Build full text
+                    text_to_tokenize = format_full_text(
+                        normalized_text,
+                        instruction_format=args.instruction_format,
+                        instruction=args.instruction,
+                    )
+                    # Also compute a prompt preview and token length of the prompt
+                    formatted = format_example(
+                        normalized_text,
+                        instruction_format=args.instruction_format,
+                        instruction=args.instruction,
+                    )
+                    if isinstance(formatted, tuple):
+                        prompt_preview = formatted[0]
+                        # Tokenize prompt to measure its token length
+                        prompt_tok = tokenize_gpt.tokenize_gpt.run(
+                            prompt_preview,
+                            model_name=args.tokenizer_model,
+                        )
+                        prefix_token_count = len(prompt_tok.get("input_ids", []))
+                    else:
+                        # plain: prompt is just the instruction + newline
+                        prompt_preview = args.instruction + "\n"
+                        prompt_tok = tokenize_gpt.tokenize_gpt.run(
+                            prompt_preview,
+                            model_name=args.tokenizer_model,
+                        )
+                        prefix_token_count = len(prompt_tok.get("input_ids", []))
+
                 tok_info = tokenize_gpt.tokenize_gpt.run(
-                    normalized_text,
+                    text_to_tokenize,
                     model_name=args.tokenizer_model,
                     # max_length=1024  # override here if you want
                 )
+                # Attach instruction metadata for verification
+                tok_info["instruction_format"] = args.instruction_format
+                tok_info["instruction"] = (
+                    args.instruction if args.instruction_format != "none" else None
+                )
+                tok_info["prompt_preview"] = prompt_preview
+                tok_info["prefix_token_count"] = prefix_token_count
+
                 tok_path = tok_root / rel.with_suffix(".tokens.json")
                 tok_path.parent.mkdir(parents=True, exist_ok=True)
                 tok_path.write_text(
