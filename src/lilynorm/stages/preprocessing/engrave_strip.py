@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 import sys
 from dataclasses import dataclass
@@ -22,7 +23,8 @@ DEFAULT_SPACE_MODE = "safe"
 # Toggle removal of \score/\layout/\midi wrappers (training-only noise).
 # Set to False to keep layout blocks for PDF generation/verification.
 # Set to True for pure ML training to maximize noise removal.
-STRIP_SCORE_LAYOUT = False
+# Can be overridden by LILYNORM_KEEP_LAYOUT environment variable.
+STRIP_SCORE_LAYOUT = True if not os.environ.get("LILYNORM_KEEP_LAYOUT") else False
 
 
 # ---------------------------------------------------------------------------
@@ -1283,7 +1285,7 @@ def run(text: str, opts: NormOptions) -> str:
         if markup_count > 0:
             print(f"[engrave_strip] pruned {markup_count} markup/directive groups", file=sys.stderr)
 
-        # Step 5-6: Optionally remove \layout/\midi/\score blocks (disabled for now)
+        # Step 5-6: Remove \layout/\midi/\score blocks for pure ML training
         if STRIP_SCORE_LAYOUT:
             cleaned, layout_count = _remove_block_directive(cleaned, "layout")
             cleaned, midi_count = _remove_block_directive(cleaned, "midi")
