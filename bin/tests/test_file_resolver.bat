@@ -1,26 +1,29 @@
 @echo off
-REM Debug preprocessing stages for all files - saves output after each stage
+REM Run file_resolver test and save log
 
 setlocal enabledelayedexpansion
 pushd "%~dp0..\.."
 
-echo === Running Debug Stages on All Raw Files ===
+echo === Running File Resolver Test ===
 echo.
 
-set count=0
-for /r "data\raw" %%f in (*.ly) do (
-    set /a count+=1
-    echo [!count!] Processing: %%f
-    uv run python scripts/test_file_resolver.py "%%f"
-    echo.
-)
+set "logfile=data\logs\test_file_resolver_%date:~-4%-%date:~-10,2%-%date:~-7,2%_%time:~0,2%-%time:~3,2%-%time:~6,2%.log"
+set "logfile=!logfile: =0!"
+
+mkdir data\logs 2>nul
+
+echo Test started at %date% %time% > "!logfile!"
+echo. >> "!logfile!"
+
+REM Run and capture to log, then display log to console
+uv run python scripts/test_file_resolver.py >> "!logfile!" 2>&1
+type "!logfile!"
 
 echo.
-echo === Processed !count! files ===
-echo Output saved to data/test_file_resolver/
+echo === Log saved to: !logfile! ===
+echo.
 
 popd
 endlocal
 
-echo.
 pause
