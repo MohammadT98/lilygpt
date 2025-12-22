@@ -474,68 +474,138 @@ def _skip_markup_expression(source: str, index: int) -> int:
     """
     Starting from `index`, skip over a single markup expression.
 
-    This handles nested braces, quoted strings, commands, and Scheme chunks.
-    Returns the index immediately after the markup expression (or len(source)
+    A markup expression is ONE of:
+    - A quoted string "..."
+    - A braced block {...}
+    - A command like \\huge
+    
+    IMPORTANT: We only consume ONE element, not a sequence of them.
+    This prevents consuming entire score blocks when processing markup
+    like \\markup\\huge "title" that is followed by \\score.
+
+    Returns the index immediately after the first markup element (or len(source)
     if it hits the end).
     """
     position = index
     length = len(source)
 
-    while position < length:
-        char = source[position]
+    # Skip leading whitespace
+    while position < length and source[position] in " \t\r\n":
+        position += 1
 
-        # Skip whitespace
-        if char in " \t\r\n":
+    if position >= length:
+        return position
+
+    char = source[position]
+
+    # Block with braces: {...}
+    if char == "{":
+        end_index = _grab_balanced(source, position, "{", "}")
+        return end_index + 1 if end_index != -1 else length
+
+    # Quoted string: "..."
+    if char == '"':
+        position += 1
+        escaped = False
+        while position < length:
+            current_char = source[position]
             position += 1
-            continue
+            if current_char == '"' and not escaped:
+                return position
+            escaped = (current_char == "\\") and not escaped
+        return position
 
-        # Block with braces: {...}
-        if char == "{":
-            end_index = _grab_balanced(source, position, "{", "}")
-            return end_index + 1 if end_index != -1 else length
-
-        # Quoted string: "..."
-        if char == '"':
-            position += 1
-            escaped = False
-            while position < length:
-                current_char = source[position]
-                position += 1
-                if current_char == '"' and not escaped:
-                    break
-                escaped = (current_char == "\\") and not escaped
-            continue
-
-        # Command: \\something
-        if char == "\\":
-            position += 1
-            while (
-                position < length
-                and (source[position].isalnum() or source[position] in "_-")
-            ):
-                position += 1
-            continue
-
-        # Scheme: #...
-        if char == "#":
-            position += 1
-            while position < length and not source[position].isspace():
-                position += 1
-            continue
-
-        # Fallback: plain word or token
-        token_start = position
+    # Command: \\something (consume just the command keyword, not what follows)
+    if char == "\\":
+        position += 1
         while (
             position < length
-            and not source[position].isspace()
-            and source[position] not in '{}"'
+            and (source[position].isalnum() or source[position] in "_-")
         ):
             position += 1
+        return position
 
-        if position == token_start:
+    # Scheme: #... (consume to end of word/expression)
+    if char == "#":
+        position += 1
+        while position < length and not source[position].isspace():
             position += 1
+        return position
 
-    return position
+    # Fallback: plain word or token
+    token_start = position
+    while (
+        position < length
+        and not source[position].isspace()
+        and source[position] not in '{}"'
+    ):
+        position += 1
+
+    return position if position > token_start else token_start + 1
+
+
+def _final_cleanup(text: str) -> str:
+    """Dataset-tail cleanup that used to live in the driver.
+
+    Runs after engraving stripping (or directly if engravings are kept).
+    """
+    # Remove unsupported custom commands and movement-local roman macros
+    unsupported = (
+        "mbreak",
+        "trasp",
+        "notrasp",
+        "typeset",
+        "notypeset",
+        "Voice",
+        "forma",
+        "terzine",
+        "con",
+        "senza",
+        "notrasp",
+    )
+    text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
+    text = re.sub(r"\\(?:I|II|III|IV)[A-Za-z][\w-]*\b", "", text)
+
+    # Structural cleanups
+    text = re.sub(r"<<\s*>>", "", text)
+    text = re.sub(r"\\new\s+(?:Staff|ChoirStaff|StaffGroup)\s*<<[^>]*>>", "", text)
+    text = re.sub(r"(?m)^\\new\s+(?:Voice|Lyrics)\s*=\s*\"[^\"]*\"\s*$", "", text)
+    text = re.sub(r"^[A-Za-z_][\w-]*\s*=\s*\{\s*\}", "", text, flags=re.MULTILINE)
+    text = re.sub(r"(?ms)^[A-Za-z_][\w-]*\s*=\s*\{\s*(?:\\(?:clef|key|time)\s+[^\}]*\s*)*\}\s*$", "", text)
+    text = re.sub(r"(?m)^\s*>>\s*$", "", text)
+    text = re.sub(r"(?m)(#\([^)]*\).*\n)\n*\}\s*$", r"\1", text, flags=re.MULTILINE)
+    text = re.sub(r"(?m)(\\pageBreak\s*\n)\n*\}\s*$", r"\1", text, flags=re.MULTILINE)
+    text = re.sub(r"(?m)^\}\s*\n\s*\}\s*$", "}", text, flags=re.MULTILINE)
+    text = re.sub(r"(?s)\\score\s*\{\s*>>\s*(?:\\(?:midi|layout)\s*\{[^}]*\}\s*)*\}", "", text)
+
+    # Token tweaks
+    text = re.sub(r"(?m)^\s*\+\s*", "", text)
+    text = re.sub(r"(?<=\s)\+(?=\s)", "", text)
+    text = re.sub(r"(?<=\w)\+(?=[)\]\}])", "", text)
+    text = re.sub(r"(?<=\.)\+", "", text)
+    text = re.sub(r"(?<=\w)\+(?=\s|$)", "", text)
+    text = re.sub(r"[ \t]{2,}", " ", text)
+    text = re.sub(r"(?m)^\s+$", "", text)
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    text = re.sub(r"(?m)^\s*(?:up|down)\s*$", "", text)
+    text = re.sub(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*(?:=\s+|$)", r"\1 = {}", text)
+    text = re.sub(r"(?m)^\s*=\s+\w+\s*$", "", text)
+
+    # Musical dotted patterns / figured bass / revert fixes
+    text = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", text)
+    text = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", text)
+    text = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", text)
+    text = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", text)
+
+    # Version line fix at top
+    if text.startswith('version "'):
+        quote_end = text.find('"', 9)
+        if quote_end > 9:
+            version_line = text[:quote_end + 1]
+            if not version_line.rstrip().endswith('"'):
+                text = version_line.rstrip() + '"' + text[quote_end:]
+
+    return text
 
 
 def _eat_after_keyword(
@@ -859,28 +929,31 @@ def run(text: str, opts: NormOptions) -> str:
     """
     if getattr(opts, "keep_engraving", True):
         print("[engrave_strip] keeping engravings", file=sys.stderr)
-        return text
+        cleaned = text
+    else:
+        # When we are actively stripping engravings, also drop empty assignments.
+        global DROP_EMPTY_ASSIGNMENTS
+        DROP_EMPTY_ASSIGNMENTS = True
 
-    # When we are actively stripping engravings, also drop empty assignments.
-    global DROP_EMPTY_ASSIGNMENTS
-    DROP_EMPTY_ASSIGNMENTS = True
+        strip_options = StripOptions(
+            remove_overrides=True,
+            remove_markups=True,
+            remove_marks=True,
+            remove_dynamics=True,
+            remove_hairpins=True,
+            remove_quotes=True,
+            space_mode=DEFAULT_SPACE_MODE,
+        )
 
-    strip_options = StripOptions(
-        remove_overrides=True,
-        remove_markups=True,
-        remove_marks=True,
-        remove_dynamics=True,
-        remove_hairpins=True,
-        remove_quotes=True,
-        space_mode=DEFAULT_SPACE_MODE,
-    )
+        cleaned, counts = clean_lilypond(text, strip_options)
+        print(
+            f"[engrave_strip] overrides:{counts['overrides']} "
+            f"markups:{counts['markups']} marks:{counts['marks']} "
+            f"dynamics:{counts['dynamics']} hairpins:{counts['hairpins']} "
+            f"quotes:{counts['quotes']}",
+            file=sys.stderr,
+        )
 
-    cleaned, counts = clean_lilypond(text, strip_options)
-    print(
-        f"[engrave_strip] overrides:{counts['overrides']} "
-        f"markups:{counts['markups']} marks:{counts['marks']} "
-        f"dynamics:{counts['dynamics']} hairpins:{counts['hairpins']} "
-        f"quotes:{counts['quotes']}",
-        file=sys.stderr,
-    )
+    # Always apply final dataset cleanup
+    cleaned = _final_cleanup(cleaned)
     return cleaned
