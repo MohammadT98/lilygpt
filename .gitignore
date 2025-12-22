@@ -40,6 +40,7 @@ data/*
 logs/
 *.log
 temp_path.txt
+lilypond-*/
 
 # OS
 .DS_Store
