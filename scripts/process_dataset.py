@@ -156,6 +156,10 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
         "notypeset",
         "Voice",
         "forma",
+        "terzine",
+        "con",
+        "senza",
+        "notrasp",
     )
     # Remove simple tokens (standalone or inline) like \mbreak, \trasp, etc.
     stage3 = re.sub(r"\\(?:" + "|".join(_unsupported_cmds) + r")\b", "", stage3)
@@ -196,9 +200,10 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
     # Remove empty angle blocks left after macro removal: << >>
     stage3 = re.sub(r"<<\s*>>", "", stage3)
     
-    # Remove broken \score { >> \midi { ... } } blocks left after all content was stripped
-    # Pattern: \score { (whitespace/comments) >> (optional layout/midi) }
-    stage3 = re.sub(r"(?s)\\score\s*\{\s*(?:>>\s*)?\s*(?:\\(?:midi|layout)\s*\{[^}]*\}\s*)*\}", "", stage3)
+    # Remove ONLY broken \score { >> \midi { ... } } blocks (with ONLY >> and layout/midi, no content)
+    # This pattern matches: \score { >> \layout/\midi { ... } }
+    # But NOT: \score { actual_content \layout { ... } }
+    stage3 = re.sub(r"(?s)\\score\s*\{\s*>>\s*(?:\\(?:midi|layout)\s*\{[^}]*\}\s*)*\}", "", stage3)
     
     # Additional '+' cleanup: remove plus glued to a token when followed by whitespace
     stage3 = re.sub(r"(?<=\w)\+(?=\s|$)", "", stage3)
@@ -208,6 +213,45 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
     stage3 = re.sub(r"(?m)^\s+$", "", stage3)
     # Collapse sequences of more than two blank lines
     stage3 = re.sub(r"\n{3,}", "\n\n", stage3)
+    
+    # Remove orphaned direction symbols that appear on their own lines (up, down)
+    stage3 = re.sub(r"(?m)^\s*(?:up|down)\s*$", "", stage3)
+    
+    # Remove broken assignments like "su = = up" (incomplete after macro removal)
+    # Pattern: name = (with nothing valid following or broken continuation)
+    stage3 = re.sub(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*(?:=\s+|$)", r"\1 = {}", stage3)
+    
+    # Remove standalone "= something" lines that are broken remnants
+    stage3 = re.sub(r"(?m)^\s*=\s+\w+\s*$", "", stage3)
+    
+    # Fix dotted note patterns with inherited durations in slurs
+    # Pattern: X8.(Y. Z. W.) -> X8(Y Z W)  (remove dots from notes that inherit duration)
+    stage3 = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", stage3)
+    
+    # Fix dotted note runs with inherited durations
+    # Pattern: X16. Y. Z. W. X8 -> X16 Y Z W X8 (add explicit durations or remove inheriting dots)
+    stage3 = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", stage3)
+    
+    # Fix broken figured bass notation: < on one line, alteration/number on next
+    # Pattern: < followed by newline and whitespace, then alteration/number and >
+    # Example: "<\n       ->" should become "<->"
+    stage3 = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", stage3)
+    
+    # Fix \revert commands with missing dot before property
+    # Pattern: \revert Stem #'transparent -> \revert Stem.#'transparent
+    stage3 = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", stage3)
+    
+    # Fix unclosed or malformed version strings at file start
+    # Ensure version line ends with proper syntax
+    if stage3.startswith('version "'):
+        # Find closing quote for version string
+        quote_end = stage3.find('"', 9)  # Start search after 'version "'
+        if quote_end > 9:
+            # Keep version string as-is, just ensure it's complete
+            version_line = stage3[:quote_end + 1]
+            # Check if it has proper structure
+            if not version_line.rstrip().endswith('"'):
+                stage3 = version_line.rstrip() + '"' + stage3[quote_end:]
 
     return stage3
 
