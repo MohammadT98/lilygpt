@@ -282,6 +282,7 @@ def _remove_custom_assignments(text: str) -> Tuple[str, int]:
     """
     removed = 0
     for name in CUSTOM_ASSIGNMENT_NAMES:
+        # Match the assignment start; RHS can be token, string, or brace block.
         pattern = re.compile(rf"(?m)^\s*{re.escape(name)}\s*=\s*")
         search_start = 0
 
@@ -1347,6 +1348,13 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, markup_assign_count = _remove_markup_assignments(cleaned)
         if markup_assign_count > 0:
             print(f"[engrave_strip] removed {markup_assign_count} markup assignment(s)", file=sys.stderr)
+
+        # Step 3d: Remove dataset-specific helper commands and assignments (e.g., notrasp = ...)
+        cleaned, removed_custom_cmds = RE_CUSTOM_COMMANDS.subn("", cleaned)
+        cleaned, removed_custom_assigns = _remove_custom_assignments(cleaned)
+        removed_custom = removed_custom_cmds + removed_custom_assigns
+        if removed_custom:
+            print(f"[engrave_strip] removed {removed_custom} custom helper definition(s)", file=sys.stderr)
 
         # Step 4b: Remove instrument/midi setters in staff blocks
         cleaned, inst_count = _remove_instrument_setters(cleaned)
