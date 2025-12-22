@@ -752,6 +752,8 @@ def _remove_instrument_setters(text: str) -> Tuple[str, int]:
         text = text[:start] + text[pos:]
         removed += 1
     
+    # Clean up multiple spaces left behind by removals
+    text = re.sub(r'  +', ' ', text)
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text, removed
 
@@ -1299,15 +1301,19 @@ def run(text: str, opts: NormOptions) -> str:
             print("[engrave_strip] keeping score/layout/midi blocks (PDF intact)", file=sys.stderr)
 
         # Step 7: Remove inline engraving overrides/tweaks/shape/omit directives
-        # These are visual-only and introduce deprecation warnings; safe to drop for ML training.
-        overrides_removed_total = 0
-        for regex in RE_OVERRIDES:
-            updated_text, removed = regex.subn("", cleaned)
-            if removed:
-                cleaned = updated_text
-                overrides_removed_total += removed
-        if overrides_removed_total:
-            print(f"[engrave_strip] removed {overrides_removed_total} inline override/tweak directives", file=sys.stderr)
+        # Only when stripping layout blocks (pure ML training mode)
+        # When keeping layout, preserve all overrides for proper PDF rendering
+        if STRIP_SCORE_LAYOUT:
+            overrides_removed_total = 0
+            for regex in RE_OVERRIDES:
+                updated_text, removed = regex.subn("", cleaned)
+                if removed:
+                    cleaned = updated_text
+                    overrides_removed_total += removed
+            if overrides_removed_total:
+                print(f"[engrave_strip] removed {overrides_removed_total} inline override/tweak directives", file=sys.stderr)
+        else:
+            print("[engrave_strip] keeping override directives for layout preservation", file=sys.stderr)
 
         # Apply light cleanup for syntax fixes
         cleaned = _light_cleanup(cleaned)
