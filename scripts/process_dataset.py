@@ -88,18 +88,54 @@ def should_process(path: Path, text: str) -> bool:
     return False
 
 
-def normalize_file(path: Path, opts: NormOptions) -> str:
-    """Run the pipeline stages and return the normalized text."""
+def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None = None) -> str:
+    """Run the pipeline stages and return the normalized text.
+
+    If a stats dict is provided, it will be updated with simple counters for
+    preparse and normalize phases.
+    """
     text = path.read_text(encoding="utf-8", errors="ignore")
 
     # Stage 0: Resolve all \include statements including variabili.ly
     # (inline everything for training; we need complete, standalone files)
     stage0 = preprocessing.file_resolver.run(text, path, exclude_variabili=False)
     
-    # Stages 1-3: Standard preprocessing
+    # Stage 1: Preparse
     stage1 = preprocessing.preparse.run(stage0, opts)
+    if stats is not None:
+        if len(stage1.splitlines()) < len(stage0.splitlines()):
+            stats["line_removed"] += 1
+        if stage1.count("{") < stage0.count("{"):
+            stats["block_removed"] += 1
+
+    # Stage 2: Normalize
     stage2 = preprocessing.normalize.run(stage1, opts)
+    if stats is not None:
+        if "\\relative" in stage2:
+            stats["rel"] += 1
+        if "=" in stage2 and "{" in stage2:
+            stats["vars"] += 1
+        if "\\transpose" in stage2:
+            stats["transpose_ok"] += 1
+        if "\\repeat" in stage2:
+            stats["repeat"] += 1
+        if "\\tuplet" in stage2 or "\\times" in stage2:
+            stats["tuplets"] += 1
+        if "\\drums" in stage2 or "DrumStaff" in stage2:
+            stats["drums"] += 1
+
+    # Stage 3: Strip engraving directives
     stage3 = preprocessing.engrave_strip.run(stage2, opts)
+
+    if stats is not None:
+        # Simple heuristic counts after stripping
+        stats["overrides"] += stage3.count("\\override")
+        stats["markups"] += stage3.count("\\markup")
+        stats["marks"] += stage3.count("\\mark")
+        stats["dynamics"] += sum(stage3.count(tok) for tok in ["\\pp", "\\p", "\\mp", "\\mf", "\\f", "\\ff", "\\fp", "\\sfz"])
+        stats["hairpins"] += stage3.count("\\<") + stage3.count("\\>")
+        stats["quotes"] += stage3.count("\\quote")
+
     return stage3
 
 
@@ -348,6 +384,25 @@ def main() -> int:
         trimmed_multi_voice = 0
         single_voice_missing = 0
 
+        # Statistics counters (aligned with test_normalize.py)
+        stats: dict[str, int] = {
+            "line_removed": 0,
+            "block_removed": 0,
+            "rel": 0,
+            "vars": 0,
+            "transpose_ok": 0,
+            "repeat": 0,
+            "tuplets": 0,
+            "drums": 0,
+            "lily_fail": 0,
+            "overrides": 0,
+            "markups": 0,
+            "marks": 0,
+            "dynamics": 0,
+            "hairpins": 0,
+            "quotes": 0,
+        }
+
         ly_files = sorted(input_root.rglob("*.ly"))
         if not ly_files:
             print(f"[dataset] no .ly files found under {input_root}")
@@ -364,12 +419,13 @@ def main() -> int:
             print(f"[dataset] processing {rel}")
 
             try:
-                normalized_text = normalize_file(src, opts)
+                normalized_text = normalize_file(src, opts, stats)
             except Exception as exc:  # pragma: no cover - defensive
                 print(
                     f"[dataset] ! failed to normalize {rel}: {exc}",
                     file=sys.stderr,
                 )
+                stats["lily_fail"] += 1
                 continue
 
             header_version, header_language, variabili_include = _read_header_metadata(
@@ -500,10 +556,29 @@ def main() -> int:
             + (
                 ""
                 if not args.single_voice_only
-                else f" single_voice_trimmed={trimmed_multi_voice}"
-                     f" single_voice_skipped={single_voice_missing}"
+                else f" single_voice_trimmed={trimmed_multi_voice} "
+                     f"single_voice_skipped={single_voice_missing}"
             )
         )
+
+        # Summary of preprocessing/normalize stats
+        print("--- Stage summaries ---")
+        print(
+            f"[preparse] line_removed={stats['line_removed']} "
+            f"block_removed={stats['block_removed']}"
+        )
+        print(
+            f"[normalize] rel:{stats['rel']} vars:{stats['vars']} "
+            f"transpose_ok:{stats['transpose_ok']} repeat:{stats['repeat']} "
+            f"tuplets:{stats['tuplets']} drums:{stats['drums']} "
+            f"lily_fail:{stats['lily_fail']}"
+        )
+        print(
+            f"[engrave_strip] overrides:{stats['overrides']} markups:{stats['markups']} "
+            f"marks:{stats['marks']} dynamics:{stats['dynamics']} "
+            f"hairpins:{stats['hairpins']} quotes:{stats['quotes']}"
+        )
+
         return 0
 
     finally:
