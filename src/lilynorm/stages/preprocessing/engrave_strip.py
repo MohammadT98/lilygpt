@@ -131,6 +131,47 @@ def _remove_block_directive(src: str, directive: str) -> Tuple[str, int]:
     return "".join(output_parts), removed_count
 
 
+def _remove_top_level_scheme_blocks(src: str) -> Tuple[str, int]:
+    """Remove top-level Scheme blocks that start with '#(' on a line.
+
+    Uses balanced parentheses via _grab_balanced to safely remove nested forms.
+    Returns (new_source, removed_count).
+    """
+    removed_count = 0
+    output_parts: List[str] = []
+    i = 0
+    while i < len(src):
+        # Find start of a line
+        line_start = i
+        # Advance to end of line or string
+        while i < len(src) and src[i] not in "\n":
+            i += 1
+        line = src[line_start:i]
+
+        # Check for top-level scheme start
+        m = re.match(r"^\s*#\(", line)
+        if m:
+            # Compute absolute position of '(' in src
+            paren_open = line_start + m.end() - 1
+            paren_close = _grab_balanced(src, paren_open, "(", ")")
+            if paren_close != -1:
+                # Skip entire scheme block and following newline
+                removed_count += 1
+                i = paren_close + 1
+                # Also skip a single trailing newline if present
+                if i < len(src) and src[i] == "\n":
+                    i += 1
+                # Replace with nothing by not appending this line
+                continue
+        # Keep original line including newline
+        output_parts.append(src[line_start:i])
+        if i < len(src) and src[i] == "\n":
+            output_parts.append("\n")
+            i += 1
+
+    return "".join(output_parts), removed_count
+
+
 def _remove_with_blocks(src: str) -> Tuple[str, int]:
     """
     Remove \\with { ... } blocks from the given LilyPond source.
@@ -544,6 +585,76 @@ def _skip_markup_expression(source: str, index: int) -> int:
     return position if position > token_start else token_start + 1
 
 
+def _remove_common_macros(text: str) -> Tuple[str, int]:
+    r"""Remove commonly seen macro definitions that are definitely not music.
+    
+    Only removes lines matching specific known macro patterns:
+    - tr = \trill
+    - su/giu = \change Staff = ...
+    - dolce/arco/pizz/solo/soli/tu = markup
+    - pad/padall = override
+    - terzine/sestine = \tupletSpan
+    - puntopz/fermopz/segnopz = \parenthesize
+    - mbreak = { }
+    
+    Returns (cleaned_text, removed_count).
+    """
+    removed_count = 0
+    
+    # Remove lines with these exact macro names (case-sensitive)
+    common_macros = (
+        "tr", "su", "giu", "tremb",
+        "dolce", "ten", "arco", "noarco", "pizz", 
+        "soli", "solo", "tu", "tasto",
+        "pad", "padall",
+        "puntopz", "fermopz", "segnopz",
+        "terzine", "terzinequarto", "sestine", "sestinequarto",
+        "notypeset", "typeset", "senza", "con",
+        "mbreak", "upl", "pratu"
+    )
+    
+    lines = text.splitlines()
+    filtered_lines = []
+    
+    for line in lines:
+        # Check if line is an assignment to a known macro
+        assign_match = re.match(r"^\s*([A-Za-z_][\w-]*)\s*=", line)
+        if assign_match:
+            var_name = assign_match.group(1)
+            if var_name in common_macros:
+                removed_count += 1
+                continue  # Skip this line
+        
+        filtered_lines.append(line)
+    
+    return "\n".join(filtered_lines), removed_count
+
+
+def _remove_macro_escape_usages(text: str) -> Tuple[str, int]:
+    """Remove usages of known custom macro escapes left dangling in training mode.
+
+    This targets inline tokens like "\\tr" and "\\solo" that are not LilyPond
+    built-ins in this dataset and cause compilation errors if definitions are stripped.
+
+    Returns (cleaned_text, removed_count).
+    """
+    # Keep the list conservative to avoid touching real LilyPond commands
+    macro_escapes = (
+        # performance and ornaments
+        "tr", "solo", "soli", "tu",
+        # dataset-specific helpers
+        "upl", "pratu", "pad", "padall",
+        "terzine", "terzinequarto", "sestine", "sestinequarto",
+        "dolce", "tremb",
+        # on/off markers frequently defined in variabili
+        "con", "senza",
+    )
+
+    pattern = re.compile(r"\\(?:" + "|".join(sorted(set(macro_escapes), key=len, reverse=True)) + r")\b")
+    updated, removed = pattern.subn("", text)
+    return updated, removed
+
+
 def _light_cleanup(text: str) -> str:
     """Minimal safety fixes used when engravings are kept.
 
@@ -579,6 +690,36 @@ def _light_cleanup(text: str) -> str:
     text = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", text)
 
     return text
+
+
+def _remove_standalone_markup_lines(text: str) -> Tuple[str, int]:
+    """Remove non-musical, standalone markup/directive lines.
+
+    Targets lines that begin with layout-only commands, not embedded in music:
+    - \markup ..., \halign, \center-column, \musicglyph, \vspace
+    - \pageBreak, \pointAndClickOff
+    Note: Do NOT remove \language; pitch names (do, re, mi) depend on it.
+
+    Returns (cleaned_text, removed_count).
+    """
+    patterns = [
+        r"(?m)^\s*\\markup.*$",
+        r"(?m)^\s*\\halign\b.*$",
+        r"(?m)^\s*\\center-column\b.*$",
+        r"(?m)^\s*\\musicglyph\b.*$",
+        r"(?m)^\s*\\vspace\b.*$",
+        r"(?m)^\s*\\pageBreak\s*$",
+        r"(?m)^\s*\\pointAndClickOff\s*$",
+    ]
+    removed = 0
+    for pat in patterns:
+        before = text
+        text = re.sub(pat, "", text)
+        if text != before:
+            removed += 1
+    # Collapse excessive blank lines introduced by removals
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text, removed
 
 
 def _final_cleanup(text: str) -> str:
@@ -969,11 +1110,32 @@ def run(text: str, opts: NormOptions) -> str:
         print("[engrave_strip] keeping engravings", file=sys.stderr)
         cleaned = _light_cleanup(text)
     else:
-        print("[engrave_strip] removing paper blocks for training", file=sys.stderr)
+        print("[engrave_strip] removing paper, top-level scheme, and common macros", file=sys.stderr)
         # Step 1: Remove \paper blocks (safe - self-contained blocks)
         cleaned, paper_count = _remove_block_directive(text, "paper")
         if paper_count > 0:
             print(f"[engrave_strip] removed {paper_count} paper block(s)", file=sys.stderr)
+
+        # Step 2: Remove top-level Scheme blocks (set-default-paper-size, set-global-staff-size, custom let)
+        cleaned, scheme_count = _remove_top_level_scheme_blocks(cleaned)
+        if scheme_count > 0:
+            print(f"[engrave_strip] removed {scheme_count} scheme block(s)", file=sys.stderr)
+
+        # Step 3: Remove common macro definitions (tr, dolce, pad, etc.)
+        cleaned, macro_count = _remove_common_macros(cleaned)
+        if macro_count > 0:
+            print(f"[engrave_strip] removed {macro_count} macro definition(s)", file=sys.stderr)
+
+        # Step 3b: Remove dangling usages of those macros (e.g., \tr, \solo)
+        cleaned, use_count = _remove_macro_escape_usages(cleaned)
+        if use_count > 0:
+            print(f"[engrave_strip] removed {use_count} macro usage(s)", file=sys.stderr)
+
+        # Step 4: Remove standalone markup/directive lines
+        cleaned, markup_count = _remove_standalone_markup_lines(cleaned)
+        if markup_count > 0:
+            print(f"[engrave_strip] pruned {markup_count} markup/directive groups", file=sys.stderr)
+
         # Apply light cleanup for syntax fixes
         cleaned = _light_cleanup(cleaned)
 
