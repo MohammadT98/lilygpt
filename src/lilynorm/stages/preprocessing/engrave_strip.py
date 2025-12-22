@@ -959,29 +959,22 @@ except Exception:
 
 
 def run(text: str, opts: NormOptions) -> str:
-    """
+    r"""
     Main entry point used by the lilynorm pipeline.
 
     If opts.keep_engraving is True, apply only light cleanup.
-    If False, the aggressive stripping is DISABLED because it breaks LilyPond syntax
-    by removing structural elements (layout blocks, macro definitions, markup contexts)
-    while leaving orphaned content. For ML training, structural removal should be
-    handled by a separate preprocessing stage that understands LilyPond document structure.
+    If False, remove \paper blocks for ML training (step 1 of gradual noise removal).
     """
     if getattr(opts, "keep_engraving", True):
         print("[engrave_strip] keeping engravings", file=sys.stderr)
         cleaned = _light_cleanup(text)
     else:
-        # TEMPORARY: Aggressive stripping is disabled due to syntax-breaking issues.
-        # It removes \markup, \layout contexts but leaves orphaned content.
-        # For now, just apply light cleanup even when keep_engraving=False.
-        print("[engrave_strip] aggressive stripping disabled (would break syntax)", file=sys.stderr)
-        cleaned = _light_cleanup(text)
-        
-        # TODO: Implement proper structure-aware stripping that:
-        # 1. Removes entire \paper, \header, \layout blocks (not just content)
-        # 2. Removes variable assignments (tr = \trill, etc.) 
-        # 3. Only strips inline markup/dynamics from music expressions
-        # 4. Preserves \score block structure
+        print("[engrave_strip] removing paper blocks for training", file=sys.stderr)
+        # Step 1: Remove \paper blocks (safe - self-contained blocks)
+        cleaned, paper_count = _remove_block_directive(text, "paper")
+        if paper_count > 0:
+            print(f"[engrave_strip] removed {paper_count} paper block(s)", file=sys.stderr)
+        # Apply light cleanup for syntax fixes
+        cleaned = _light_cleanup(cleaned)
 
     return cleaned
