@@ -256,6 +256,12 @@ RE_MARK = re.compile(r"(?:[-_^]\s*)?\\mark\b", re.I)
 # Performance instructions (soli, tutti, etc.) - treated as markup
 RE_PERFORMANCE_MARKS = re.compile(r"\\(?:soli|tu|solo|tutti)\b", re.I)
 
+# Dataset-specific custom commands that should be removed
+RE_CUSTOM_COMMANDS = re.compile(
+    r"\\(?:terzine|con|senza|mbreak|trasp|notrasp|typeset|notypeset|forma)\b",
+    re.I
+)
+
 DYNAMICS = (
     "ppppp|pppp|ppp|pp|p|mp|mf|f|ff|fff|ffff|fffff|fp|sf|sfz|sffz|rfz|fz|sfp|sff|sfpp|sfzp"
 )
@@ -673,18 +679,42 @@ def _strip_inline_patterns(
 
     # Overrides and related engraving commands
     if options.remove_overrides:
+        # IMPORTANT: Protect \layout, \midi, \paper, \header blocks from override removal
+        # These blocks are critical for output generation and should not be modified
+        protected_blocks = {}
+        text_protected = text
+        block_counter = 0
+        
+        # Extract all layout/midi/paper/header blocks
+        for directive in ("layout", "midi", "paper", "header"):
+            pattern = re.compile(rf"\\{directive}\s*\{{", re.M)
+            search_start = 0
+            
+            while True:
+                match = pattern.search(text_protected, search_start)
+                if not match:
+                    break
+                
+                brace_open_index = match.end() - 1
+                brace_close_index = _grab_balanced(text_protected, brace_open_index, "{", "}")
+                
+                if brace_close_index == -1:
+                    search_start = match.end()
+                    continue
+                
+                block_key = f"__PROTECTED_BLOCK_{block_counter}__"
+                protected_blocks[block_key] = text_protected[match.start():brace_close_index + 1]
+                text_protected = text_protected[:match.start()] + block_key + text_protected[brace_close_index + 1:]
+                block_counter += 1
+                search_start = match.start() + len(block_key)
+        
+        text = text_protected
+        
         # Remove \\with { ... } blocks
         updated_text, removed_with_blocks = _remove_with_blocks(text)
         if removed_with_blocks:
             text = updated_text
             counts["overrides"] += removed_with_blocks
-
-        # Remove layout/paper/header blocks
-        for directive in ("layout", "paper", "header"):
-            updated_text, removed_blocks = _remove_block_directive(text, directive)
-            if removed_blocks:
-                text = updated_text
-                counts["overrides"] += removed_blocks
 
         # Inline overrides/tweaks/shape/omit...
         for regex in RE_OVERRIDES:
@@ -692,6 +722,10 @@ def _strip_inline_patterns(
             if removed:
                 text = updated_text
                 counts["overrides"] += removed
+        
+        # Restore protected blocks
+        for block_key, block_content in protected_blocks.items():
+            text = text.replace(block_key, block_content)
 
     # Dynamics & hairpins
     if options.remove_dynamics:
@@ -702,6 +736,9 @@ def _strip_inline_patterns(
         text, removed_hairpins = RE_HAIRPINS.subn("", text)
         counts["hairpins"] += removed_hairpins
 
+    # Remove dataset-specific custom commands
+    text, removed_custom = RE_CUSTOM_COMMANDS.subn("", text)
+    
     # Clean up stranded attachment markers and lone \\once
     # But first protect Scheme expressions like #(set-default-paper-size "a4")
     # from having their hyphens removed
@@ -716,9 +753,26 @@ def _strip_inline_patterns(
 
     # Normalize empty assignments and remove empty blocks/assignments
     text = _collapse_empty_assignment_blocks(text)
+    
+    # Remove empty angle brackets created by content removal
+    text = re.sub(r"<<\s*>>", "", text)
+    
+    # Remove incomplete \new Voice/Lyrics declarations left after content removal
+    text = re.sub(r"(?m)^\\new\s+(?:Voice|Lyrics)\s*=\s*\"[^\"]*\"\s*$", "", text)
+    
+    # Remove incomplete \new Staff structures with no content
+    text = re.sub(r"\\new\s+(?:Staff|ChoirStaff|StaffGroup)\s*<<[^>]*>>", "", text)
+    
+    # Remove stray '>>' lines
+    text = re.sub(r"(?m)^\s*>>\s*$", "", text)
+    
+    # Now remove empty blocks and assignments after structure cleanup
     text = RE_EMPTY_BLOCK_LINE.sub("", text)
     text = RE_EMPTY_ASSIGNMENT_LINE.sub("", text)
+    
+    # Replace inline empty braces with space, but only if not part of an assignment
     text = RE_INLINE_EMPTY_BRACES.sub(" ", text)
+    
     text = RE_INCLUDE_TAG.sub("", text)
     text = RE_REPEATED_INCLUDE.sub("", text)
     text = RE_EMPTY_SCORES.sub("", text)
@@ -729,6 +783,36 @@ def _strip_inline_patterns(
 
     if PRUNE_SPACER_SUBVOICES:
         text = _prune_spacer_only_subvoices(text)
+    
+    # Remove orphaned closing braces that follow Scheme commands or page breaks
+    text = re.sub(r"(?m)(#\([^)]*\).*\n)\n*\}\s*$", r"\1", text, flags=re.MULTILINE)
+    text = re.sub(r"(?m)(\\pageBreak\s*\n)\n*\}\s*$", r"\1", text, flags=re.MULTILINE)
+    
+    # Remove orphaned direction symbols that appear on their own lines (up, down)
+    text = re.sub(r"(?m)^\s*(?:up|down)\s*$", "", text)
+    
+    # Remove broken assignments like "su = = up" (incomplete after macro removal)
+    text = re.sub(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*(?:=\s+|$)", r"\1 = {}", text)
+    
+    # Remove standalone "= something" lines that are broken remnants
+    text = re.sub(r"(?m)^\s*=\s+\w+\s*$", "", text)
+    
+    # Fix dotted note patterns with inherited durations in slurs
+    # Pattern: X8.(Y. Z. W.) -> X8(Y Z W)  (remove dots from notes that inherit duration)
+    text = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", text)
+    
+    # Fix dotted note runs with inherited durations
+    # Pattern: X16. Y. Z. W. X8 -> X16 Y Z W X8 (add explicit durations or remove inheriting dots)
+    text = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", text)
+    
+    # Fix broken figured bass notation: < on one line, alteration/number on next
+    # Pattern: < followed by newline and whitespace, then alteration/number and >
+    # Example: "<\n       ->" should become "<->"
+    text = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", text)
+    
+    # Fix \revert commands with missing dot before property
+    # Pattern: \revert Stem #'transparent -> \revert Stem.#'transparent
+    text = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", text)
 
     # Whitespace compaction
     if options.space_mode == "simple":
