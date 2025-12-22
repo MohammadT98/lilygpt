@@ -186,3 +186,25 @@ def run(
     resolved = re.sub(r'(^|\n)\s*\\version\s+"[^"]+"\s*', _keep_first_version, resolved, flags=re.MULTILINE)
     
     return resolved
+
+
+def split_on_multiple_forma(text: str) -> list[str]:
+    """Split a resolved LilyPond file into pieces if it defines multiple top-level `forma = { ... }` blocks.
+
+    The shared header (comments, \version, \language, includes already inlined) is kept in each piece to keep
+    outputs standalone. If only one `forma` exists, the original text is returned in a single-element list.
+    """
+    matches = list(re.finditer(r"(?m)^forma\s*=\s*\{", text))
+    if len(matches) <= 1:
+        return [text]
+
+    prefix = text[: matches[0].start()]
+    pieces: list[str] = []
+
+    for idx, match in enumerate(matches):
+        start = match.start()
+        end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
+        body = text[start:end]
+        pieces.append(prefix + body)
+
+    return pieces
