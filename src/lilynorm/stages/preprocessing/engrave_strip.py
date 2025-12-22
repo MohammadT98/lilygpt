@@ -20,7 +20,8 @@ PRUNE_SPACER_SUBVOICES = True
 DEFAULT_SPACE_MODE = "safe"
 
 # Toggle removal of \score/\layout/\midi wrappers (training-only noise).
-# Set to False per user request to keep layout/PDF compilation intact for now.
+# Set to False to keep layout blocks for PDF generation/verification.
+# Set to True for pure ML training to maximize noise removal.
 STRIP_SCORE_LAYOUT = False
 
 
@@ -683,57 +684,109 @@ def _remove_markup_assignments(text: str) -> Tuple[str, int]:
 
 
 def _remove_instrument_setters(text: str) -> Tuple[str, int]:
-    """Remove instrumentName/midiInstrument setters inside staff/voice blocks."""
+    """Remove instrumentName/midiInstrument setters inside staff/voice blocks.
+    
+    Handles cases like:
+      \\set Staff.instrumentName = \\markup\\center-column {"text"}
+      \\set Staff.midiInstrument = #"string"
+    """
     removed = 0
-    patterns = [
-        r"(?m)^\s*\\set\s+Staff\.instrumentName\b.*$",
-        r"(?m)^\s*\\set\s+Staff\.midiInstrument\b.*$",
-    ]
-    for pat in patterns:
-        before = text
-        text = re.sub(pat, "", text)
-        if text != before:
-            removed += 1
+    
+    # Remove midiInstrument first (simpler: just #"string")
+    pattern = r'\\set\s+Staff\.midiInstrument\s*=\s*#"[^"]*"'
+    count = len(re.findall(pattern, text))
+    text = re.sub(pattern, "", text)
+    removed += count
+    
+    # Remove instrumentName (more complex: has markup with nested braces)
+    # Use iterative approach to handle the markup expression
+    while True:
+        match = re.search(r'\\set\s+Staff\.instrumentName\s*=\s*', text)
+        if not match:
+            break
+        
+        start = match.start()
+        pos = match.end()
+        
+        # Skip whitespace
+        while pos < len(text) and text[pos] in ' \t\n\r':
+            pos += 1
+        
+        # Check for \markup
+        if text[pos:pos+7] == '\\markup':
+            pos += 7
+            # Skip whitespace
+            while pos < len(text) and text[pos] in ' \t\n\r':
+                pos += 1
+        
+        # Now handle the markup commands and braces
+        # Skip commands like \center-column, \huge, etc.
+        while pos < len(text) and text[pos] == '\\':
+            # Skip command
+            pos += 1
+            while pos < len(text) and (text[pos].isalnum() or text[pos] in '-_'):
+                pos += 1
+            # Skip whitespace
+            while pos < len(text) and text[pos] in ' \t\n\r':
+                pos += 1
+        
+        # Now handle the brace block or quoted string
+        if pos < len(text) and text[pos] == '{':
+            close_pos = _grab_balanced(text, pos, '{', '}')
+            if close_pos != -1:
+                pos = close_pos + 1
+        elif pos < len(text) and text[pos] == '"':
+            # Skip quoted string
+            pos += 1
+            while pos < len(text) and text[pos] != '"':
+                if text[pos] == '\\':
+                    pos += 2
+                else:
+                    pos += 1
+            if pos < len(text):
+                pos += 1
+        
+        # Remove from start to pos
+        text = text[:start] + text[pos:]
+        removed += 1
+    
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text, removed
 
 
 def _remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
-    """Remove variable assignments that are empty or have no meaningful value (leftover from content removal).
+    """Remove variable assignments that are empty (leftover from content removal).
     
-    Matches patterns like:
-    - `varname = { ... }` where only whitespace/newlines are inside braces
-    - `varname = ` with only whitespace after equals sign
-    
-    PRESERVES *global variables (Iglobal, IIglobal, etc.) as they're timing/structure placeholders
-    still referenced elsewhere in the file.
+    Also removes all references to those empty variables to avoid undefined references.
     
     Returns (cleaned_text, removed_count).
     """
     removed = 0
-    # Match variable assignment to a block with only whitespace inside braces
-    # But exclude *global variables (they're structural placeholders)
-    pattern1 = re.compile(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*\{[\n\s]*\}$")
     
-    def filter_global(match):
-        var_name = match.group(1)
-        # Keep *global variables
-        if var_name.lower().endswith('global'):
-            return match.group(0)  # Return unchanged
-        return ""  # Remove it
+    # Find all empty variable assignments: varname = { }
+    pattern = re.compile(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*\{[\n\s]*\}$")
+    matches = pattern.findall(text)
     
-    cleaned = pattern1.sub(filter_global, text)
-    # Count removals by checking how many were replaced with empty string
-    removed += len(pattern1.findall(text)) - len(pattern1.findall(cleaned))
+    if matches:
+        # For each empty variable, remove both definition and references
+        for var_name in matches:
+            # Remove the definition
+            def_pattern = re.compile(rf"(?m)^{re.escape(var_name)}\s*=\s*\{{[\n\s]*\}}$")
+            text, count = def_pattern.subn("", text)
+            if count > 0:
+                removed += count
+                # Remove all references to this variable (e.g., \Iglobal)
+                ref_pattern = re.compile(rf"\\{re.escape(var_name)}\b")
+                text = ref_pattern.sub("", text)
     
     # Match variable assignment with no value (just whitespace after =)
     pattern2 = re.compile(r"(?m)^[A-Za-z_][\w-]*\s*=\s*$")
-    cleaned, count2 = pattern2.subn("", cleaned)
+    text, count2 = pattern2.subn("", text)
     removed += count2
     
     # Clean up extra blank lines from removals
-    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-    return cleaned, removed
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text, removed
 
 
 def _light_cleanup(text: str) -> str:
