@@ -446,13 +446,15 @@ def main() -> int:
             )
 
             # Strip figuremode if requested
-            # When keeping engraving, also keep figures (they're referenced and required)
-            if not args.keep_figures and not args.keep_engraving:
-                normalized_text = FIGURE_ASSIGN_RE.sub("", normalized_text)
-                normalized_text = FIGURE_INLINE_RE.sub("", normalized_text)
-                normalized_text = normalized_text.replace("<figure>", "").replace(
-                    "</figure>", ""
-                )
+            # DISABLED: Stripping figured bass causes broken references when definitions
+            # are removed but usages remain (e.g., \Ibfn undefined after Ibfn = \figuremode {...} is stripped)
+            # For ML training, figured bass should be preserved as it contains harmonic information.
+            # if not args.keep_figures and not args.keep_engraving:
+            #     normalized_text = FIGURE_ASSIGN_RE.sub("", normalized_text)
+            #     normalized_text = FIGURE_INLINE_RE.sub("", normalized_text)
+            #     normalized_text = normalized_text.replace("<figure>", "").replace(
+            #         "</figure>", ""
+            #     )
 
             selected_voice = None
 
