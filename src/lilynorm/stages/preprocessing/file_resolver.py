@@ -172,5 +172,17 @@ def run(
     import re
     resolved = re.sub(r'-\+', ' ', resolved)      # Remove -+ (replace with space)
     resolved = re.sub(r'-(?=\\)', ' ', resolved)   # Remove - before \ (replace with space)
+
+    # Keep only the first \version declaration to avoid duplicates after inlining includes
+    version_seen = False
+
+    def _keep_first_version(match: re.Match) -> str:
+        nonlocal version_seen
+        if version_seen:
+            return ""
+        version_seen = True
+        return match.group(0)
+
+    resolved = re.sub(r'(^|\n)\s*\\version\s+"[^"]+"\s*', _keep_first_version, resolved, flags=re.MULTILINE)
     
     return resolved
