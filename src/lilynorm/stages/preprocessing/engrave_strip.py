@@ -878,9 +878,17 @@ def _light_cleanup(text: str) -> str:
         "fermopz",
         "terzinesenza",
         "terzinecon",
-        "tu",
+        # Note: "tu" removed from list - handled separately below due to whitespace issues
     )
+    
+    # Handle \tu separately - but NOT when it's part of \tuplet!
+    # Use negative lookahead to ensure we don't match \tuplet
+    text = re.sub(r"\\tu(?!plet)\s*", "", text)
+    
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
+    
+    # Fix scheme errors: ## { # } -> remove these malformed empty scheme blocks
+    text = re.sub(r"##\s*\{\s*#\s*\}", "", text)
     
     # DO NOT remove roman numeral variables like \Ibcn, \IIbfn, etc.
     # These are movement-specific music/figuremode assignments that hold actual content.
@@ -937,6 +945,10 @@ def _light_cleanup(text: str) -> str:
     # Remove text alignment directives like ^-align {\musicglyph ...}
     text = re.sub(r"[\^_-]*align\s*\\[A-Za-z]+\s*#\"[^\"]*\"", "", text)
     text = re.sub(r"[\^_-]*align\s*\{[^{}]*\}", "", text)
+    
+    # Remove malformed variable assignments where the variable name is a string (e.g., "|" = \bar "||")
+    # These break parsing completely
+    text = re.sub(r"^\s*\"[^\"]*\"\s*=.*$", "", text, flags=re.MULTILINE)
 
     # Clean malformed figured-bass brackets with stray +/- tokens (e.g., < +>, < - 6>)
     text = re.sub(r"<\s*[\+-]\s*>", "<>", text)
