@@ -550,6 +550,24 @@ def _light_cleanup(text: str) -> str:
     Avoids structural removals (lyrics, custom macros, empty blocks, spacer pruning),
     and only fixes syntax breakers we've seen in this dataset.
     """
+    # Remove unsupported custom commands (but NOT variable references!)
+    # These are standalone commands that break compilation
+    unsupported = (
+        "mbreak",
+        "trasp",
+        "notrasp",
+        "typeset",
+        "notypeset",
+        "forma",
+        "terzine",
+        "con",
+        "senza",
+    )
+    text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
+    
+    # DO NOT remove roman numeral variables like \Ibcn, \IIbfn, etc.
+    # These are movement-specific music/figuremode assignments that hold actual content.
+
     # Figured bass broken across lines: "<\n  ->" -> "<->"
     text = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", text)
 
@@ -585,10 +603,12 @@ def _final_cleanup(text: str) -> str:
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
     text = re.sub(r"\\(?:I|II|III|IV)[A-Za-z][\w-]*\b", "", text)
 
-    # Structural cleanups
+    # Structural cleanups - DISABLED: these patterns are too aggressive and destroy valid structures
+    # The [^>]* pattern is greedy and matches across actual music content
+    # Leaving only safe empty-block removal
     text = re.sub(r"<<\s*>>", "", text)
-    text = re.sub(r"\\new\s+(?:Staff|ChoirStaff|StaffGroup)\s*<<[^>]*>>", "", text)
-    text = re.sub(r"(?m)^\\new\s+(?:Voice|Lyrics)\s*=\s*\"[^\"]*\"\s*$", "", text)
+    # DISABLED: text = re.sub(r"\\new\s+(?:Staff|ChoirStaff|StaffGroup)\s*<<[^>]*>>", "", text)
+    # DISABLED: text = re.sub(r"(?m)^\\new\s+(?:Voice|Lyrics)\s*=\s*\"[^\"]*\"\s*$", "", text)
     text = re.sub(r"^[A-Za-z_][\w-]*\s*=\s*\{\s*\}", "", text, flags=re.MULTILINE)
     text = re.sub(r"(?ms)^[A-Za-z_][\w-]*\s*=\s*\{\s*(?:\\(?:clef|key|time)\s+[^\}]*\s*)*\}\s*$", "", text)
     text = re.sub(r"(?m)^\s*>>\s*$", "", text)
@@ -846,8 +866,8 @@ def _strip_inline_patterns(
     # Remove empty angle brackets created by content removal
     text = re.sub(r"<<\s*>>", "", text)
     
-    # Remove incomplete \new Voice/Lyrics declarations left after content removal
-    text = re.sub(r"(?m)^\\new\s+(?:Voice|Lyrics)\s*=\s*\"[^\"]*\"\s*$", "", text)
+    # DISABLED: Remove incomplete \new Voice/Lyrics declarations - pattern is too greedy
+    # text = re.sub(r"(?m)^\\new\s+(?:Voice|Lyrics)\s*=\s*\"[^\"]*\"\s*$", "", text)
     
     # Remove incomplete \new Staff structures with no content
     text = re.sub(r"\\new\s+(?:Staff|ChoirStaff|StaffGroup)\s*<<[^>]*>>", "", text)
@@ -942,36 +962,26 @@ def run(text: str, opts: NormOptions) -> str:
     """
     Main entry point used by the lilynorm pipeline.
 
-    If opts.keep_engraving is True, the function returns the input unchanged.
-    Otherwise it strips engraving information (overrides, markups, etc.) and
-    compacts the LilyPond source.
+    If opts.keep_engraving is True, apply only light cleanup.
+    If False, the aggressive stripping is DISABLED because it breaks LilyPond syntax
+    by removing structural elements (layout blocks, macro definitions, markup contexts)
+    while leaving orphaned content. For ML training, structural removal should be
+    handled by a separate preprocessing stage that understands LilyPond document structure.
     """
     if getattr(opts, "keep_engraving", True):
         print("[engrave_strip] keeping engravings", file=sys.stderr)
         cleaned = _light_cleanup(text)
     else:
-        # When we are actively stripping engravings, also drop empty assignments.
-        global DROP_EMPTY_ASSIGNMENTS
-        DROP_EMPTY_ASSIGNMENTS = True
-
-        strip_options = StripOptions(
-            remove_overrides=True,
-            remove_markups=True,
-            remove_marks=True,
-            remove_dynamics=True,
-            remove_hairpins=True,
-            remove_quotes=True,
-            space_mode=DEFAULT_SPACE_MODE,
-        )
-
-        cleaned, counts = clean_lilypond(text, strip_options)
-        print(
-            f"[engrave_strip] overrides:{counts['overrides']} "
-            f"markups:{counts['markups']} marks:{counts['marks']} "
-            f"dynamics:{counts['dynamics']} hairpins:{counts['hairpins']} "
-            f"quotes:{counts['quotes']}",
-            file=sys.stderr,
-        )
-        cleaned = _final_cleanup(cleaned)
+        # TEMPORARY: Aggressive stripping is disabled due to syntax-breaking issues.
+        # It removes \markup, \layout contexts but leaves orphaned content.
+        # For now, just apply light cleanup even when keep_engraving=False.
+        print("[engrave_strip] aggressive stripping disabled (would break syntax)", file=sys.stderr)
+        cleaned = _light_cleanup(text)
+        
+        # TODO: Implement proper structure-aware stripping that:
+        # 1. Removes entire \paper, \header, \layout blocks (not just content)
+        # 2. Removes variable assignments (tr = \trill, etc.) 
+        # 3. Only strips inline markup/dynamics from music expressions
+        # 4. Preserves \score block structure
 
     return cleaned
