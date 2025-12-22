@@ -136,123 +136,7 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
         stats["hairpins"] += stage3.count("\\<") + stage3.count("\\>")
         stats["quotes"] += stage3.count("\\quote")
 
-    # Cleanup: remove stray '+' tokens from legacy line-continuations revealed after stripping
-    # - Leading line pluses: "+ ..." -> removed
-    # - Isolated plus between spaces: " ... + ..." -> collapse
-    # - Plus glued before closers after a token: "la+)" -> "la)"
-    # - Plus immediately after a dot: "la8.+ sol16" -> "la8. sol16"
-    stage3 = re.sub(r"(?m)^\s*\+\s*", "", stage3)
-    stage3 = re.sub(r"(?<=\s)\+(?=\s)", "", stage3)
-    stage3 = re.sub(r"(?<=\w)\+(?=[)\]\}])", "", stage3)
-    stage3 = re.sub(r"(?<=\.)\+", "", stage3)
-
-    # Remove unsupported custom macros/tokens that may remain after stripping engravings.
-    # These are dataset-local directives that LilyPond doesn't recognize and should be dropped.
-    _unsupported_cmds = (
-        "mbreak",
-        "trasp",
-        "notrasp",
-        "typeset",
-        "notypeset",
-        "Voice",
-        "forma",
-        "terzine",
-        "con",
-        "senza",
-        "notrasp",
-    )
-    # Remove simple tokens (standalone or inline) like \mbreak, \trasp, etc.
-    stage3 = re.sub(r"\\(?:" + "|".join(_unsupported_cmds) + r")\b", "", stage3)
-    # Remove movement-local uppercase roman macros such as \Iglobal, \IIglobal, \Ivoce, \Ivocen, \IItesto
-    stage3 = re.sub(r"\\(?:I|II|III|IV)[A-Za-z][\w-]*\b", "", stage3)
-    
-    # Remove empty angle blocks left after macro removal: << >>
-    stage3 = re.sub(r"<<\s*>>", "", stage3)
-    
-    # Remove incomplete \new Staff << ... >> constructs left after content removal
-    # Pattern: \new Staff << (possibly \set commands) >> with no actual voice content
-    stage3 = re.sub(r"\\new\s+(?:Staff|ChoirStaff|StaffGroup)\s*<<[^>]*>>", "", stage3)
-    
-    # Remove incomplete \new Voice/Lyrics declarations left after macro content was stripped
-    # Pattern: \new Voice = "name" (standalone line with no music content following)
-    stage3 = re.sub(r"(?m)^\\new\s+(?:Voice|Lyrics)\s*=\s*\"[^\"]*\"\s*$", "", stage3)
-    
-    # Remove entire empty assignments created by macro removal: "Name = { ... }" where body is empty/whitespace
-    # Match the full block including the newlines: Name = {\n\n}\n
-    stage3 = re.sub(r"^[A-Za-z_][\w-]*\s*=\s*\{\s*\}", "", stage3, flags=re.MULTILINE)
-    
-    # Remove assignments that contain only \clef or other non-music commands (no actual notes)
-    # Pattern: Name = { \clef ... } where there's only \clef, \key, \time, whitespace inside
-    stage3 = re.sub(r"(?ms)^[A-Za-z_][\w-]*\s*=\s*\{\s*(?:\\(?:clef|key|time)\s+[^\}]*\s*)*\}\s*$", "", stage3)
-    
-    # Remove stray '>>' left after staff removal
-    stage3 = re.sub(r"(?m)^\s*>>\s*$", "", stage3)
-    
-    # Remove orphaned closing braces that typically appear after Scheme commands or page breaks
-    # Pattern: lines with only } that follow #(...) or \pageBreak patterns
-    stage3 = re.sub(r"(?m)(#\([^)]*\).*\n)\n*\}\s*$", r"\1", stage3, flags=re.MULTILINE)
-    stage3 = re.sub(r"(?m)(\\pageBreak\s*\n)\n*\}\s*$", r"\1", stage3, flags=re.MULTILINE)
-    
-    # Additional cleanup: remove any remaining standalone } lines at depth 0
-    # (simpler heuristic: just remove } that appear twice in succession or after specific markers)
-    stage3 = re.sub(r"(?m)^\}\s*\n\s*\}\s*$", "}", stage3, flags=re.MULTILINE)
-    
-    # Remove empty angle blocks left after macro removal: << >>
-    stage3 = re.sub(r"<<\s*>>", "", stage3)
-    
-    # Remove ONLY broken \score { >> \midi { ... } } blocks (with ONLY >> and layout/midi, no content)
-    # This pattern matches: \score { >> \layout/\midi { ... } }
-    # But NOT: \score { actual_content \layout { ... } }
-    stage3 = re.sub(r"(?s)\\score\s*\{\s*>>\s*(?:\\(?:midi|layout)\s*\{[^}]*\}\s*)*\}", "", stage3)
-    
-    # Additional '+' cleanup: remove plus glued to a token when followed by whitespace
-    stage3 = re.sub(r"(?<=\w)\+(?=\s|$)", "", stage3)
-    # Tidy up any double spaces created by removals
-    stage3 = re.sub(r"[ \t]{2,}", " ", stage3)
-    # Remove lines that became only whitespace
-    stage3 = re.sub(r"(?m)^\s+$", "", stage3)
-    # Collapse sequences of more than two blank lines
-    stage3 = re.sub(r"\n{3,}", "\n\n", stage3)
-    
-    # Remove orphaned direction symbols that appear on their own lines (up, down)
-    stage3 = re.sub(r"(?m)^\s*(?:up|down)\s*$", "", stage3)
-    
-    # Remove broken assignments like "su = = up" (incomplete after macro removal)
-    # Pattern: name = (with nothing valid following or broken continuation)
-    stage3 = re.sub(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*(?:=\s+|$)", r"\1 = {}", stage3)
-    
-    # Remove standalone "= something" lines that are broken remnants
-    stage3 = re.sub(r"(?m)^\s*=\s+\w+\s*$", "", stage3)
-    
-    # Fix dotted note patterns with inherited durations in slurs
-    # Pattern: X8.(Y. Z. W.) -> X8(Y Z W)  (remove dots from notes that inherit duration)
-    stage3 = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", stage3)
-    
-    # Fix dotted note runs with inherited durations
-    # Pattern: X16. Y. Z. W. X8 -> X16 Y Z W X8 (add explicit durations or remove inheriting dots)
-    stage3 = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", stage3)
-    
-    # Fix broken figured bass notation: < on one line, alteration/number on next
-    # Pattern: < followed by newline and whitespace, then alteration/number and >
-    # Example: "<\n       ->" should become "<->"
-    stage3 = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", stage3)
-    
-    # Fix \revert commands with missing dot before property
-    # Pattern: \revert Stem #'transparent -> \revert Stem.#'transparent
-    stage3 = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", stage3)
-    
-    # Fix unclosed or malformed version strings at file start
-    # Ensure version line ends with proper syntax
-    if stage3.startswith('version "'):
-        # Find closing quote for version string
-        quote_end = stage3.find('"', 9)  # Start search after 'version "'
-        if quote_end > 9:
-            # Keep version string as-is, just ensure it's complete
-            version_line = stage3[:quote_end + 1]
-            # Check if it has proper structure
-            if not version_line.rstrip().endswith('"'):
-                stage3 = version_line.rstrip() + '"' + stage3[quote_end:]
-
+    # Final cleanup now handled inside engraving stage
     return stage3
 
 
@@ -494,7 +378,7 @@ def main() -> int:
         norm_root = Path(normalized_out).expanduser().resolve()
         tok_root = Path(tokenized_out).expanduser().resolve()
 
-        opts = NormOptions()
+        opts = NormOptions(keep_engraving=True)
 
         processed = 0
         skipped = 0
