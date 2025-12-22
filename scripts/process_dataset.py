@@ -293,6 +293,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Preserve basso-figure (`\\figuremode`) blocks in normalized output.",
     )
     parser.add_argument(
+        "--keep-engraving",
+        action="store_true",
+        help="Preserve engraving directives. By default engraving is stripped.",
+    )
+    parser.add_argument(
         "--skip-tokenize",
         action="store_true",
         help="Do not produce GPT token files.",
@@ -378,7 +383,7 @@ def main() -> int:
         norm_root = Path(normalized_out).expanduser().resolve()
         tok_root = Path(tokenized_out).expanduser().resolve()
 
-        opts = NormOptions(keep_engraving=True)
+        opts = NormOptions(keep_engraving=args.keep_engraving)
 
         processed = 0
         skipped = 0
@@ -441,7 +446,8 @@ def main() -> int:
             )
 
             # Strip figuremode if requested
-            if not args.keep_figures:
+            # When keeping engraving, also keep figures (they're referenced and required)
+            if not args.keep_figures and not args.keep_engraving:
                 normalized_text = FIGURE_ASSIGN_RE.sub("", normalized_text)
                 normalized_text = FIGURE_INLINE_RE.sub("", normalized_text)
                 normalized_text = normalized_text.replace("<figure>", "").replace(
