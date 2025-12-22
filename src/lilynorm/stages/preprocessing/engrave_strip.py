@@ -911,6 +911,10 @@ def _light_cleanup(text: str) -> str:
 
     # Remove stray + characters that cling to notes (e.g., la+)
     text = re.sub(r"((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)\+", r"\1", text)
+    # Remove leading + tokens at line starts before notes
+    text = re.sub(r"(?m)^[ \t]*\+(?=\s*[a-gr])", "", text)
+    # Collapse standalone + or - tokens between whitespace
+    text = re.sub(r"\s+[\+-](?=\s)", " ", text)
 
     # Neutralize undefined wrapper blocks like <<\IIvlIn\forma>> or <<\IIbcn\forma\IIbfn>>
     # These are references to undefined variables that break compilation
@@ -920,6 +924,12 @@ def _light_cleanup(text: str) -> str:
     # Drop inline markup tokens that appear inside music lines (e.g., \markup {\musicglyph ...})
     # These are visual-only and can break parsing when left between notes.
     text = re.sub(r"\s*\\markup\s*\{[^{}]*\}", "", text, flags=re.DOTALL)
+
+    # Clean malformed figured-bass brackets with stray +/- tokens (e.g., < +>, < - 6>)
+    text = re.sub(r"<\s*[\+-]\s*>", "<>", text)
+    text = re.sub(r"<\s*[\+-]\s+(\d)", r"<\1", text)
+    text = re.sub(r"(\d)\s+[\+-]\s*>", r"\1>", text)
+    text = re.sub(r"(\d)\s+[\+-]\s+(\d)", r"\1 \2", text)
 
     # Ensure slur parentheses have spaces so tokens parse (mi( sol) -> mi( sol ) )
     text = re.sub(r"\((?=[a-grA-G])", "( ", text)
