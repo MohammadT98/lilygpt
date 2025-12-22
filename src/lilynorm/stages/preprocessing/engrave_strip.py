@@ -19,6 +19,10 @@ PRUNE_SPACER_SUBVOICES = True
 # Controls whitespace compaction strategy ("safe" or "simple").
 DEFAULT_SPACE_MODE = "safe"
 
+# Toggle removal of \score/\layout/\midi wrappers (training-only noise).
+# Set to False per user request to keep layout/PDF compilation intact for now.
+STRIP_SCORE_LAYOUT = False
+
 
 # ---------------------------------------------------------------------------
 # Core helpers
@@ -655,6 +659,29 @@ def _remove_macro_escape_usages(text: str) -> Tuple[str, int]:
     return updated, removed
 
 
+def _remove_markup_assignments(text: str) -> Tuple[str, int]:
+        """Remove variable assignments that are pure markup directives.
+
+        Example patterns:
+            - `name = \\markup ...`
+            - `name = _\\markup ...`
+
+        Returns (cleaned_text, removed_count).
+        """
+        removed = 0
+        # Match entire lines where RHS begins with optional '_' then \markup
+        pattern = re.compile(r"(?m)^\s*[A-Za-z_][\w-]*\s*=\s*_?\\markup\b.*$")
+        cleaned, n = pattern.subn("", text)
+        removed += n
+        # Also remove assignments to simple mark tokens like \mark "..." when used as pure assignment
+        pattern_mark = re.compile(r"(?m)^\s*[A-Za-z_][\w-]*\s*=\s*_?\\mark\b.*$")
+        cleaned, n2 = pattern_mark.subn("", cleaned)
+        removed += n2
+        # Squash extra blank lines from removals
+        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+        return cleaned, removed
+
+
 def _light_cleanup(text: str) -> str:
     """Minimal safety fixes used when engravings are kept.
 
@@ -1131,10 +1158,39 @@ def run(text: str, opts: NormOptions) -> str:
         if use_count > 0:
             print(f"[engrave_strip] removed {use_count} macro usage(s)", file=sys.stderr)
 
+        # Step 3c: Remove markup-only variable assignments (e.g., ds = _\markup ...)
+        cleaned, markup_assign_count = _remove_markup_assignments(cleaned)
+        if markup_assign_count > 0:
+            print(f"[engrave_strip] removed {markup_assign_count} markup assignment(s)", file=sys.stderr)
+
         # Step 4: Remove standalone markup/directive lines
         cleaned, markup_count = _remove_standalone_markup_lines(cleaned)
         if markup_count > 0:
             print(f"[engrave_strip] pruned {markup_count} markup/directive groups", file=sys.stderr)
+
+        # Step 5-6: Optionally remove \layout/\midi/\score blocks (disabled for now)
+        if STRIP_SCORE_LAYOUT:
+            cleaned, layout_count = _remove_block_directive(cleaned, "layout")
+            cleaned, midi_count = _remove_block_directive(cleaned, "midi")
+            if layout_count or midi_count:
+                print(f"[engrave_strip] removed layout={layout_count} midi={midi_count} block(s)", file=sys.stderr)
+
+            cleaned, score_count = _remove_block_directive(cleaned, "score")
+            if score_count:
+                print(f"[engrave_strip] removed {score_count} score block(s)", file=sys.stderr)
+        else:
+            print("[engrave_strip] keeping score/layout/midi blocks (PDF intact)", file=sys.stderr)
+
+        # Step 7: Remove inline engraving overrides/tweaks/shape/omit directives
+        # These are visual-only and introduce deprecation warnings; safe to drop for ML training.
+        overrides_removed_total = 0
+        for regex in RE_OVERRIDES:
+            updated_text, removed = regex.subn("", cleaned)
+            if removed:
+                cleaned = updated_text
+                overrides_removed_total += removed
+        if overrides_removed_total:
+            print(f"[engrave_strip] removed {overrides_removed_total} inline override/tweak directives", file=sys.stderr)
 
         # Apply light cleanup for syntax fixes
         cleaned = _light_cleanup(cleaned)
