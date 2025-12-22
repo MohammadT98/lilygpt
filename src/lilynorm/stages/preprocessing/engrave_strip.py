@@ -275,6 +275,57 @@ def _strip_inline_lyricmode(text: str) -> Tuple[str, int]:
     return "".join(output_parts), removed_count
 
 
+def _remove_custom_assignments(text: str) -> Tuple[str, int]:
+    """Remove dataset-specific helper assignments like `notrasp = ...` or `forma = {...}`.
+
+    Handles both single-line definitions and balanced-brace blocks. Returns (new_text, removed_count).
+    """
+    removed = 0
+    for name in CUSTOM_ASSIGNMENT_NAMES:
+        pattern = re.compile(rf"(?m)^\s*{re.escape(name)}\s*=\s*")
+        search_start = 0
+
+        while True:
+            m = pattern.search(text, search_start)
+            if not m:
+                break
+
+            assign_start = m.end()
+            # Skip whitespace after the equals sign
+            while assign_start < len(text) and text[assign_start] in " \t":
+                assign_start += 1
+
+            removal_end = assign_start
+            if assign_start < len(text) and text[assign_start] == "{":
+                close_idx = _grab_balanced(text, assign_start, "{", "}")
+                if close_idx != -1:
+                    removal_end = close_idx + 1
+                else:
+                    # Fallback: drop to end of line if braces are unbalanced
+                    nl = text.find("\n", assign_start)
+                    removal_end = len(text) if nl == -1 else nl
+            else:
+                nl = text.find("\n", assign_start)
+                removal_end = len(text) if nl == -1 else nl
+
+            # Also remove trailing newline if present
+            if removal_end < len(text) and text[removal_end] == "\n":
+                removal_end += 1
+
+            text = text[: m.start()] + text[removal_end:]
+            removed += 1
+            search_start = m.start()
+
+    return text, removed
+
+
+def _remove_metadata_headers(text: str) -> Tuple[str, int]:
+    """Drop header-style metadata lines that add noise for training (keep \language for pitch names)."""
+    pattern = re.compile(r"(?m)^\s*\\version\b.*$")
+    cleaned, removed = pattern.subn("", text)
+    return cleaned, removed
+
+
 # ---------------------------------------------------------------------------
 # Regex definitions
 # ---------------------------------------------------------------------------
@@ -306,8 +357,19 @@ RE_PERFORMANCE_MARKS = re.compile(r"\\(?:soli|tu|solo|tutti)\b", re.I)
 
 # Dataset-specific custom commands that should be removed
 RE_CUSTOM_COMMANDS = re.compile(
-    r"\\(?:terzine|con|senza|mbreak|trasp|notrasp|typeset|notypeset|forma)\b",
+    r"\\(?:terzine|con|senza|mbreak|trasp|notrasp|typeset|notypeset)\\b",
     re.I
+)
+
+CUSTOM_ASSIGNMENT_NAMES = (
+    "terzine",
+    "con",
+    "senza",
+    "mbreak",
+    "trasp",
+    "notrasp",
+    "typeset",
+    "notypeset",
 )
 
 DYNAMICS = (
@@ -1044,12 +1106,18 @@ def _strip_inline_patterns(
         "dynamics": 0,
         "hairpins": 0,
         "quotes": 0,
+        "metadata": 0,
+        "custom_assignments": 0,
     }
 
     # Attached quotes like ^"text"
     if options.remove_quotes:
         text, removed_quotes = RE_ATTACHED_QUOTES.subn("", text)
         counts["quotes"] += removed_quotes
+
+    # Header-like metadata
+    text, removed_headers = _remove_metadata_headers(text)
+    counts["metadata"] += removed_headers
 
     # \\markup and \\mark
     if options.remove_markups:
@@ -1127,8 +1195,11 @@ def _strip_inline_patterns(
         text, removed_hairpins = RE_HAIRPINS.subn("", text)
         counts["hairpins"] += removed_hairpins
 
-    # Remove dataset-specific custom commands
+    # Remove dataset-specific custom commands and their variable assignments (excluding \forma)
     text, removed_custom = RE_CUSTOM_COMMANDS.subn("", text)
+    counts["custom_assignments"] += removed_custom
+    text, removed_custom_assigns = _remove_custom_assignments(text)
+    counts["custom_assignments"] += removed_custom_assigns
     
     # Clean up stranded attachment markers and lone \\once
     # But first protect Scheme expressions like #(set-default-paper-size "a4")
