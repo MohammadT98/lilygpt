@@ -744,13 +744,14 @@ def _light_cleanup(text: str) -> str:
     """
     # Remove unsupported custom commands (but NOT variable references!)
     # These are standalone commands that break compilation
+    # NOTE: 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
     unsupported = (
         "mbreak",
         "trasp",
         "notrasp",
         "typeset",
         "notypeset",
-        "forma",
+        # "forma",  # REMOVED: contains \key and \time (key signatures) - essential for music
         "terzine",
         "con",
         "senza",
@@ -809,6 +810,7 @@ def _final_cleanup(text: str) -> str:
     Runs after engraving stripping (or directly if engravings are kept).
     """
     # Remove unsupported custom commands and movement-local roman macros
+    # NOTE: 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
     unsupported = (
         "mbreak",
         "trasp",
@@ -816,7 +818,7 @@ def _final_cleanup(text: str) -> str:
         "typeset",
         "notypeset",
         "Voice",
-        "forma",
+        # "forma",  # REMOVED: contains \key and \time (key signatures) - essential for music
         "terzine",
         "con",
         "senza",
@@ -832,7 +834,8 @@ def _final_cleanup(text: str) -> str:
     # DISABLED: text = re.sub(r"\\new\s+(?:Staff|ChoirStaff|StaffGroup)\s*<<[^>]*>>", "", text)
     # DISABLED: text = re.sub(r"(?m)^\\new\s+(?:Voice|Lyrics)\s*=\s*\"[^\"]*\"\s*$", "", text)
     text = re.sub(r"^[A-Za-z_][\w-]*\s*=\s*\{\s*\}", "", text, flags=re.MULTILINE)
-    text = re.sub(r"(?ms)^[A-Za-z_][\w-]*\s*=\s*\{\s*(?:\\(?:clef|key|time)\s+[^\}]*\s*)*\}\s*$", "", text)
+    # REMOVED: This pattern was removing variables with \key and \time which are MUSICAL STRUCTURE, not engraving!
+    # text = re.sub(r"(?ms)^[A-Za-z_][\w-]*\s*=\s*\{\s*(?:\\(?:clef|key|time)\s+[^\}]*\s*)*\}\s*$", "", text)
     text = re.sub(r"(?m)^\s*>>\s*$", "", text)
     text = re.sub(r"(?m)(#\([^)]*\).*\n)\n*\}\s*$", r"\1", text, flags=re.MULTILINE)
     text = re.sub(r"(?m)(\\pageBreak\s*\n)\n*\}\s*$", r"\1", text, flags=re.MULTILINE)
