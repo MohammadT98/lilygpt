@@ -293,9 +293,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Preserve basso-figure (`\\figuremode`) blocks in normalized output.",
     )
     parser.add_argument(
-        "--keep-engraving",
+        "--keep-compilable",
         action="store_true",
-        help="Preserve engraving directives. By default engraving is stripped.",
+        help="Keep files compilable with layout/midi/paper blocks. By default, files are stripped for ML training.",
     )
     parser.add_argument(
         "--skip-tokenize",
@@ -383,7 +383,7 @@ def main() -> int:
         norm_root = Path(normalized_out).expanduser().resolve()
         tok_root = Path(tokenized_out).expanduser().resolve()
 
-        opts = NormOptions(keep_engraving=args.keep_engraving)
+        opts = NormOptions(keep_engraving=args.keep_compilable)
 
         processed = 0
         skipped = 0
