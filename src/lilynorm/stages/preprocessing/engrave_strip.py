@@ -544,6 +544,25 @@ def _skip_markup_expression(source: str, index: int) -> int:
     return position if position > token_start else token_start + 1
 
 
+def _light_cleanup(text: str) -> str:
+    """Minimal safety fixes used when engravings are kept.
+
+    Avoids structural removals (lyrics, custom macros, empty blocks, spacer pruning),
+    and only fixes syntax breakers we've seen in this dataset.
+    """
+    # Figured bass broken across lines: "<\n  ->" -> "<->"
+    text = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", text)
+
+    # Dotted duration inheritance issues
+    text = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", text)
+    text = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", text)
+
+    # Missing dot in revert paths: \revert Stem #'transparent -> \revert Stem.#'transparent
+    text = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", text)
+
+    return text
+
+
 def _final_cleanup(text: str) -> str:
     """Dataset-tail cleanup that used to live in the driver.
 
@@ -929,7 +948,7 @@ def run(text: str, opts: NormOptions) -> str:
     """
     if getattr(opts, "keep_engraving", True):
         print("[engrave_strip] keeping engravings", file=sys.stderr)
-        cleaned = text
+        cleaned = _light_cleanup(text)
     else:
         # When we are actively stripping engravings, also drop empty assignments.
         global DROP_EMPTY_ASSIGNMENTS
@@ -953,7 +972,6 @@ def run(text: str, opts: NormOptions) -> str:
             f"quotes:{counts['quotes']}",
             file=sys.stderr,
         )
+        cleaned = _final_cleanup(cleaned)
 
-    # Always apply final dataset cleanup
-    cleaned = _final_cleanup(cleaned)
     return cleaned
