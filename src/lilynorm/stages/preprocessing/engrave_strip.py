@@ -875,6 +875,10 @@ def _light_cleanup(text: str) -> str:
         "terzine",
         "con",
         "senza",
+        "fermopz",
+        "terzinesenza",
+        "terzinecon",
+        "tu",
     )
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
     
@@ -923,7 +927,12 @@ def _light_cleanup(text: str) -> str:
 
     # Drop inline markup tokens that appear inside music lines (e.g., \markup {\musicglyph ...})
     # These are visual-only and can break parsing when left between notes.
-    text = re.sub(r"\s*\\markup\s*\{[^{}]*\}", "", text, flags=re.DOTALL)
+    # Handle nested braces by removing markup recursively
+    while re.search(r"\\markup\s*\{[^{}]*\}", text):
+        text = re.sub(r"\\markup\s*\{[^{}]*\}", "", text)
+    # Also remove simple inline markups without braces, e.g., \markup\italic"Tasto Solo"
+    text = re.sub(r"\\markup(?:\s*\\[A-Za-z]+)*\s*\"[^\"]*\"", "", text)
+    text = re.sub(r"\\markup(?:\s*\\[A-Za-z]+)+", "", text)
 
     # Clean malformed figured-bass brackets with stray +/- tokens (e.g., < +>, < - 6>)
     text = re.sub(r"<\s*[\+-]\s*>", "<>", text)
