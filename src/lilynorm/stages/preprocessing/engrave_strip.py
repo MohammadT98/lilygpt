@@ -902,6 +902,24 @@ def _light_cleanup(text: str) -> str:
     text = re.sub(r"\b((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)[_]+\b", r"\1", text)
     # More aggressive underscore stripping (covers cases next to punctuation/newlines)
     text = re.sub(r"((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)[_]+", r"\1", text)
+    # Remove standalone lyric underscores left as separate tokens
+    text = re.sub(r"\s+_\s+", " ", text)
+    # Remove underscore tokens that directly precede a note without trailing space (e.g., _mi)
+    text = re.sub(r"\s*_(?=(?:do|re|mi|fa|sol|la|si|[a-gr]))", " ", text)
+    # Final fallback: strip any remaining bare underscores
+    text = re.sub(r"_+", " ", text)
+
+    # Remove stray + characters that cling to notes (e.g., la+)
+    text = re.sub(r"((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)\+", r"\1", text)
+
+    # Neutralize undefined wrapper blocks like <<\IIvlIn\forma>> or <<\IIbcn\forma\IIbfn>>
+    # These are references to undefined variables that break compilation
+    # Use DOTALL to match across newlines, and allow zero or more spaces between elements
+    text = re.sub(r"<<\s*\\[A-Za-z0-9_]+(?:\s*\\forma)?(?:\s*\\[A-Za-z0-9_]+)?\s*>>", "{}", text, flags=re.DOTALL)
+
+    # Drop inline markup tokens that appear inside music lines (e.g., \markup {\musicglyph ...})
+    # These are visual-only and can break parsing when left between notes.
+    text = re.sub(r"\s*\\markup\s*\{[^{}]*\}", "", text, flags=re.DOTALL)
 
     # Ensure slur parentheses have spaces so tokens parse (mi( sol) -> mi( sol ) )
     text = re.sub(r"\((?=[a-grA-G])", "( ", text)
