@@ -660,26 +660,42 @@ def _remove_macro_escape_usages(text: str) -> Tuple[str, int]:
 
 
 def _remove_markup_assignments(text: str) -> Tuple[str, int]:
-        """Remove variable assignments that are pure markup directives.
+    """Remove variable assignments that are pure markup directives.
 
-        Example patterns:
-            - `name = \\markup ...`
-            - `name = _\\markup ...`
+    Example patterns:
+        - `name = \markup ...`
+        - `name = _\markup ...`
 
-        Returns (cleaned_text, removed_count).
-        """
-        removed = 0
-        # Match entire lines where RHS begins with optional '_' then \markup
-        pattern = re.compile(r"(?m)^\s*[A-Za-z_][\w-]*\s*=\s*_?\\markup\b.*$")
-        cleaned, n = pattern.subn("", text)
-        removed += n
-        # Also remove assignments to simple mark tokens like \mark "..." when used as pure assignment
-        pattern_mark = re.compile(r"(?m)^\s*[A-Za-z_][\w-]*\s*=\s*_?\\mark\b.*$")
-        cleaned, n2 = pattern_mark.subn("", cleaned)
-        removed += n2
-        # Squash extra blank lines from removals
-        cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
-        return cleaned, removed
+    Returns (cleaned_text, removed_count).
+    """
+    removed = 0
+    # Match entire lines where RHS begins with optional '_' then \markup
+    pattern = re.compile(r"(?m)^\s*[A-Za-z_][\w-]*\s*=\s*_?\\markup\b.*$")
+    cleaned, n = pattern.subn("", text)
+    removed += n
+    # Also remove assignments to simple mark tokens like \mark "..." when used as pure assignment
+    pattern_mark = re.compile(r"(?m)^\s*[A-Za-z_][\w-]*\s*=\s*_?\\mark\b.*$")
+    cleaned, n2 = pattern_mark.subn("", cleaned)
+    removed += n2
+    # Squash extra blank lines from removals
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned, removed
+
+
+def _remove_instrument_setters(text: str) -> Tuple[str, int]:
+    """Remove instrumentName/midiInstrument setters inside staff/voice blocks."""
+    removed = 0
+    patterns = [
+        r"(?m)^\s*\\set\s+Staff\.instrumentName\b.*$",
+        r"(?m)^\s*\\set\s+Staff\.midiInstrument\b.*$",
+    ]
+    for pat in patterns:
+        before = text
+        text = re.sub(pat, "", text)
+        if text != before:
+            removed += 1
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text, removed
 
 
 def _light_cleanup(text: str) -> str:
@@ -1162,6 +1178,11 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, markup_assign_count = _remove_markup_assignments(cleaned)
         if markup_assign_count > 0:
             print(f"[engrave_strip] removed {markup_assign_count} markup assignment(s)", file=sys.stderr)
+
+        # Step 4b: Remove instrument/midi setters in staff blocks
+        cleaned, inst_count = _remove_instrument_setters(cleaned)
+        if inst_count > 0:
+            print(f"[engrave_strip] removed {inst_count} instrument/midi setter group(s)", file=sys.stderr)
 
         # Step 4: Remove standalone markup/directive lines
         cleaned, markup_count = _remove_standalone_markup_lines(cleaned)
