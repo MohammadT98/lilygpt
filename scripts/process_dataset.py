@@ -12,6 +12,7 @@ try:
     from lilynorm.utils.options import NormOptions
     from lilynorm.stages import preprocessing
     from lilynorm.stages import tokenization as tokenize_gpt
+    from lilynorm.stages.preprocessing.file_resolver import split_on_multiple_forma
     from lilynorm.utils.formatting import format_full_text, format_example
 except ModuleNotFoundError:
     # Allow running the script directly from the repo without installing the package.
@@ -482,18 +483,24 @@ def main() -> int:
                         f"(removed {len(voice_blocks) - 1} voices)"
                     )
 
+            # Split files that embed multiple forma blocks into separate pieces
+            forma_pieces = split_on_multiple_forma(normalized_text)
+
             if args.dry_run:
                 processed += 1
                 continue
 
-            # Prepend \version directive to every output file (no extra quotes)
-            norm_path = norm_root / rel
-            norm_path.parent.mkdir(parents=True, exist_ok=True)
+            for idx, piece in enumerate(forma_pieces, start=1):
+                norm_path = norm_root / rel
+                if len(forma_pieces) > 1:
+                    norm_path = norm_path.with_stem(norm_path.stem + f"_part{idx}")
 
-            # Remove existing \version declarations, then add \version "2.24.4"
-            cleaned = re.sub(r'(^|\n)\\version\s+"[^"]+"\s*', "", normalized_text)
-            output_text = '\\version "2.24.4"\n' + cleaned.lstrip() + "\n"
-            norm_path.write_text(output_text, encoding="utf-8")
+                norm_path.parent.mkdir(parents=True, exist_ok=True)
+
+                # Remove existing \version declarations, then add \version "2.24.4"
+                cleaned = re.sub(r'(^|\n)\\version\s+"[^"]+"\s*', "", piece)
+                output_text = '\\version "2.24.4"\n' + cleaned.lstrip() + "\n"
+                norm_path.write_text(output_text, encoding="utf-8")
 
             # Tokenization output
             if not args.skip_tokenize:
