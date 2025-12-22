@@ -164,10 +164,13 @@ def run(
     # Fix common typo: set-defaultpaper-size -> set-default-paper-size
     resolved = resolved.replace("set-defaultpaper-size", "set-default-paper-size")
     
-    # Remove LilyPond line continuation markers (-+)
-    # These appear as mi8.-+ re16 in source and should become mi8. re16
-    # Replace -+ with space to preserve note separation (avoid "rere16" errors)
+    # Remove LilyPond line continuation markers
+    # Raw source patterns:
+    #   re4.-+ mib8        (hyphen-plus at line continuation)
+    #   re4.-\cmd -+ mib8  (hyphen before command AND hyphen-plus)
+    # After removing: should be re4. and re4. \cmd
     import re
-    resolved = re.sub(r'-\+', ' ', resolved)
+    resolved = re.sub(r'-\+', ' ', resolved)      # Remove -+ (replace with space)
+    resolved = re.sub(r'-(?=\\)', ' ', resolved)   # Remove - before \ (replace with space)
     
     return resolved
