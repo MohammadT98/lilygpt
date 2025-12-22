@@ -1,9 +1,12 @@
 @echo off
 REM Run normalization + tokenization + splitting
-REM This version keeps layout/midi blocks for PDF generation
+REM Keeps layout/midi/score blocks for PDF compilation
 
 setlocal
 pushd "%~dp0\.."
+
+REM Set environment variable to keep layout blocks
+set LILYNORM_KEEP_LAYOUT=1
 
 echo === Normalizing + Tokenizing Dataset (keeping layout for PDF) ===
 uv run python -m scripts.process_dataset --input "data/raw"
@@ -17,5 +20,4 @@ endlocal
 
 echo.
 echo === ALL DONE ===
-echo Normalized files retain layout/midi blocks and can be compiled to PDF
 pause
