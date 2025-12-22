@@ -1,5 +1,5 @@
 """Preprocessing stage: text normalization and cleaning."""
 
-from . import preparse, normalize, engrave_strip
+from . import file_resolver, preparse, normalize, engrave_strip
 
-__all__ = ["preparse", "normalize", "engrave_strip"]
+__all__ = ["file_resolver", "preparse", "normalize", "engrave_strip"]
