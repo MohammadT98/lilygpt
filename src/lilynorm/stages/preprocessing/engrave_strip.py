@@ -891,6 +891,22 @@ def _light_cleanup(text: str) -> str:
     # Missing dot in revert paths: \revert Stem #'transparent -> \revert Stem.#'transparent
     text = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", text)
 
+    # Strip stray \once that are not followed by a Lily command (breaks timed music)
+    text = RE_LONE_ONCE.sub("", text)
+
+    # Normalize legacy trill macro usages to the built-in command
+    text = re.sub(r"\\tr\b", r"\\trill", text)
+    text = re.sub(r"\\tr(?=[\\_])", r"\\trill", text)
+
+    # Remove lyric-style extenders that accidentally cling to note tokens (e.g., si_)
+    text = re.sub(r"\b((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)[_]+\b", r"\1", text)
+    # More aggressive underscore stripping (covers cases next to punctuation/newlines)
+    text = re.sub(r"((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)[_]+", r"\1", text)
+
+    # Ensure slur parentheses have spaces so tokens parse (mi( sol) -> mi( sol ) )
+    text = re.sub(r"\((?=[a-grA-G])", "( ", text)
+    text = re.sub(r"(?<=[a-gr0-9',])\)", " )", text)
+
     return text
 
 
