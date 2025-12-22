@@ -663,8 +663,8 @@ def _remove_markup_assignments(text: str) -> Tuple[str, int]:
     """Remove variable assignments that are pure markup directives.
 
     Example patterns:
-        - `name = \markup ...`
-        - `name = _\markup ...`
+        - `name = \\markup ...`
+        - `name = _\\markup ...`
 
     Returns (cleaned_text, removed_count).
     """
@@ -696,6 +696,44 @@ def _remove_instrument_setters(text: str) -> Tuple[str, int]:
             removed += 1
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text, removed
+
+
+def _remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
+    """Remove variable assignments that are empty or have no meaningful value (leftover from content removal).
+    
+    Matches patterns like:
+    - `varname = { ... }` where only whitespace/newlines are inside braces
+    - `varname = ` with only whitespace after equals sign
+    
+    PRESERVES *global variables (Iglobal, IIglobal, etc.) as they're timing/structure placeholders
+    still referenced elsewhere in the file.
+    
+    Returns (cleaned_text, removed_count).
+    """
+    removed = 0
+    # Match variable assignment to a block with only whitespace inside braces
+    # But exclude *global variables (they're structural placeholders)
+    pattern1 = re.compile(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*\{[\n\s]*\}$")
+    
+    def filter_global(match):
+        var_name = match.group(1)
+        # Keep *global variables
+        if var_name.lower().endswith('global'):
+            return match.group(0)  # Return unchanged
+        return ""  # Remove it
+    
+    cleaned = pattern1.sub(filter_global, text)
+    # Count removals by checking how many were replaced with empty string
+    removed += len(pattern1.findall(text)) - len(pattern1.findall(cleaned))
+    
+    # Match variable assignment with no value (just whitespace after =)
+    pattern2 = re.compile(r"(?m)^[A-Za-z_][\w-]*\s*=\s*$")
+    cleaned, count2 = pattern2.subn("", cleaned)
+    removed += count2
+    
+    # Clean up extra blank lines from removals
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned, removed
 
 
 def _light_cleanup(text: str) -> str:
@@ -739,9 +777,9 @@ def _remove_standalone_markup_lines(text: str) -> Tuple[str, int]:
     """Remove non-musical, standalone markup/directive lines.
 
     Targets lines that begin with layout-only commands, not embedded in music:
-    - \markup ..., \halign, \center-column, \musicglyph, \vspace
-    - \pageBreak, \pointAndClickOff
-    Note: Do NOT remove \language; pitch names (do, re, mi) depend on it.
+    - \\markup ..., \\halign, \\center-column, \\musicglyph, \\vspace
+    - \\pageBreak, \\pointAndClickOff
+    Note: Do NOT remove \\language; pitch names (do, re, mi) depend on it.
 
     Returns (cleaned_text, removed_count).
     """
@@ -1215,5 +1253,10 @@ def run(text: str, opts: NormOptions) -> str:
 
         # Apply light cleanup for syntax fixes
         cleaned = _light_cleanup(cleaned)
+        
+        # Final step: Remove empty variable assignments (leftovers from content stripping)
+        cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
+        if empty_var_count > 0:
+            print(f"[engrave_strip] removed {empty_var_count} empty variable assignment(s)", file=sys.stderr)
 
     return cleaned
