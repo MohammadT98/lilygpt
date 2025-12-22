@@ -38,7 +38,7 @@ def should_process(path: Path, text: str) -> bool:
     stem = path.stem.lower()
     
     for tag in NAME_BLACKLIST:
-        if stem == tag or stem.endswith(f"_{tag}") or f"_{tag}" in stem:
+        if stem == tag or stem.endswith(f"_{tag}"):
             return False
     
     # Only process files that have "score" in the name
