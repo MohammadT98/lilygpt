@@ -923,7 +923,8 @@ def _light_cleanup(text: str) -> str:
     # Neutralize undefined wrapper blocks like <<\IIvlIn\forma>> or <<\IIbcn\forma\IIbfn>>
     # These are references to undefined variables that break compilation
     # Use DOTALL to match across newlines, and allow zero or more spaces between elements
-    text = re.sub(r"<<\s*\\[A-Za-z0-9_]+(?:\s*\\forma)?(?:\s*\\[A-Za-z0-9_]+)?\s*>>", "{}", text, flags=re.DOTALL)
+    # Match 1-3 backslash identifiers
+    text = re.sub(r"<<\s*(?:\\[A-Za-z0-9_]+\s*){1,3}>>", "{}", text, flags=re.DOTALL)
 
     # Drop inline markup tokens that appear inside music lines (e.g., \markup {\musicglyph ...})
     # These are visual-only and can break parsing when left between notes.
@@ -933,6 +934,9 @@ def _light_cleanup(text: str) -> str:
     # Also remove simple inline markups without braces, e.g., \markup\italic"Tasto Solo"
     text = re.sub(r"\\markup(?:\s*\\[A-Za-z]+)*\s*\"[^\"]*\"", "", text)
     text = re.sub(r"\\markup(?:\s*\\[A-Za-z]+)+", "", text)
+    # Remove text alignment directives like ^-align {\musicglyph ...}
+    text = re.sub(r"[\^_-]*align\s*\\[A-Za-z]+\s*#\"[^\"]*\"", "", text)
+    text = re.sub(r"[\^_-]*align\s*\{[^{}]*\}", "", text)
 
     # Clean malformed figured-bass brackets with stray +/- tokens (e.g., < +>, < - 6>)
     text = re.sub(r"<\s*[\+-]\s*>", "<>", text)
