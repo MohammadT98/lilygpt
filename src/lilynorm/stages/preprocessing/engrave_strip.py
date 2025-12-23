@@ -1310,6 +1310,67 @@ def _remove_music_inline_strings(text: str) -> Tuple[str, int]:
     return cleaned, removed
 
 
+def _remove_empty_figuremode_blocks(text: str) -> Tuple[str, int]:
+    """Remove \\figuremode blocks that only contain layout directives (no figures)."""
+    removed = 0
+
+    assign_re = re.compile(r"(?m)^[ \t]*[A-Za-z_][\w-]*\s*=\s*\\figuremode\s*\{")
+    inline_re = re.compile(r"\\figuremode\s*\{")
+
+    def has_figures(content: str) -> bool:
+        if re.search(r"<[^>]*>", content):
+            return True
+        return bool(re.search(r"\b\d+\b", content))
+
+    def _strip_at(match_start: int, brace_start: int, is_assignment: bool) -> tuple[int, int] | None:
+        brace_end = _grab_balanced(text, brace_start, "{", "}")
+        if brace_end == -1:
+            return None
+        content = text[brace_start + 1:brace_end]
+        if has_figures(content):
+            return None
+        remove_start = match_start if is_assignment else brace_start
+        remove_end = brace_end + 1
+        while remove_end < len(text) and text[remove_end] == "\n":
+            remove_end += 1
+        return remove_start, remove_end
+
+    # First pass: assignment-style blocks
+    search_start = 0
+    while True:
+        match = assign_re.search(text, search_start)
+        if not match:
+            break
+        brace_start = match.end() - 1
+        removal = _strip_at(match.start(), brace_start, True)
+        if removal:
+            start, end = removal
+            text = text[:start] + text[end:]
+            removed += 1
+            search_start = start
+        else:
+            search_start = match.end()
+
+    # Second pass: inline \\figuremode blocks
+    search_start = 0
+    while True:
+        match = inline_re.search(text, search_start)
+        if not match:
+            break
+        brace_start = match.end() - 1
+        removal = _strip_at(match.start(), brace_start, False)
+        if removal:
+            start, end = removal
+            text = text[:start] + text[end:]
+            removed += 1
+            search_start = start
+        else:
+            search_start = match.end()
+
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text, removed
+
+
 def _final_cleanup(text: str) -> str:
     """Dataset-tail cleanup that used to live in the driver.
 
@@ -1794,6 +1855,10 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, inline_str_count = _remove_music_inline_strings(cleaned)
         if inline_str_count > 0:
             print(f"[engrave_strip] removed {inline_str_count} inline music string(s)", file=sys.stderr)
+
+        cleaned, figuremode_count = _remove_empty_figuremode_blocks(cleaned)
+        if figuremode_count > 0:
+            print(f"[engrave_strip] removed {figuremode_count} empty figuremode block(s)", file=sys.stderr)
 
         cleaned, empty_book_count = _remove_empty_block_directives(cleaned, ("bookpart", "book"))
         if empty_book_count > 0:
