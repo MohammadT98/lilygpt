@@ -512,6 +512,116 @@ def _prune_spacer_only_subvoices(text: str) -> str:
     return current
 
 
+def _remove_spacer_notes(text: str) -> Tuple[str, int]:
+    """
+    Remove standalone spacer notes (s1*, s2*, s4*, s8*, etc.) that are layout placeholders.
+    These are not real music content and add noise to training data.
+    
+    Note: Spacer notes in `forma` blocks (like `s1*59` for timing) are preserved
+    as they serve a musical purpose for tempo/metrical structure.
+    
+    Pattern matches: s1*59, s2*12, s4*8, s8*4, etc. (but not in forma blocks)
+    Also matches: s1, s2, s4, s8 (without multiplier) when standalone.
+    
+    Returns (cleaned_text, removed_count).
+    """
+    removed = 0
+    
+    # Protect spacer notes inside forma blocks (they're used for timing)
+    # Find forma blocks and temporarily replace them with placeholders
+    from lilynorm.stages.preprocessing.engrave_strip import _grab_balanced
+    
+    protected_blocks = {}
+    block_counter = 0
+    
+    # Find all forma blocks
+    forma_start_pattern = re.compile(r'forma\s*=\s*\{')
+    index = 0
+    
+    while index < len(text):
+        match = forma_start_pattern.search(text, index)
+        if not match:
+            break
+        
+        brace_start = match.end() - 1
+        brace_end = _grab_balanced(text, brace_start, "{", "}")
+        
+        if brace_end != -1:
+            block_key = f"__PROTECTED_FORMA_{block_counter}__"
+            protected_blocks[block_key] = text[match.start():brace_end + 1]
+            text = text[:match.start()] + block_key + text[brace_end + 1:]
+            block_counter += 1
+            index = match.start() + len(block_key)
+        else:
+            index = match.end()
+    
+    # Remove spacer notes with multipliers: s1*59, s2*12, etc. (outside forma blocks)
+    pattern1 = re.compile(r'\bs\d+[*]\d+\b')
+    text, count1 = pattern1.subn('', text)
+    removed += count1
+    
+    # Remove standalone spacer notes on their own lines: s1, s2, s4, s8, etc.
+    # But be careful not to remove them if they're part of actual music content
+    pattern2 = re.compile(r'(?m)^\s*\bs\d+[.\']*\s*$')
+    text, count2 = pattern2.subn('', text)
+    removed += count2
+    
+    # Remove spacer notes followed by newline or end of line (but preserve context)
+    # Pattern: "s8\n" or "s4 " at end of line
+    pattern3 = re.compile(r'\bs\d+[.\']*\s+(?=\n|$)')
+    text, count3 = pattern3.subn('', text)
+    removed += count3
+    
+    # Restore protected forma blocks
+    for block_key, block_content in protected_blocks.items():
+        text = text.replace(block_key, block_content)
+    
+    return text, removed
+
+
+def _compact_whitespace_aggressive(text: str) -> str:
+    """
+    Aggressively compact whitespace to reduce empty lines from ~25% to <10%.
+    
+    Rules:
+    - Remove more than 1 consecutive empty line (keep max 1)
+    - Preserve structure: keep 1 empty line between variable definitions and after closing braces
+    - Remove empty lines before closing braces
+    - Remove trailing empty lines
+    """
+    lines = text.split('\n')
+    output = []
+    prev_empty = False
+    prev_was_var_def = False
+    prev_was_closing_brace = False
+    
+    for i, line in enumerate(lines):
+        is_empty = not line.strip()
+        is_var_def = bool(re.match(r'^[A-Za-z_][\w-]*\s*=\s*\{', line))
+        is_closing_brace = line.strip() == '}'
+        
+        if is_empty:
+            # Only add empty line if:
+            # 1. Previous line wasn't empty (max 1 consecutive empty line)
+            # 2. Previous line was a variable definition or closing brace (preserve structure)
+            if not prev_empty and (prev_was_var_def or prev_was_closing_brace):
+                output.append('')
+            prev_empty = True
+            prev_was_var_def = False
+            prev_was_closing_brace = False
+        else:
+            output.append(line)
+            prev_empty = False
+            prev_was_var_def = is_var_def
+            prev_was_closing_brace = is_closing_brace
+    
+    # Remove trailing empty lines
+    while output and not output[-1].strip():
+        output.pop()
+    
+    return '\n'.join(output)
+
+
 def _compact_spaces_safe(text: str) -> str:
     """
     Compact whitespace conservatively, preserving line structure and avoiding
@@ -1504,10 +1614,19 @@ def run(text: str, opts: NormOptions) -> str:
     if getattr(opts, "keep_engraving", True):
         print("[engrave_strip] keeping engravings", file=sys.stderr)
         cleaned = _light_cleanup(text)
+        
+        # Remove spacer notes (layout placeholders, not real music)
+        cleaned, spacer_count = _remove_spacer_notes(cleaned)
+        if spacer_count > 0:
+            print(f"[engrave_strip] removed {spacer_count} spacer note(s)", file=sys.stderr)
+        
         # Remove empty variable assignments even when keeping engravings
         cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
         if empty_var_count > 0:
             print(f"[engrave_strip] removed {empty_var_count} empty variable assignment(s)", file=sys.stderr)
+        
+        # Aggressively compact whitespace to reduce noise
+        cleaned = _compact_whitespace_aggressive(cleaned)
     else:
         print("[engrave_strip] removing paper, top-level scheme, and common macros", file=sys.stderr)
         # Step 1: Remove \paper blocks (safe - self-contained blocks)
@@ -1515,27 +1634,32 @@ def run(text: str, opts: NormOptions) -> str:
         if paper_count > 0:
             print(f"[engrave_strip] removed {paper_count} paper block(s)", file=sys.stderr)
 
-        # Step 2: Remove top-level Scheme blocks (set-default-paper-size, set-global-staff-size, custom let)
+        # Step 2: Remove \header blocks (metadata not needed for ML training)
+        cleaned, header_count = _remove_block_directive(cleaned, "header")
+        if header_count > 0:
+            print(f"[engrave_strip] removed {header_count} header block(s)", file=sys.stderr)
+
+        # Step 3: Remove top-level Scheme blocks (set-default-paper-size, set-global-staff-size, custom let)
         cleaned, scheme_count = _remove_top_level_scheme_blocks(cleaned)
         if scheme_count > 0:
             print(f"[engrave_strip] removed {scheme_count} scheme block(s)", file=sys.stderr)
 
-        # Step 3: Remove common macro definitions (tr, dolce, pad, etc.)
+        # Step 4: Remove common macro definitions (tr, dolce, pad, etc.)
         cleaned, macro_count = _remove_common_macros(cleaned)
         if macro_count > 0:
             print(f"[engrave_strip] removed {macro_count} macro definition(s)", file=sys.stderr)
 
-        # Step 3b: Remove dangling usages of those macros (e.g., \tr, \solo)
+        # Step 4b: Remove dangling usages of those macros (e.g., \tr, \solo)
         cleaned, use_count = _remove_macro_escape_usages(cleaned)
         if use_count > 0:
             print(f"[engrave_strip] removed {use_count} macro usage(s)", file=sys.stderr)
 
-        # Step 3c: Remove markup-only variable assignments (e.g., ds = _\markup ...)
+        # Step 4c: Remove markup-only variable assignments (e.g., ds = _\markup ...)
         cleaned, markup_assign_count = _remove_markup_assignments(cleaned)
         if markup_assign_count > 0:
             print(f"[engrave_strip] removed {markup_assign_count} markup assignment(s)", file=sys.stderr)
 
-        # Step 3d: Remove dataset-specific helper commands and assignments (e.g., notrasp = ...)
+        # Step 4d: Remove dataset-specific helper commands and assignments (e.g., notrasp = ...)
         cleaned, removed_custom_cmds = RE_CUSTOM_COMMANDS.subn("", cleaned)
         cleaned, removed_custom_assigns = _remove_custom_assignments(cleaned)
         removed_custom = removed_custom_cmds + removed_custom_assigns
@@ -1583,9 +1707,17 @@ def run(text: str, opts: NormOptions) -> str:
         # Apply light cleanup for syntax fixes
         cleaned = _light_cleanup(cleaned)
         
+        # Remove spacer notes (layout placeholders, not real music)
+        cleaned, spacer_count = _remove_spacer_notes(cleaned)
+        if spacer_count > 0:
+            print(f"[engrave_strip] removed {spacer_count} spacer note(s)", file=sys.stderr)
+        
         # Final step: Remove empty variable assignments (leftovers from content stripping)
         cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
         if empty_var_count > 0:
             print(f"[engrave_strip] removed {empty_var_count} empty variable assignment(s)", file=sys.stderr)
+        
+        # Aggressively compact whitespace to reduce noise
+        cleaned = _compact_whitespace_aggressive(cleaned)
 
     return cleaned
