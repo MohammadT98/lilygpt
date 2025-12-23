@@ -159,34 +159,7 @@ def run(
     exclude_pattern = "variabili" if exclude_variabili else None
     resolver = FileResolver(base_dir, exclude_pattern=exclude_pattern)
 
-    resolved = resolver.resolve(file_path)
-    
-    # Fix common typo: set-defaultpaper-size -> set-default-paper-size
-    resolved = resolved.replace("set-defaultpaper-size", "set-default-paper-size")
-    
-    # Remove LilyPond line continuation markers
-    # Raw source patterns:
-    #   re4.-+ mib8        (hyphen-plus at line continuation)
-    #   re4.-\cmd -+ mib8  (hyphen before command AND hyphen-plus)
-    # After removing: should be re4. and re4. \cmd
-    import re
-    resolved = re.sub(r'-\+', ' ', resolved)      # Remove -+ (replace with space)
-    resolved = re.sub(r'-(?=\\)', ' ', resolved)   # Remove - before \ (replace with space)
-
-    # Keep only the first \version declaration to avoid duplicates after inlining includes
-    version_seen = False
-
-    def _keep_first_version(match: re.Match) -> str:
-        nonlocal version_seen
-        if version_seen:
-            # Preserve the leading newline (if any) so lines don't get glued together.
-            return match.group(1)
-        version_seen = True
-        return match.group(0)
-
-    resolved = re.sub(r'(^|\n)\s*\\version\s+"[^"]+"\s*', _keep_first_version, resolved, flags=re.MULTILINE)
-    
-    return resolved
+    return resolver.resolve(file_path)
 
 
 def split_on_multiple_forma(text: str) -> list[str]:
@@ -199,13 +172,31 @@ def split_on_multiple_forma(text: str) -> list[str]:
     if len(matches) <= 1:
         return [text]
 
+    def _find_matching_brace(source: str, open_index: int) -> int:
+        depth = 0
+        for idx in range(open_index, len(source)):
+            char = source[idx]
+            if char == "{":
+                depth += 1
+            elif char == "}":
+                depth -= 1
+                if depth == 0:
+                    return idx
+        return -1
+
     prefix = text[: matches[0].start()]
     pieces: list[str] = []
+
+    last_match = matches[-1]
+    last_open_index = last_match.end() - 1
+    last_close_index = _find_matching_brace(text, last_open_index)
+    suffix_after_last = text[last_close_index + 1 :] if last_close_index != -1 else ""
 
     for idx, match in enumerate(matches):
         start = match.start()
         end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
         body = text[start:end]
-        pieces.append(prefix + body)
+        # Keep shared tail content (e.g., score blocks) for every piece.
+        pieces.append(prefix + body + suffix_after_last)
 
     return pieces
