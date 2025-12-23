@@ -168,6 +168,10 @@ def split_on_multiple_forma(text: str) -> list[str]:
     The shared header (comments, \version, \language, includes already inlined) is kept in each piece to keep
     outputs standalone. If only one `forma` exists, the original text is returned in a single-element list.
     """
+    # Normalize version declarations to a single 2.24.4 header.
+    text = re.sub(r'(?m)^\\version\\s+"[^"]+"\\s*\\n?', "", text)
+    text = '\\version "2.24.4"\\n' + text.lstrip()
+
     matches = list(re.finditer(r"(?m)^forma\s*=\s*\{", text))
     if len(matches) <= 1:
         return [text]
