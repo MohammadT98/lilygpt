@@ -179,7 +179,8 @@ def run(
     def _keep_first_version(match: re.Match) -> str:
         nonlocal version_seen
         if version_seen:
-            return ""
+            # Preserve the leading newline (if any) so lines don't get glued together.
+            return match.group(1)
         version_seen = True
         return match.group(0)
 
