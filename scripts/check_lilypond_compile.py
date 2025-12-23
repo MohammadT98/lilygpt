@@ -70,6 +70,8 @@ def _run_lilypond(lily_cmd: str, ly_file: Path, timeout: int) -> subprocess.Comp
             cmd,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="ignore",
             timeout=timeout,
             cwd=None,
         )
