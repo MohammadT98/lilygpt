@@ -932,6 +932,7 @@ def _light_cleanup(text: str) -> str:
     text = re.sub(r'^[a-z]+\s*=\s*\^\s*$', '', text, flags=re.MULTILINE)
     text = re.sub(r'^[a-z]+\s*=\s*\^\s*\{[^}]*\}\s*$', '', text, flags=re.MULTILINE)
     text = re.sub(r'^[a-z]+\s*=\s*\^\{[^}]*\}\s*$', '', text, flags=re.MULTILINE)
+    
     # Remove underscore tokens that directly precede a note without trailing space (e.g., _mi)
     text = re.sub(r"\s*_(?=(?:do|re|mi|fa|sol|la|si|[a-gr]))", " ", text)
     # Final fallback: strip any remaining bare underscores
@@ -943,6 +944,20 @@ def _light_cleanup(text: str) -> str:
     text = re.sub(r"(?m)^[ \t]*\+(?=\s*[a-gr])", "", text)
     # Collapse standalone + or - tokens between whitespace
     text = re.sub(r"\s+[\+-](?=\s)", " ", text)
+    
+    # Fix repeating note patterns: Note^ followed by same/different note (NOTENAME_PITCH error)
+    # Pattern: "mi^ la la" -> "mi la la" (remove the ^ articulation that confuses the parser)
+    text = re.sub(r"(\b(?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)\^\s+(?=(?:do|re|mi|fa|sol|la|si|[a-gr]))", r"\1 ", text)
+    
+    # Remove \vspace from middle of markup strings
+    text = re.sub(r'"\\\\vspace[^"]*', r'"', text)
+    
+    # Add \tasto to unsupported list (remove it like other unknown commands)
+    text = re.sub(r"\\\\tasto\b", "", text)
+    
+    # Fix figured bass figure alteration errors: < !> -> remove the !>
+    # Pattern: "< !>2." becomes "<>2."
+    text = re.sub(r"<\s*!\s*>", "<>", text)
 
     # Neutralize undefined wrapper blocks like <<\IIvlIn\forma>> or <<\IIbcn\forma\IIbfn>>
     # These are references to undefined variables that break compilation
