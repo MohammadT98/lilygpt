@@ -1391,11 +1391,19 @@ def _final_cleanup(text: str) -> str:
         "con",
         "senza",
         "notrasp",
+        "etc",
     )
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
     # Strip leftover markup tokens that can survive markup removal and break parsing
-    text = re.sub(r"\\(?:super|bold|italic|center-align)\b", "", text)
+    text = re.sub(
+        r"\\(?:super|bold|italic|center-align|column|musicglyph|parentSlur|fill-line|smaller)\b",
+        "",
+        text,
+    )
     text = re.sub(r"\\(?:I|II|III|IV)[A-Za-z][\w-]*\b", "", text)
+    # Remove stray numeric identifier lines (e.g., leftover movement labels)
+    text = re.sub(r"(?m)^\s*\d+\s*$", "", text)
+    text = re.sub(r"(?m)^\s*\d+\.\s*$", "", text)
 
     # Structural cleanups - DISABLED: these patterns are too aggressive and destroy valid structures
     # The [^>]* pattern is greedy and matches across actual music content
@@ -1786,6 +1794,7 @@ def run(text: str, opts: NormOptions) -> str:
         
         # Aggressively compact whitespace to reduce noise
         cleaned = _compact_whitespace_aggressive(cleaned)
+        cleaned = _final_cleanup(cleaned)
     else:
         print("[engrave_strip] removing paper, top-level scheme, and common macros", file=sys.stderr)
         # Step 1: Remove \paper blocks (safe - self-contained blocks)
@@ -1914,5 +1923,6 @@ def run(text: str, opts: NormOptions) -> str:
         
         # Aggressively compact whitespace to reduce noise
         cleaned = _compact_whitespace_aggressive(cleaned)
+        cleaned = _final_cleanup(cleaned)
 
     return cleaned
