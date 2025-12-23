@@ -1151,6 +1151,8 @@ def _light_cleanup(text: str) -> str:
     # Fix \tempo with malformed arguments: "\tempo 2. = 60" (should be "\tempo 2.=60" or removed)
     # Remove tempo marks that have syntax issues
     text = re.sub(r"\\\\tempo\s+[^=]+=\s*\d+", "", text)
+    # Remove bare \bar commands that have no argument (invalid LilyPond)
+    text = re.sub(r"(?m)^\s*\\bar\s*$", "", text)
     # Final fallback: strip any remaining bare underscores
     text = re.sub(r"_+", " ", text)
 
