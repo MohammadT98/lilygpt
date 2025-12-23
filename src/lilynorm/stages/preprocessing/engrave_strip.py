@@ -1253,6 +1253,14 @@ def _remove_standalone_quoted_lines(text: str) -> Tuple[str, int]:
     return cleaned, removed
 
 
+def _remove_standalone_braced_text_lines(text: str) -> Tuple[str, int]:
+    """Remove lines that are just { ... } with no Lily commands (leftover labels)."""
+    pattern = re.compile(r"(?m)^\s*\{\s*[^\\{}]*\s*\}\s*$")
+    cleaned, removed = pattern.subn("", text)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned, removed
+
+
 def _remove_empty_block_directives(text: str, directives: Tuple[str, ...]) -> Tuple[str, int]:
     """Remove empty \\directive { } blocks (whitespace only inside)."""
     removed = 0
@@ -1778,6 +1786,10 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, quote_line_count = _remove_standalone_quoted_lines(cleaned)
         if quote_line_count > 0:
             print(f"[engrave_strip] removed {quote_line_count} standalone quoted line(s)", file=sys.stderr)
+
+        cleaned, braced_text_count = _remove_standalone_braced_text_lines(cleaned)
+        if braced_text_count > 0:
+            print(f"[engrave_strip] removed {braced_text_count} standalone braced text line(s)", file=sys.stderr)
 
         cleaned, inline_str_count = _remove_music_inline_strings(cleaned)
         if inline_str_count > 0:
