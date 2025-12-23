@@ -1251,6 +1251,17 @@ def _remove_standalone_quoted_lines(text: str) -> Tuple[str, int]:
     return cleaned, removed
 
 
+def _remove_empty_block_directives(text: str, directives: Tuple[str, ...]) -> Tuple[str, int]:
+    """Remove empty \\directive { } blocks (whitespace only inside)."""
+    removed = 0
+    for directive in directives:
+        pattern = re.compile(rf"(?s)\\{directive}\s*\{{\s*\}}")
+        text, n = pattern.subn("", text)
+        removed += n
+    text = re.sub(r"\n{3,}", "\n\n", text)
+    return text, removed
+
+
 def _final_cleanup(text: str) -> str:
     """Dataset-tail cleanup that used to live in the driver.
 
@@ -1728,6 +1739,10 @@ def run(text: str, opts: NormOptions) -> str:
         if quote_line_count > 0:
             print(f"[engrave_strip] removed {quote_line_count} standalone quoted line(s)", file=sys.stderr)
 
+        cleaned, empty_book_count = _remove_empty_block_directives(cleaned, ("bookpart", "book"))
+        if empty_book_count > 0:
+            print(f"[engrave_strip] removed {empty_book_count} empty book block(s)", file=sys.stderr)
+
         # Step 5-6: Remove \layout/\midi/\score blocks for pure ML training
         if STRIP_SCORE_LAYOUT:
             cleaned, layout_count = _remove_block_directive(cleaned, "layout")
@@ -1738,6 +1753,10 @@ def run(text: str, opts: NormOptions) -> str:
             cleaned, score_count = _remove_block_directive(cleaned, "score")
             if score_count:
                 print(f"[engrave_strip] removed {score_count} score block(s)", file=sys.stderr)
+
+            cleaned, empty_book_count = _remove_empty_block_directives(cleaned, ("bookpart", "book"))
+            if empty_book_count > 0:
+                print(f"[engrave_strip] removed {empty_book_count} empty book block(s)", file=sys.stderr)
         else:
             print("[engrave_strip] keeping score/layout/midi blocks (PDF intact)", file=sys.stderr)
 
