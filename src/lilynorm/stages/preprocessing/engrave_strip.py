@@ -880,6 +880,9 @@ def _light_cleanup(text: str) -> str:
         "terzinecon",
         "pizz",
         "arco",
+        "fort",
+        "staccatissimo",
+        "tasto",
         # Note: "tu" removed from list - handled separately below due to whitespace issues
     )
     
@@ -952,8 +955,7 @@ def _light_cleanup(text: str) -> str:
     # Remove \vspace from middle of markup strings
     text = re.sub(r'"\\\\vspace[^"]*', r'"', text)
     
-    # Add \tasto to unsupported list (remove it like other unknown commands)
-    text = re.sub(r"\\\\tasto\b", "", text)
+    # Note: \tasto, \fort, \staccatissimo now in unsupported list above
     
     # Fix figured bass figure alteration errors: < !> -> remove the !>
     # Pattern: "< !>2." becomes "<>2."
@@ -962,6 +964,11 @@ def _light_cleanup(text: str) -> str:
     # Remove problematic one-liners: variable = articulation (^ or ^-align or ^\markup)
     # These break compilation: "presto = ^ ", "ts = ^", etc.
     text = re.sub(r'^[a-z]+\s*=\s*\^(?:-align\s+"[^"]*"|\\\\markup)?\s*(?:\{[^}]*\})?\s*$', '', text, flags=re.MULTILINE)
+    
+    # Remove completely malformed variable assignments with = (appear as orphaned lines)
+    # These are variables like "Ibfn = \figuremode { ... }" that appear mid-file with syntax errors
+    # Match only if they're isolated variable definitions (not inside music content)
+    text = re.sub(r'^[A-Za-z_][A-Za-z0-9_]*\s*=\s*(?:\\\\(?:relative|figuremode|set|clef)|\\{).*?^(?=\}|[A-Za-z]|\s*$)', '', text, flags=re.MULTILINE | re.DOTALL)
 
     # Neutralize undefined wrapper blocks like <<\IIvlIn\forma>> or <<\IIbcn\forma\IIbfn>>
     # These are references to undefined variables that break compilation
