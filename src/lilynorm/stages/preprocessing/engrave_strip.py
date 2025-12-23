@@ -878,6 +878,8 @@ def _light_cleanup(text: str) -> str:
         "fermopz",
         "terzinesenza",
         "terzinecon",
+        "pizz",
+        "arco",
         # Note: "tu" removed from list - handled separately below due to whitespace issues
     )
     
@@ -916,6 +918,20 @@ def _light_cleanup(text: str) -> str:
     text = re.sub(r"((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)[_]+", r"\1", text)
     # Remove standalone lyric underscores left as separate tokens
     text = re.sub(r"\s+_\s+", " ", text)
+    
+    # Fix invalid note name 'x' at end of line (percussion/cross-staff notation)
+    # Pattern: "sold,2x" -> "sold,2 do"
+    text = re.sub(r"(\b[a-z]+[',]*,?)2\s*x\b", r"\1 2 do", text)
+    
+    # Fix figured bass broken syntax: '+[' and variants
+    text = re.sub(r"\s*\+\[", " \\\\[ ", text)
+    text = re.sub(r"\s*\+\]", " \\\\] ", text)
+    
+    # Remove malformed variable assignments with -align, empty markup, or ^{ patterns
+    text = re.sub(r'^[a-z]+\s*=\s*\^-align\s+"[^"]*"\s*$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^[a-z]+\s*=\s*\^\s*$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^[a-z]+\s*=\s*\^\s*\{[^}]*\}\s*$', '', text, flags=re.MULTILINE)
+    text = re.sub(r'^[a-z]+\s*=\s*\^\{[^}]*\}\s*$', '', text, flags=re.MULTILINE)
     # Remove underscore tokens that directly precede a note without trailing space (e.g., _mi)
     text = re.sub(r"\s*_(?=(?:do|re|mi|fa|sol|la|si|[a-gr]))", " ", text)
     # Final fallback: strip any remaining bare underscores
