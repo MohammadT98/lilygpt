@@ -866,18 +866,43 @@ def _remove_markup_assignments(text: str) -> Tuple[str, int]:
     Example patterns:
         - `name = \\markup ...`
         - `name = _\\markup ...`
+        - `name = ^\\markup { ... }`
 
     Returns (cleaned_text, removed_count).
     """
     removed = 0
-    # Match entire lines where RHS begins with optional '_' then \markup
-    pattern = re.compile(r"(?m)^\s*[A-Za-z_][\w-]*\s*=\s*_?\\markup\b.*$")
-    cleaned, n = pattern.subn("", text)
-    removed += n
+    output_parts: List[str] = []
+    search_start = 0
+
+    pattern = re.compile(
+        r"(?m)^[ \t]*[A-Za-z_][\w-]*\s*=\s*(?:[-_^]\s*)?\\markup\b"
+    )
+
+    while True:
+        match = pattern.search(text, search_start)
+        if not match:
+            output_parts.append(text[search_start:])
+            break
+
+        output_parts.append(text[search_start:match.start()])
+        after_markup = match.end()
+
+        end_index = _skip_markup_expression(text, after_markup)
+        while end_index < len(text) and text[end_index] in " \t\r":
+            end_index += 1
+        if end_index < len(text) and text[end_index] == "\n":
+            end_index += 1
+
+        removed += 1
+        search_start = end_index
+
+    cleaned = "".join(output_parts)
+
     # Also remove assignments to simple mark tokens like \mark "..." when used as pure assignment
     pattern_mark = re.compile(r"(?m)^\s*[A-Za-z_][\w-]*\s*=\s*_?\\mark\b.*$")
     cleaned, n2 = pattern_mark.subn("", cleaned)
     removed += n2
+
     # Squash extra blank lines from removals
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
     return cleaned, removed
@@ -1214,6 +1239,14 @@ def _remove_standalone_markup_lines(text: str) -> Tuple[str, int]:
     # Collapse excessive blank lines introduced by removals
     text = re.sub(r"\n{3,}", "\n\n", text)
     return text, removed
+
+
+def _remove_standalone_quoted_lines(text: str) -> Tuple[str, int]:
+    """Remove lines that are just quoted strings (often leftover from markup stripping)."""
+    pattern = re.compile(r'(?m)^\s*"[^\n"]*"\s*$')
+    cleaned, removed = pattern.subn("", text)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned, removed
 
 
 def _final_cleanup(text: str) -> str:
@@ -1666,6 +1699,11 @@ def run(text: str, opts: NormOptions) -> str:
         if removed_custom:
             print(f"[engrave_strip] removed {removed_custom} custom helper definition(s)", file=sys.stderr)
 
+        # Step 4e: Remove remaining inline markups (textual ornaments, directions)
+        cleaned, inline_markup_count = _eat_after_keyword(cleaned, RE_MARKUP, deep_markup=True)
+        if inline_markup_count:
+            print(f"[engrave_strip] removed {inline_markup_count} inline markup token(s)", file=sys.stderr)
+
         # Step 4b: Remove instrument/midi setters in staff blocks
         cleaned, inst_count = _remove_instrument_setters(cleaned)
         if inst_count > 0:
@@ -1675,6 +1713,10 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, markup_count = _remove_standalone_markup_lines(cleaned)
         if markup_count > 0:
             print(f"[engrave_strip] pruned {markup_count} markup/directive groups", file=sys.stderr)
+
+        cleaned, quote_line_count = _remove_standalone_quoted_lines(cleaned)
+        if quote_line_count > 0:
+            print(f"[engrave_strip] removed {quote_line_count} standalone quoted line(s)", file=sys.stderr)
 
         # Step 5-6: Remove \layout/\midi/\score blocks for pure ML training
         if STRIP_SCORE_LAYOUT:
