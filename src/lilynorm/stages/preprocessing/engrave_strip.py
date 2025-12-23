@@ -396,6 +396,8 @@ RE_HAIRPINS = re.compile(
     r"\\[<>!]|\\(?:cresc|decresc|decr|dim|crescendo|diminuendo)\b", re.I
 )
 RE_ATTACHED_QUOTES = re.compile(r"(?:[-_^]\s*)\"[^\"]*\"")
+# Quotes attached directly to a token (e.g., r8"Sempre piano")
+RE_INLINE_QUOTES = re.compile(r'(?<=\S)"[^"\n]*"')
 RE_LYRIC_ASSIGN = re.compile(
     r"(?m)(^\s*[A-Za-z_@][\w@]*\s*=\s*)\\lyricmode\s*\{"
 )
@@ -1439,7 +1441,8 @@ def _strip_inline_patterns(
     # Attached quotes like ^"text"
     if options.remove_quotes:
         text, removed_quotes = RE_ATTACHED_QUOTES.subn("", text)
-        counts["quotes"] += removed_quotes
+        text, removed_inline = RE_INLINE_QUOTES.subn("", text)
+        counts["quotes"] += removed_quotes + removed_inline
 
     # Header-like metadata
     text, removed_headers = _remove_metadata_headers(text)
@@ -1703,6 +1706,13 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, inline_markup_count = _eat_after_keyword(cleaned, RE_MARKUP, deep_markup=True)
         if inline_markup_count:
             print(f"[engrave_strip] removed {inline_markup_count} inline markup token(s)", file=sys.stderr)
+
+        # Step 4f: Remove attached/inlined quoted annotations like r8"sempre piano"
+        cleaned, attached_quote_count = RE_ATTACHED_QUOTES.subn("", cleaned)
+        cleaned, inline_quote_count = RE_INLINE_QUOTES.subn("", cleaned)
+        total_quotes = attached_quote_count + inline_quote_count
+        if total_quotes:
+            print(f"[engrave_strip] removed {total_quotes} inline quoted annotation(s)", file=sys.stderr)
 
         # Step 4b: Remove instrument/midi setters in staff blocks
         cleaned, inst_count = _remove_instrument_setters(cleaned)
