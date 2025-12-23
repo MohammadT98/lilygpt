@@ -15,6 +15,7 @@ if src_dir.exists():
     sys.path.insert(0, str(src_dir))
 
 from lilynorm.stages.preprocessing import file_resolver, preparse
+from lilynorm.stages.preprocessing.file_resolver import split_on_multiple_forma
 from lilynorm.utils.options import NormOptions
 
 # Same blacklist as process_dataset.py
@@ -87,10 +88,16 @@ def main():
             # Stage 1: Preparse
             stage1 = preparse.run(stage0, opts)
 
-            # Save output
-            out_path = output_root / rel
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(stage1, encoding="utf-8")
+            # Split multi-forma files to match full pipeline behavior
+            pieces = split_on_multiple_forma(stage1)
+
+            for idx, piece in enumerate(pieces, start=1):
+                out_path = output_root / rel
+                if len(pieces) > 1:
+                    out_path = out_path.with_stem(out_path.stem + f"_part{idx}")
+
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(piece, encoding="utf-8")
             
             processed += 1
             
