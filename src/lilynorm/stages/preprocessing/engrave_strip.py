@@ -397,7 +397,7 @@ RE_HAIRPINS = re.compile(
 )
 RE_ATTACHED_QUOTES = re.compile(r"(?:[-_^]\s*)\"[^\"]*\"")
 # Quotes attached directly to a token (e.g., r8"Sempre piano")
-RE_INLINE_QUOTES = re.compile(r'(?<=\S)"[^"\n]*"')
+RE_INLINE_QUOTES = re.compile(r'(?m)(?<=\\S)\\s*\"[^\"\\n]*\"')
 RE_LYRIC_ASSIGN = re.compile(
     r"(?m)(^\s*[A-Za-z_@][\w@]*\s*=\s*)\\lyricmode\s*\{"
 )
@@ -1264,6 +1264,44 @@ def _remove_empty_block_directives(text: str, directives: Tuple[str, ...]) -> Tu
     return text, removed
 
 
+def _remove_music_inline_strings(text: str) -> Tuple[str, int]:
+    """Remove quoted strings that follow musical tokens, even across line breaks."""
+    note_re = re.compile(r"\b(?:do|re|mi|fa|sol|la|si|[a-gr]|r)[',]*\d", re.I)
+    removed = 0
+    lines = text.splitlines(keepends=True)
+    out: List[str] = []
+    in_str = False
+
+    for line in lines:
+        if in_str:
+            end = line.find('"')
+            if end != -1:
+                line = line[end + 1 :]
+                in_str = False
+                removed += 1
+            else:
+                removed += 1
+                continue
+
+        if '"' in line and note_re.search(line):
+            start = line.find('"')
+            if start != -1:
+                end = line.find('"', start + 1)
+                if end != -1:
+                    line = line[:start] + line[end + 1 :]
+                    removed += 1
+                else:
+                    line = line[:start]
+                    in_str = True
+                    removed += 1
+
+        out.append(line)
+
+    cleaned = "".join(out)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
+    return cleaned, removed
+
+
 def _final_cleanup(text: str) -> str:
     """Dataset-tail cleanup that used to live in the driver.
 
@@ -1740,6 +1778,10 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, quote_line_count = _remove_standalone_quoted_lines(cleaned)
         if quote_line_count > 0:
             print(f"[engrave_strip] removed {quote_line_count} standalone quoted line(s)", file=sys.stderr)
+
+        cleaned, inline_str_count = _remove_music_inline_strings(cleaned)
+        if inline_str_count > 0:
+            print(f"[engrave_strip] removed {inline_str_count} inline music string(s)", file=sys.stderr)
 
         cleaned, empty_book_count = _remove_empty_block_directives(cleaned, ("bookpart", "book"))
         if empty_book_count > 0:
