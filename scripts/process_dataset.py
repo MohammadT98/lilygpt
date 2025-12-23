@@ -400,7 +400,7 @@ def main() -> int:
             "transpose_ok": 0,
             "repeat": 0,
             "tuplets": 0,
-            #"drums": 0,
+            "drums": 0,
             "lily_fail": 0,
             "overrides": 0,
             "markups": 0,
