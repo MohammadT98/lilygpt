@@ -938,6 +938,18 @@ def _light_cleanup(text: str) -> str:
     
     # Remove underscore tokens that directly precede a note without trailing space (e.g., _mi)
     text = re.sub(r"\s*_(?=(?:do|re|mi|fa|sol|la|si|[a-gr]))", " ", text)
+    
+    # Fix note names with sharp/natural/flat modifiers: "mi!16" -> "mi16", "fa#2" -> "fa2"
+    # These are malformed - the modifier should be after duration or part of syntax
+    text = re.sub(r"((?:do|re|mi|fa|sol|la|si)[',]*?)([!#b]+)(\d+)", r"\1\3", text)
+    
+    # Fix orphaned "r" rest on its own line appearing as note name
+    # Pattern: lines that are just "r" or "r8" or "r4" when they should be rests within music
+    text = re.sub(r"^\s*r(?:8|4|2|1)?\s*$", "", text, flags=re.MULTILINE)
+    
+    # Fix \tempo with malformed arguments: "\tempo 2. = 60" (should be "\tempo 2.=60" or removed)
+    # Remove tempo marks that have syntax issues
+    text = re.sub(r"\\\\tempo\s+[^=]+=\s*\d+", "", text)
     # Final fallback: strip any remaining bare underscores
     text = re.sub(r"_+", " ", text)
 
@@ -964,11 +976,6 @@ def _light_cleanup(text: str) -> str:
     # Remove problematic one-liners: variable = articulation (^ or ^-align or ^\markup)
     # These break compilation: "presto = ^ ", "ts = ^", etc.
     text = re.sub(r'^[a-z]+\s*=\s*\^(?:-align\s+"[^"]*"|\\\\markup)?\s*(?:\{[^}]*\})?\s*$', '', text, flags=re.MULTILINE)
-    
-    # Remove completely malformed variable assignments with = (appear as orphaned lines)
-    # These are variables like "Ibfn = \figuremode { ... }" that appear mid-file with syntax errors
-    # Match only if they're isolated variable definitions (not inside music content)
-    text = re.sub(r'^[A-Za-z_][A-Za-z0-9_]*\s*=\s*(?:\\\\(?:relative|figuremode|set|clef)|\\{).*?^(?=\}|[A-Za-z]|\s*$)', '', text, flags=re.MULTILINE | re.DOTALL)
 
     # Neutralize undefined wrapper blocks like <<\IIvlIn\forma>> or <<\IIbcn\forma\IIbfn>>
     # These are references to undefined variables that break compilation
