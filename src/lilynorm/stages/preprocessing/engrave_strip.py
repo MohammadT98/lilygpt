@@ -958,6 +958,10 @@ def _light_cleanup(text: str) -> str:
     # Fix figured bass figure alteration errors: < !> -> remove the !>
     # Pattern: "< !>2." becomes "<>2."
     text = re.sub(r"<\s*!\s*>", "<>", text)
+    
+    # Remove problematic one-liners: variable = articulation (^ or ^-align or ^\markup)
+    # These break compilation: "presto = ^ ", "ts = ^", etc.
+    text = re.sub(r'^[a-z]+\s*=\s*\^(?:-align\s+"[^"]*"|\\\\markup)?\s*(?:\{[^}]*\})?\s*$', '', text, flags=re.MULTILINE)
 
     # Neutralize undefined wrapper blocks like <<\IIvlIn\forma>> or <<\IIbcn\forma\IIbfn>>
     # These are references to undefined variables that break compilation
