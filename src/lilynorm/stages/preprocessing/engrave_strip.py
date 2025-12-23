@@ -1228,6 +1228,7 @@ def _remove_standalone_markup_lines(text: str) -> Tuple[str, int]:
     patterns = [
         r"(?m)^\s*\\markup.*$",
         r"(?m)^\s*\\halign\b.*$",
+        r"(?m)^\s*\\center-align\b.*$",
         r"(?m)^\s*\\center-column\b.*$",
         r"(?m)^\s*\\musicglyph\b.*$",
         r"(?m)^\s*\\vspace\b.*$",
@@ -1392,6 +1393,8 @@ def _final_cleanup(text: str) -> str:
         "notrasp",
     )
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
+    # Strip leftover markup tokens that can survive markup removal and break parsing
+    text = re.sub(r"\\(?:super|bold|italic|center-align)\b", "", text)
     text = re.sub(r"\\(?:I|II|III|IV)[A-Za-z][\w-]*\b", "", text)
 
     # Structural cleanups - DISABLED: these patterns are too aggressive and destroy valid structures
