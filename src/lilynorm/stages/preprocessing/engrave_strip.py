@@ -215,8 +215,8 @@ def _remove_with_blocks(src: str) -> Tuple[str, int]:
 
 def _strip_lyricmode_assignments(text: str) -> Tuple[str, int]:
     """
-    Replace `name = \\lyricmode { ... }` with `name = {}` (empty block),
-    preserving the assignment prefix and structure.
+    Remove `name = \\lyricmode { ... }` assignments entirely.
+    Empty assignments will be cleaned up by _remove_empty_variable_assignments.
 
     Returns (new_text, removed_count).
     """
@@ -232,8 +232,22 @@ def _strip_lyricmode_assignments(text: str) -> Tuple[str, int]:
         if brace_close_index == -1:
             break
 
-        prefix = match.group(1)
-        text = text[:match.start()] + prefix + "{}" + text[brace_close_index + 1 :]
+        # Find the variable name to also remove references
+        var_name_match = re.match(r'^\s*([A-Za-z_@][\w@]*)\s*=', match.group(0))
+        var_name = var_name_match.group(1) if var_name_match else None
+        
+        # Remove the entire assignment (including trailing newline)
+        assignment_end = brace_close_index + 1
+        if assignment_end < len(text) and text[assignment_end] == '\n':
+            assignment_end += 1
+        
+        text = text[:match.start()] + text[assignment_end:]
+        
+        # Remove references to this variable
+        if var_name:
+            ref_pattern = re.compile(rf"\\{re.escape(var_name)}\b")
+            text = ref_pattern.sub("", text)
+        
         removed_count += 1
 
     return text, removed_count
@@ -423,6 +437,10 @@ def _collapse_empty_assignment_blocks(text: str) -> str:
     into a compact single line:
 
         foo = {}
+    
+    Also handles single-line empty blocks and nested empty blocks like:
+        foo = {}
+        foo = { {} }
     """
     index = 0
     output_parts: List[str] = []
@@ -450,7 +468,14 @@ def _collapse_empty_assignment_blocks(text: str) -> str:
             continue
 
         inner_content = text[brace_open_index + 1:brace_close_index]
-        if inner_content.strip() == "":
+        # Check if content is effectively empty (whitespace, nested empty braces, etc.)
+        stripped = inner_content.strip()
+        # Remove nested empty braces recursively
+        while '{}' in stripped:
+            stripped = stripped.replace('{}', '')
+        stripped = stripped.strip()
+        
+        if stripped == "":
             # Replace with `foo = {}\n`, skipping possible trailing newline.
             output_parts.append(f"{assignment_prefix}{{}}\n")
             next_index = brace_close_index + 1
@@ -824,27 +849,66 @@ def _remove_instrument_setters(text: str) -> Tuple[str, int]:
 def _remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
     """Remove variable assignments that are empty (leftover from content removal).
     
+    Handles both simple empty blocks (varname = { }) and nested empty blocks
+    (varname = { {} }).
+    
     Also removes all references to those empty variables to avoid undefined references.
     
     Returns (cleaned_text, removed_count).
     """
     removed = 0
     
-    # Find all empty variable assignments: varname = { }
-    pattern = re.compile(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*\{[\n\s]*\}$")
-    matches = pattern.findall(text)
+    def _is_empty_content(content: str) -> bool:
+        """Check if content is effectively empty (only whitespace, nested empty braces, or clef directives)."""
+        # Remove clef directives first (before whitespace removal, since they contain spaces)
+        stripped = re.sub(r'\\clef\s+\w+', '', content)
+        # Remove all whitespace and newlines
+        stripped = re.sub(r'[\s\n]+', '', stripped)
+        # Remove all nested empty braces {} recursively
+        while '{}' in stripped:
+            stripped = stripped.replace('{}', '')
+        # If nothing remains, it's empty
+        return len(stripped.strip()) == 0
     
-    if matches:
-        # For each empty variable, remove both definition and references
-        for var_name in matches:
-            # Remove the definition
-            def_pattern = re.compile(rf"(?m)^{re.escape(var_name)}\s*=\s*\{{[\n\s]*\}}$")
-            text, count = def_pattern.subn("", text)
-            if count > 0:
-                removed += count
-                # Remove all references to this variable (e.g., \Iglobal)
-                ref_pattern = re.compile(rf"\\{re.escape(var_name)}\b")
-                text = ref_pattern.sub("", text)
+    # First pass: find all empty variable assignments and their positions
+    empty_var_ranges = []  # List of (start_pos, end_pos, var_name)
+    pattern = re.compile(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*\{")
+    index = 0
+    
+    while index < len(text):
+        match = pattern.search(text, index)
+        if not match:
+            break
+        
+        var_name = match.group(1)
+        assignment_start = match.start()
+        brace_start = match.end() - 1  # Position of opening brace
+        brace_end = _grab_balanced(text, brace_start, "{", "}")
+        
+        if brace_end != -1:
+            # Extract content between braces
+            content = text[brace_start + 1:brace_end]
+            
+            # Check if content is effectively empty
+            if _is_empty_content(content):
+                # Find the end of the assignment (including all trailing newlines)
+                assignment_end = brace_end + 1
+                # Include all trailing newlines
+                while assignment_end < len(text) and text[assignment_end] == '\n':
+                    assignment_end += 1
+                empty_var_ranges.append((assignment_start, assignment_end, var_name))
+                removed += 1
+            
+            index = brace_end + 1
+        else:
+            index = match.end()
+    
+    # Second pass: remove empty variable definitions (in reverse order to preserve indices)
+    for start, end, var_name in reversed(empty_var_ranges):
+        text = text[:start] + text[end:]
+        # Remove all references to this variable (e.g., \Ivl)
+        ref_pattern = re.compile(rf"\\{re.escape(var_name)}\b")
+        text = ref_pattern.sub("", text)
     
     # Match variable assignment with no value (just whitespace after =)
     pattern2 = re.compile(r"(?m)^[A-Za-z_][\w-]*\s*=\s*$")
@@ -1440,6 +1504,10 @@ def run(text: str, opts: NormOptions) -> str:
     if getattr(opts, "keep_engraving", True):
         print("[engrave_strip] keeping engravings", file=sys.stderr)
         cleaned = _light_cleanup(text)
+        # Remove empty variable assignments even when keeping engravings
+        cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
+        if empty_var_count > 0:
+            print(f"[engrave_strip] removed {empty_var_count} empty variable assignment(s)", file=sys.stderr)
     else:
         print("[engrave_strip] removing paper, top-level scheme, and common macros", file=sys.stderr)
         # Step 1: Remove \paper blocks (safe - self-contained blocks)

@@ -499,6 +499,14 @@ def main() -> int:
 
                 # Remove existing \version declarations, then add \version "2.24.4"
                 cleaned = re.sub(r'(^|\n)\\version\s+"[^"]+"\s*', "", piece)
+                
+                # Final cleanup: Remove any empty variable assignments that might have been created
+                # during file splitting or other post-processing steps
+                from lilynorm.stages.preprocessing.engrave_strip import _remove_empty_variable_assignments
+                cleaned, empty_count = _remove_empty_variable_assignments(cleaned)
+                if empty_count > 0:
+                    print(f"[dataset] removed {empty_count} empty variable assignment(s) from {rel}" + (f"_part{idx}" if len(forma_pieces) > 1 else ""), file=sys.stderr)
+                
                 output_text = '\\version "2.24.4"\n' + cleaned.lstrip() + "\n"
                 norm_path.write_text(output_text, encoding="utf-8")
 
