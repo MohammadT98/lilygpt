@@ -15,6 +15,7 @@ if src_dir.exists():
     sys.path.insert(0, str(src_dir))
 
 from lilynorm.stages.preprocessing import file_resolver
+from lilynorm.stages.preprocessing.file_resolver import split_on_multiple_forma
 
 # Same blacklist as process_dataset.py
 NAME_BLACKLIST = (
@@ -81,11 +82,17 @@ def main():
         try:
             # File resolver only (resolve includes, inline variabili.ly, fix typos, remove -+, dedupe version)
             resolved = file_resolver.run(text, src, exclude_variabili=False)
+
+            # Split files defining multiple forma blocks to mirror full pipeline behavior
+            pieces = split_on_multiple_forma(resolved)
             
-            # Save output preserving folder structure and filename
-            out_path = output_root / rel
-            out_path.parent.mkdir(parents=True, exist_ok=True)
-            out_path.write_text(resolved, encoding="utf-8")
+            for idx, piece in enumerate(pieces, start=1):
+                out_path = output_root / rel
+                if len(pieces) > 1:
+                    out_path = out_path.with_stem(out_path.stem + f"_part{idx}")
+
+                out_path.parent.mkdir(parents=True, exist_ok=True)
+                out_path.write_text(piece, encoding="utf-8")
             
             processed += 1
             
