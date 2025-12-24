@@ -335,7 +335,7 @@ def _remove_custom_assignments(text: str) -> Tuple[str, int]:
 
 
 def _remove_metadata_headers(text: str) -> Tuple[str, int]:
-    """Drop header-style metadata lines that add noise for training (keep \language for pitch names)."""
+    r"""Drop header-style metadata lines that add noise for training (keep \language for pitch names)."""
     pattern = re.compile(r"(?m)^\s*\\version\b.*$")
     cleaned, removed = pattern.subn("", text)
     return cleaned, removed
@@ -809,6 +809,10 @@ def _skip_markup_expression(source: str, index: int) -> int:
                 # Not a markup token - backtrack and stop
                 position = token_start
                 break
+        else:
+            # No token consumed - skip this character to avoid infinite loop
+            position += 1
+            break
 
     return position
 
