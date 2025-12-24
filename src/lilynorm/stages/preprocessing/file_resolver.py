@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import re
 import sys
+import unicodedata
 from pathlib import Path
 from typing import Optional, Set
 
@@ -46,6 +47,16 @@ class FileResolver:
         alt = self.base_dir.parent / include_path
         if alt.exists():
             return alt
+
+        # Normalize unicode in filenames (e.g., composed vs decomposed accents).
+        include_norm = unicodedata.normalize("NFC", include_path)
+        if include_norm != include_path:
+            candidate_norm = self.base_dir / include_norm
+            if candidate_norm.exists():
+                return candidate_norm
+            alt_norm = self.base_dir.parent / include_norm
+            if alt_norm.exists():
+                return alt_norm
 
         return None
 
@@ -183,7 +194,7 @@ def run(
 
 
 def split_on_multiple_forma(text: str) -> list[str]:
-    """Split a resolved LilyPond file into pieces if it defines multiple top-level `forma = { ... }` blocks.
+    r"""Split a resolved LilyPond file into pieces if it defines multiple top-level `forma = { ... }` blocks.
 
     The shared header (comments, \version, \language, includes already inlined) is kept in each piece to keep
     outputs standalone. If only one `forma` exists, the original text is returned in a single-element list.
