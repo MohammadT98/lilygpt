@@ -118,30 +118,47 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
     # Stage 2: Normalize
     stage2 = preprocessing.normalize.run(stage1, opts)
     if stats is not None:
-        if "\\relative" in stage2:
-            stats["rel"] += 1
-        if "=" in stage2 and "{" in stage2:
-            stats["vars"] += 1
-        if "\\transpose" in stage2:
-            stats["transpose_ok"] += 1
-        if "\\repeat" in stage2:
-            stats["repeat"] += 1
-        if "\\tuplet" in stage2 or "\\times" in stage2:
-            stats["tuplets"] += 1
-        if "\\drums" in stage2 or "DrumStaff" in stage2:
-            stats["drums"] += 1
+        def count_occurrences(text: str) -> dict[str, int]:
+            return {
+                "rel": text.count("\\relative"),
+                "vars": len(re.findall(r"(?m)^[A-Za-z_][\\w-]*\\s*=\\s*\\{", text)),
+                "transpose": text.count("\\transpose"),
+                "repeat": text.count("\\repeat"),
+                "tuplets": text.count("\\tuplet") + text.count("\\times"),
+                "drums": text.count("\\drums") + text.count("DrumStaff"),
+            }
+
+        before = count_occurrences(stage1)
+        after = count_occurrences(stage2)
+        stats["rel_removed"] += max(0, before["rel"] - after["rel"])
+        stats["vars_removed"] += max(0, before["vars"] - after["vars"])
+        stats["transpose_removed"] += max(0, before["transpose"] - after["transpose"])
+        stats["repeat_removed"] += max(0, before["repeat"] - after["repeat"])
+        stats["tuplets_removed"] += max(0, before["tuplets"] - after["tuplets"])
+        stats["drums_removed"] += max(0, before["drums"] - after["drums"])
 
     # Stage 3: Strip engraving directives
     stage3 = preprocessing.engrave_strip.run(stage2, opts)
 
     if stats is not None:
-        # Simple heuristic counts after stripping
-        stats["overrides"] += stage3.count("\\override")
-        stats["markups"] += stage3.count("\\markup")
-        stats["marks"] += stage3.count("\\mark")
-        stats["dynamics"] += sum(stage3.count(tok) for tok in ["\\pp", "\\p", "\\mp", "\\mf", "\\f", "\\ff", "\\fp", "\\sfz"])
-        stats["hairpins"] += stage3.count("\\<") + stage3.count("\\>")
-        stats["quotes"] += stage3.count("\\quote")
+        def count_engraving(text: str) -> dict[str, int]:
+            return {
+                "overrides": text.count("\\override"),
+                "markups": text.count("\\markup"),
+                "marks": text.count("\\mark"),
+                "dynamics": sum(text.count(tok) for tok in ["\\pp", "\\p", "\\mp", "\\mf", "\\f", "\\ff", "\\fp", "\\sfz"]),
+                "hairpins": text.count("\\<") + text.count("\\>"),
+                "quotes": text.count("\\quote"),
+            }
+
+        before = count_engraving(stage2)
+        after = count_engraving(stage3)
+        stats["overrides_removed"] += max(0, before["overrides"] - after["overrides"])
+        stats["markups_removed"] += max(0, before["markups"] - after["markups"])
+        stats["marks_removed"] += max(0, before["marks"] - after["marks"])
+        stats["dynamics_removed"] += max(0, before["dynamics"] - after["dynamics"])
+        stats["hairpins_removed"] += max(0, before["hairpins"] - after["hairpins"])
+        stats["quotes_removed"] += max(0, before["quotes"] - after["quotes"])
 
     # Final cleanup now handled inside engraving stage
     return stage3
@@ -401,19 +418,19 @@ def main() -> int:
         stats: dict[str, int] = {
             "line_removed": 0,
             "block_removed": 0,
-            "rel": 0,
-            "vars": 0,
-            "transpose_ok": 0,
-            "repeat": 0,
-            "tuplets": 0,
-            "drums": 0,
+            "rel_removed": 0,
+            "vars_removed": 0,
+            "transpose_removed": 0,
+            "repeat_removed": 0,
+            "tuplets_removed": 0,
+            "drums_removed": 0,
             "lily_fail": 0,
-            "overrides": 0,
-            "markups": 0,
-            "marks": 0,
-            "dynamics": 0,
-            "hairpins": 0,
-            "quotes": 0,
+            "overrides_removed": 0,
+            "markups_removed": 0,
+            "marks_removed": 0,
+            "dynamics_removed": 0,
+            "hairpins_removed": 0,
+            "quotes_removed": 0,
         }
 
         ly_files = sorted(input_root.rglob("*.ly"))
@@ -673,15 +690,16 @@ def main() -> int:
             f"block_removed={stats['block_removed']}"
         )
         print(
-            f"[normalize] rel:{stats['rel']} vars:{stats['vars']} "
-            f"transpose_ok:{stats['transpose_ok']} repeat:{stats['repeat']} "
-            f"tuplets:{stats['tuplets']} drums:{stats['drums']} "
+            f"[normalize] rel_removed:{stats['rel_removed']} vars_removed:{stats['vars_removed']} "
+            f"transpose_removed:{stats['transpose_removed']} repeat_removed:{stats['repeat_removed']} "
+            f"tuplets_removed:{stats['tuplets_removed']} drums_removed:{stats['drums_removed']} "
             f"lily_fail:{stats['lily_fail']}"
         )
         print(
-            f"[engrave_strip] overrides:{stats['overrides']} markups:{stats['markups']} "
-            f"marks:{stats['marks']} dynamics:{stats['dynamics']} "
-            f"hairpins:{stats['hairpins']} quotes:{stats['quotes']}"
+            f"[engrave_strip] overrides_removed:{stats['overrides_removed']} "
+            f"markups_removed:{stats['markups_removed']} marks_removed:{stats['marks_removed']} "
+            f"dynamics_removed:{stats['dynamics_removed']} "
+            f"hairpins_removed:{stats['hairpins_removed']} quotes_removed:{stats['quotes_removed']}"
         )
 
         return 0
