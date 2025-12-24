@@ -520,6 +520,12 @@ def main() -> int:
                     cleaned,
                     flags=re.MULTILINE,
                 )
+                # Fix malformed durations like la168 -> la16 8 (two glued durations)
+                cleaned = re.sub(
+                    rf"(\b{note_token}[',]*)(128|64|32|16)([1248])\b",
+                    r"\1\2 \3",
+                    cleaned,
+                )
                 
                 # Final cleanup: Remove any empty variable assignments that might have been created
                 # during file splitting or other post-processing steps
