@@ -29,7 +29,6 @@ except ModuleNotFoundError:
     from lilynorm.utils.options import NormOptions
     from lilynorm.stages import preprocessing
     from lilynorm.stages import tokenization as tokenize_gpt
-    from lilynorm.stages.splitting import build_splits
     from lilynorm.utils.formatting import format_full_text, format_example
 
 
@@ -101,8 +100,6 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
     If a stats dict is provided, it will be updated with simple counters for
     preparse and normalize phases.
     """
-    text = path.read_text(encoding="utf-8", errors="ignore")
-
     # Stage 0: Resolve all \include statements including variabili.ly
     # (inline everything for training; we need complete, standalone files)
     stage0 = preprocessing.file_resolver.run(path, exclude_variabili=False)
@@ -110,10 +107,8 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
     # Stage 1: Preparse
     stage1 = preprocessing.preparse.run(stage0, opts)
     if stats is not None:
-        if len(stage1.splitlines()) < len(stage0.splitlines()):
-            stats["line_removed"] += 1
-        if stage1.count("{") < stage0.count("{"):
-            stats["block_removed"] += 1
+        stats["line_removed"] += max(0, len(stage0.splitlines()) - len(stage1.splitlines()))
+        stats["block_removed"] += max(0, stage0.count("{") - stage1.count("{"))
 
     # Stage 2: Normalize
     stage2 = preprocessing.normalize.run(stage1, opts)
