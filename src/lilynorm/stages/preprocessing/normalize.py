@@ -19,28 +19,6 @@ DEFAULT_LILYPOND_PATH = (
     r"C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe"
 )
 
-DEBUG = False
-
-
-def debug_print(label: str, content: str, separator: bool = True) -> None:
-    """
-    Print debug information to stderr if DEBUG is enabled.
-
-    label      - short label for the debug section
-    content    - debug text to print
-    separator  - if True, surround block with separators
-    """
-    if not DEBUG:
-        return
-
-    if separator:
-        print("\n" + "=" * 80, file=sys.stderr)
-
-    print(f"DEBUG [{label}]:", file=sys.stderr)
-    print(content, file=sys.stderr)
-
-    if separator:
-        print("=" * 80 + "\n", file=sys.stderr)
 
 
 # ---------------------------------------------------------------------------
@@ -1208,7 +1186,6 @@ def process_string(
         text_after_inline, count = _inline_named_music_recursive(text, env)
         report.variables_inlined = count
         text = text_after_inline
-        debug_print("Variables inlined (recursive)", f"expansions={count}")
 
     # Expand music functions
     if opts.expand_music_functions:
@@ -1220,7 +1197,6 @@ def process_string(
         if ok_count or fail_count:
             text = text_after_functions
             report.lily_failures += fail_count
-            debug_print("Music functions expanded", f"ok={ok_count}, fail={fail_count}")
 
     # Expand relative
     if opts.expand_relative:
@@ -1233,7 +1209,6 @@ def process_string(
             )
             report.relative_blocks = relative_count
             report.lily_failures += rel_failures
-            debug_print("Relative expanded", f"blocks={relative_count}")
 
     # Resolve transpose
     if opts.resolve_transpose:
@@ -1246,7 +1221,6 @@ def process_string(
             text = text_after_transpose
             report.transpose_blocks = ok_count
             report.lily_failures += fail_count
-            debug_print("Transpose resolved", f"ok={ok_count}, fail={fail_count}")
 
     # Expand repeat unfold
     if opts.expand_repeat_unfold:
@@ -1254,7 +1228,6 @@ def process_string(
         if count:
             text = text_after_repeat
             report.repeats_unfolded = count
-            debug_print("Repeat unfold expanded", f"blocks={count}")
 
     # Normalize tuplets
     if opts.normalize_tuplets:
@@ -1262,7 +1235,6 @@ def process_string(
         if count:
             text = text_after_tuplets
             report.tuplets_normalized = count
-            debug_print("Tuplets normalized", f"changes~={count}")
 
     # Normalize drummode
     if opts.normalize_drums:
@@ -1270,7 +1242,6 @@ def process_string(
         if changed_blocks:
             text = text_after_drums
             report.drum_blocks_normalized = changed_blocks
-            debug_print("Drummode normalized", f"blocks={changed_blocks}")
 
     # Whitespace & chord bracket canonicalization
     if opts.normalize_whitespace:
@@ -1392,11 +1363,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Path to lilypond executable (auto-detected if omitted)",
     )
     parser.add_argument(
-        "--debug",
-        action="store_true",
-        help="Enable debug prints to stderr",
-    )
-    parser.add_argument(
         "--report",
         action="store_true",
         help="Print a JSON summary report to stderr",
@@ -1444,12 +1410,10 @@ def main() -> int:
       1 on missing input file
       2 if LilyPond is not available
     """
-    global DEBUG
 
     parser = build_arg_parser()
     args = parser.parse_args()
 
-    DEBUG = bool(args.debug)
 
     in_path = Path(args.inp)
     if not in_path.exists():
