@@ -61,6 +61,19 @@ REMOVE_SCHEME_BLOCKS = False
 # This is experimental and only touches named music assignments.
 USE_LILYPOND_PARSER_STRIP = True
 
+# Remove entire variables that contain ONLY engraving/layout (no musical notes).
+# This is a coarse but safe approach: delete engraving-only variables entirely.
+# Example: "global = { \override ... }" → removed completely
+# Example: "melody = { c4 d e f }" → kept (even if it has \p, \< attached)
+REMOVE_ENGRAVING_ONLY_VARIABLES = True
+
+# Remove entire paragraphs (blocks separated by blank lines) with no musical content.
+# This catches layout blocks, orphaned commands, and other engraving noise.
+# Example: "\pointAndClickOff" → removed
+# Example: "\paper { ... }" → removed
+# Example: "{ c4 d e f }" → kept
+REMOVE_ENGRAVING_ONLY_PARAGRAPHS = True
+
 # Music event names to remove when using the parser strip.
 # Keep this conservative until validated on your dataset.
 PARSER_STRIP_REMOVE_NAMES = (
@@ -1934,6 +1947,222 @@ def _find_music_assignments(text: str) -> List[Tuple[int, int, str, str]]:
     return results
 
 
+def _variable_contains_music(rhs_content: str) -> bool:
+    """
+    Check if a variable assignment contains actual musical content (notes/rests).
+
+    Returns True if the variable has notes that should be kept for training.
+    Returns False if it's pure engraving/layout that can be safely removed.
+
+    Examples:
+        "{ c4 d e f }" → True (has notes)
+        "{ \\override Stem.length = #7 }" → False (only engraving)
+        "^\\markup {Solo}" → False (only markup)
+        "{ \\time 4/4 \\key c \\major s1 }" → True (has spacer note 's')
+    """
+    # Check for actual note/rest tokens
+    # Matches: do, re, mi, fa, sol, la, si, a-g, r, s (with optional accidentals, octaves, durations)
+    note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r|s)[is|es|isbf|esbf]*[,\']*\d+\.?\d*'
+    if re.search(note_pattern, rhs_content, re.I):
+        return True
+
+    # Check for chord notation: < ... >
+    if re.search(r'<[^>]*[a-g][^>]*>', rhs_content, re.I):
+        return True
+
+    # If we get here, it's likely just engraving/layout
+    return False
+
+
+def _find_all_variable_assignments(text: str) -> List[Tuple[int, int, str, str]]:
+    """
+    Find ALL variable assignments including markup, not just music variables.
+
+    Similar to _find_music_assignments but doesn't skip markup assignments.
+    Returns: list of (assign_start, assign_end, var_name, full_assignment_text)
+    """
+    results: List[Tuple[int, int, str, str]] = []
+    search_start = 0
+    length = len(text)
+
+    while search_start < length:
+        match = RE_ASSIGNMENT.search(text, search_start)
+        if not match:
+            break
+
+        name = match.group(2)
+        assign_start = match.start() if match.group(1) else match.start(2)
+
+        rhs_start = match.end()
+        while rhs_start < length and text[rhs_start].isspace():
+            rhs_start += 1
+
+        if rhs_start >= length:
+            search_start = rhs_start
+            continue
+
+        # Handle different assignment types
+        assign_end = None
+
+        # Simple markup: name = ^\markup ...
+        if text[rhs_start] in ("_", "^"):
+            # Find end of markup
+            markup_start = rhs_start
+            markup_start += 1  # skip _ or ^
+            while markup_start < length and text[markup_start].isspace():
+                markup_start += 1
+
+            if text.startswith("\\markup", markup_start):
+                # Skip \markup and find the braces or quoted string
+                markup_start += 7  # len("\\markup")
+                while markup_start < length and text[markup_start].isspace():
+                    markup_start += 1
+
+                if markup_start < length and text[markup_start] == '{':
+                    brace_end = _grab_balanced(text, markup_start, "{", "}")
+                    assign_end = brace_end + 1 if brace_end != -1 else markup_start + 1
+                else:
+                    # Find end of line
+                    assign_end = text.find('\n', markup_start)
+                    if assign_end == -1:
+                        assign_end = length
+            else:
+                # Just direction marker, find end of line
+                assign_end = text.find('\n', rhs_start)
+                if assign_end == -1:
+                    assign_end = length
+
+        # Block assignment: name = { ... }
+        elif text[rhs_start] == '{':
+            brace_end = _grab_balanced(text, rhs_start, "{", "}")
+            assign_end = brace_end + 1 if brace_end != -1 else rhs_start + 1
+
+        # \relative, \transpose, etc.
+        elif text.startswith("\\relative", rhs_start) or text.startswith("\\transpose", rhs_start):
+            # Find the opening brace
+            brace_pos = text.find('{', rhs_start)
+            if brace_pos != -1:
+                brace_end = _grab_balanced(text, brace_pos, "{", "}")
+                assign_end = brace_end + 1 if brace_end != -1 else brace_pos + 1
+            else:
+                assign_end = text.find('\n', rhs_start)
+                if assign_end == -1:
+                    assign_end = length
+
+        # Angle brackets: name = << ... >>
+        elif text.startswith("<<", rhs_start):
+            angle_end = _grab_angles(text, rhs_start)
+            assign_end = angle_end if angle_end != -1 else rhs_start + 2
+
+        if assign_end is not None:
+            results.append((
+                assign_start,
+                assign_end,
+                name,
+                text[assign_start:assign_end]
+            ))
+            search_start = assign_end
+        else:
+            search_start = rhs_start + 1
+
+    return results
+
+
+def _remove_engraving_only_variables(text: str) -> Tuple[str, int]:
+    """
+    Remove variable assignments that contain ONLY engraving/layout, no actual music.
+
+    This is a coarse-grained filter that operates at the variable level:
+    - If a variable has NO notes/rests → remove entire variable
+    - If a variable has notes → keep it (even if it also has engraving)
+
+    This prevents the "broken Scheme code" problem by removing entire
+    engraving-only blocks rather than trying to surgically edit them.
+
+    Returns (cleaned_text, removed_count).
+    """
+    assignments = _find_all_variable_assignments(text)
+    if not assignments:
+        return text, 0
+
+    removed_count = 0
+
+    # Work backwards so indices remain valid
+    for assign_start, assign_end, name, full_text in reversed(assignments):
+        if not _variable_contains_music(full_text):
+            # Find the start of the line
+            line_start = assign_start
+            while line_start > 0 and text[line_start - 1] not in '\n':
+                line_start -= 1
+
+            # Remove the entire assignment (including trailing newline if present)
+            end_pos = assign_end
+            if end_pos < len(text) and text[end_pos] == '\n':
+                end_pos += 1
+
+            text = text[:line_start] + text[end_pos:]
+            removed_count += 1
+
+    return text, removed_count
+
+
+def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
+    """
+    Remove paragraphs (text blocks separated by blank lines) that contain
+    ONLY engraving/layout commands, no actual musical content.
+
+    A paragraph is defined as text between two consecutive newlines.
+
+    Examples of paragraphs that will be removed:
+        - \\pointAndClickOff
+        - \\paper { ... }
+        - #(set-global-staff-size 17)
+        - \\override Score.MetronomeMark.transparent = ##t
+
+    Examples of paragraphs that will be kept:
+        - melody = { c4 d e f }
+        - { c4 d e f }  (even without variable name)
+        - \\time 4/4 s1*10  (has spacer notes)
+
+    Returns (cleaned_text, removed_count).
+    """
+    # Split into paragraphs (separated by blank lines - two consecutive newlines)
+    # Keep the separators so we can rebuild
+    paragraphs = re.split(r'(\n\s*\n)', text)
+
+    result_parts = []
+    removed_count = 0
+
+    for i, para in enumerate(paragraphs):
+        # If this is a separator (blank line), keep it conditionally
+        if re.match(r'^\n\s*\n$', para):
+            # Only keep if we have content before and after
+            if result_parts and i < len(paragraphs) - 1:
+                result_parts.append('\n\n')  # Normalize to double newline
+            continue
+
+        # Skip empty paragraphs
+        if not para.strip():
+            continue
+
+        # Check if paragraph contains music
+        if _variable_contains_music(para):
+            result_parts.append(para)
+        else:
+            # Check if it's a comment-only paragraph (should keep)
+            lines = para.strip().split('\n')
+            all_comments = all(line.strip().startswith('%') or not line.strip() for line in lines)
+
+            if all_comments and any(line.strip() for line in lines):
+                # Keep comment paragraphs
+                result_parts.append(para)
+            else:
+                # Remove this paragraph - it's pure engraving/layout
+                removed_count += 1
+
+    return '\n\n'.join(result_parts), removed_count
+
+
 def _build_parser_strip_preamble() -> str:
     """
     Build Scheme preamble for removing engraving events in LilyPond.
@@ -2396,6 +2625,18 @@ def run(text: str, opts: NormOptions) -> str:
         if USE_LILYPOND_PARSER_STRIP:
             cleaned, parser_count = _strip_engraving_with_lilypond(cleaned)
             _add_count("parser_strip", parser_count)
+
+        # Step 4d3: Remove engraving-only variables (coarse but safe approach)
+        # This removes entire variables like "global = { \override ... }" that have NO notes
+        if REMOVE_ENGRAVING_ONLY_VARIABLES:
+            cleaned, engrave_var_count = _remove_engraving_only_variables(cleaned)
+            _add_count("engrave_vars", engrave_var_count)
+
+        # Step 4d4: Remove engraving-only paragraphs (blocks without musical content)
+        # This catches layout blocks, \pointAndClickOff, orphaned commands, etc.
+        if REMOVE_ENGRAVING_ONLY_PARAGRAPHS:
+            cleaned, engrave_para_count = _remove_engraving_only_paragraphs(cleaned)
+            _add_count("engrave_paras", engrave_para_count)
 
         # Step 4e: Remove remaining inline markups (textual ornaments, directions)
         if REMOVE_MARKUP:
