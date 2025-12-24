@@ -8,3 +8,4 @@ class NormOptions:
     strip_comments: bool = True
     normalize_whitespace: bool = True
     expand_relative: bool = False
+    inline_variables: bool = False

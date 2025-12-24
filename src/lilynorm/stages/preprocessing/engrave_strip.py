@@ -720,76 +720,97 @@ class StripOptions:
 
 def _skip_markup_expression(source: str, index: int) -> int:
     """
-    Starting from `index`, skip over a single markup expression.
+    Starting from `index`, skip over a complete markup expression to end of line.
 
-    A markup expression is ONE of:
-    - A quoted string "..."
-    - A braced block {...}
-    - A command like \\huge
-    
-    IMPORTANT: We only consume ONE element, not a sequence of them.
-    This prevents consuming entire score blocks when processing markup
-    like \\markup\\huge "title" that is followed by \\score.
+    A markup expression can contain multiple elements:
+    - Commands like \\italic, \\huge, \\bold
+    - Quoted strings "..."
+    - Braced blocks {...}
 
-    Returns the index immediately after the first markup element (or len(source)
+    This function consumes ALL elements until end of line or a newline.
+    This is needed for markup assignments like:
+        piuf = _\\markup \\italic "più f"
+
+    Returns the index immediately after the complete markup (or len(source)
     if it hits the end).
     """
     position = index
     length = len(source)
 
-    # Skip leading whitespace
-    while position < length and source[position] in " \t\r\n":
-        position += 1
-
-    if position >= length:
-        return position
-
-    char = source[position]
-
-    # Block with braces: {...}
-    if char == "{":
-        end_index = _grab_balanced(source, position, "{", "}")
-        return end_index + 1 if end_index != -1 else length
-
-    # Quoted string: "..."
-    if char == '"':
-        position += 1
-        escaped = False
-        while position < length:
-            current_char = source[position]
+    # Consume all markup elements until we hit a newline or something that's not markup
+    while position < length:
+        # Skip whitespace (but not newlines - they end the assignment)
+        while position < length and source[position] in " \t\r":
             position += 1
-            if current_char == '"' and not escaped:
-                return position
-            escaped = (current_char == "\\") and not escaped
-        return position
 
-    # Command: \\something (consume just the command keyword, not what follows)
-    if char == "\\":
-        position += 1
+        if position >= length or source[position] == "\n":
+            break
+
+        char = source[position]
+
+        # Block with braces: {...}
+        if char == "{":
+            end_index = _grab_balanced(source, position, "{", "}")
+            if end_index == -1:
+                return length
+            position = end_index + 1
+            continue
+
+        # Quoted string: "..."
+        if char == '"':
+            position += 1
+            escaped = False
+            while position < length:
+                current_char = source[position]
+                position += 1
+                if current_char == '"' and not escaped:
+                    break
+                escaped = (current_char == "\\") and not escaped
+            continue
+
+        # Command: \\something
+        if char == "\\":
+            position += 1
+            while (
+                position < length
+                and (source[position].isalnum() or source[position] in "_-")
+            ):
+                position += 1
+            continue
+
+        # Scheme: #...
+        if char == "#":
+            position += 1
+            while position < length and not source[position].isspace():
+                position += 1
+            continue
+
+        # Direction markers: ^ or _
+        if char in "^_":
+            position += 1
+            continue
+
+        # Anything else: consume token and stop
+        token_start = position
         while (
             position < length
-            and (source[position].isalnum() or source[position] in "_-")
+            and not source[position].isspace()
+            and source[position] not in '{}"'
         ):
             position += 1
-        return position
 
-    # Scheme: #... (consume to end of word/expression)
-    if char == "#":
-        position += 1
-        while position < length and not source[position].isspace():
-            position += 1
-        return position
+        # If we consumed a token that's not a markup command, we're done
+        if position > token_start:
+            token = source[token_start:position]
+            # Check if this is a markup-related token
+            markup_keywords = ('markup', 'italic', 'bold', 'huge', 'large', 'small', 'center-align', 'center-column')
+            is_markup_token = any(kw in token for kw in markup_keywords)
+            if not is_markup_token:
+                # Not a markup token - backtrack and stop
+                position = token_start
+                break
 
-    # Fallback: plain word or token
-    token_start = position
-    while (
-        position < length
-        and not source[position].isspace()
-        and source[position] not in '{}"'
-    ):
-        position += 1
-
-    return position if position > token_start else token_start + 1
+    return position
 
 
 def _remove_common_macros(text: str) -> Tuple[str, int]:

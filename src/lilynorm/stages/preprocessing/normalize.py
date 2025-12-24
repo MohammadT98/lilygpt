@@ -259,7 +259,12 @@ def _collect_named_music(source: str) -> Dict[str, str]:
       name = { ... }
       name = \\relative ... { ... }
       name = << ... >>
+      name = \\transpose ... { ... }
       name = simple_token
+
+    EXCLUDES markup assignments like:
+      name = _\\markup ...
+      name = ^\\markup ...
 
     Returns a dict mapping variable names to their text.
     """
@@ -278,6 +283,20 @@ def _collect_named_music(source: str) -> Dict[str, str]:
 
         name = match.group(2)
 
+        # Skip markup variables (start with _ or ^)
+        if rhs_start < length and source[rhs_start] in ("_", "^"):
+            # Skip to end of line or next assignment
+            search_start = rhs_start + 1
+            continue
+
+        # Skip setting/override commands that shouldn't be inlined
+        # (these are context-dependent and break when inlined into music blocks)
+        skip_prefixes = ("\\override", "\\set", "\\tupletSpan", "\\revert", "\\unset")
+        is_setting = any(source.startswith(prefix, rhs_start) for prefix in skip_prefixes)
+        if is_setting:
+            search_start = rhs_start + 1
+            continue
+
         # name = \relative ...
         if source.startswith("\\relative", rhs_start):
             relative_match = RE_RELATIVE_BLK.search(source, rhs_start)
@@ -285,6 +304,17 @@ def _collect_named_music(source: str) -> Dict[str, str]:
                 search_start = rhs_start + 1
                 continue
             brace_open_index = relative_match.end() - 1
+            brace_close_index = _grab_braces(source, brace_open_index)
+            environment[name] = source[rhs_start:brace_close_index]
+            search_start = brace_close_index
+
+        # name = \transpose ...
+        elif source.startswith("\\transpose", rhs_start):
+            transpose_match = RE_TRANSPOSE.search(source, rhs_start)
+            if not transpose_match:
+                search_start = rhs_start + 1
+                continue
+            brace_open_index = transpose_match.end() - 1
             brace_close_index = _grab_braces(source, brace_open_index)
             environment[name] = source[rhs_start:brace_close_index]
             search_start = brace_close_index
@@ -301,7 +331,7 @@ def _collect_named_music(source: str) -> Dict[str, str]:
             environment[name] = source[rhs_start:angle_close_index]
             search_start = angle_close_index
 
-        # name = simple_token
+        # name = simple_token (but not markup)
         else:
             token_end = rhs_start
             while token_end < length and not source[token_end].isspace():
@@ -668,7 +698,11 @@ def _run_lily_batch(
             block_text = re.sub(r"[ \t]*\r?\n[ \t]*", " ", block_text)
             block_text = re.sub(r"[ \t]+", " ", block_text).strip()
 
-        results[idx] = block_text
+        # Check for invalid/empty output
+        if block_text in ("", "## { # }"):
+            results[idx] = None
+        else:
+            results[idx] = block_text
 
     return results
 
@@ -766,10 +800,14 @@ def resolve_transpose_with_lily_batched(
     if not blocks:
         return source, 0, 0
 
+    language = _detect_note_language(source)
+    preamble = f'\\language "{language}"' if language else ""
+
     expansions = _run_lily_batch(
         [block_text for (_, _, block_text) in blocks],
         lily_cmd=lily_cmd,
         preserve_linebreaks=preserve_linebreaks,
+        preamble=preamble,
     )
 
     output_parts: List[str] = []
@@ -1284,7 +1322,13 @@ def _map_options(norm_opts: "NormOptions") -> ParseOptions:
         field_def.name: getattr(norm_opts, field_def.name, getattr(defaults, field_def.name))
         for field_def in fields(ParseOptions)
     }
-    return ParseOptions(**values)
+
+    # DISABLED: inline_variables causes issues with markup and setting variables
+    # The selective filtering in _collect_named_music helps but doesn't solve all cases
+    # Better to let expansion fail gracefully than corrupt the output
+    parse_opts = ParseOptions(**values)
+
+    return parse_opts
 
 
 def run(text: str, opts: "NormOptions") -> str:
