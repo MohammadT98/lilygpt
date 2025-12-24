@@ -1165,7 +1165,20 @@ def _light_cleanup(text: str) -> str:
     
     # Fix repeating note patterns: Note^ followed by same/different note (NOTENAME_PITCH error)
     # Pattern: "mi^ la la" -> "mi la la" (remove the ^ articulation that confuses the parser)
-    text = re.sub(r"(\b(?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)\^\s+(?=(?:do|re|mi|fa|sol|la|si|[a-gr]))", r"\1 ", text)
+    note_token = r"(?:do|re|mi|fa|sol|la|si|[a-gr])[a-z]*"
+    text = re.sub(
+        rf"(\\b{note_token}[',]*\\d?)\\^\\s+(?={note_token})",
+        r"\\1 ",
+        text,
+    )
+    # Also handle no-space caret: "dod^ mi" or "dod^mi" -> "dod mi"
+    text = re.sub(
+        rf"(\\b{note_token}[',]*\\d?)\\^(?=\\s*{note_token})",
+        r"\\1",
+        text,
+    )
+    # Remove caret at end-of-line before next note on following line.
+    text = re.sub(rf"(\\b{note_token}[',]*\\d?)\\^\\s*$", r"\\1", text, flags=re.MULTILINE)
     
     # Remove \vspace from middle of markup strings
     text = re.sub(r'"\\\\vspace[^"]*', r'"', text)
@@ -1396,7 +1409,7 @@ def _final_cleanup(text: str) -> str:
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
     # Strip leftover markup tokens that can survive markup removal and break parsing
     text = re.sub(
-        r"\\(?:super|bold|italic|center-align|column|musicglyph|parentSlur|fill-line|smaller)\b",
+        r"\\(?:super|bold|italic|center-align|column|musicglyph|parentSlur|fill-line|smaller|larger)\b",
         "",
         text,
     )
