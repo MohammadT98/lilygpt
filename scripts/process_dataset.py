@@ -526,6 +526,12 @@ def main() -> int:
                     r"\1\2 \3",
                     cleaned,
                 )
+                # Remove malformed \tempo directives (break LilyPond parsing)
+                cleaned = re.sub(r"(?m)^\s*\\tempo\s+.*$", "", cleaned)
+                # Drop bare \mark lines and \mark"..." labels (engraving-only)
+                cleaned = re.sub(r'(?m)^\s*\\mark\s*"?[^"\n]*"?\s*$', "", cleaned)
+                # Remove inline empty text blocks like {" "}
+                cleaned = re.sub(r'\{\s*"\s*"\s*\}', "", cleaned)
                 
                 # Final cleanup: Remove any empty variable assignments that might have been created
                 # during file splitting or other post-processing steps
