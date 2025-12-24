@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import os
 import re
 import sys
 from dataclasses import dataclass
@@ -9,7 +8,6 @@ from typing import Tuple
 
 BOM = "\ufeff"
 
-_RE_WS = re.compile(r"\s+")
 _RE_MARKUP_TOKEN = re.compile(r"\\markup(?![A-Za-z])")
 
 
@@ -95,7 +93,7 @@ def _normalize_newlines(text: str) -> str:
 
 
 def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
-    """
+    r"""
     Remove line and block comments from text according to CleanOptions.
 
     The scanner is aware of:
@@ -269,6 +267,9 @@ def _consume_block_comment(text: str, i: int) -> Tuple[int, int]:
 
         idx += 1
 
+    if depth > 0:
+        print("WARNING: Unterminated block comment", file=sys.stderr)
+        removed += 1
     return idx, removed
 
 
@@ -402,6 +403,7 @@ def run(text: str, opts: "NormOptions") -> str:
 
     print(
         f"[preparse] line_removed={stats.line_comments_removed} "
-        f"block_removed={stats.block_comments_removed}"
+        f"block_removed={stats.block_comments_removed}",
+        file=sys.stderr,
     )
     return cleaned
