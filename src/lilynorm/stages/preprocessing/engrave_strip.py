@@ -366,6 +366,7 @@ RE_OVERRIDES = [
 
 RE_MARKUP = re.compile(r"(?:[-_^]\s*)?\\markup\b", re.I)
 RE_MARK = re.compile(r"(?:[-_^]\s*)?\\mark\b", re.I)
+RE_FOOTNOTE = re.compile(r"(?:[-_^]\s*)?\\footnote\b", re.I)
 
 # Performance instructions (soli, tutti, etc.) - treated as markup
 RE_PERFORMANCE_MARKS = re.compile(r"\\(?:soli|tu|solo|tutti)\b", re.I)
@@ -1488,6 +1489,67 @@ def _final_cleanup(text: str) -> str:
     return text
 
 
+def _remove_footnotes(source: str) -> Tuple[str, int]:
+    """
+    Remove \\footnote commands and their arguments.
+
+    Footnote syntax: \\footnote #'(offset) \\markup{...} annotated_object
+
+    We need to remove:
+    1. The \\footnote keyword
+    2. The Scheme offset expression: #'(...)
+    3. The markup expression
+
+    This leaves the annotated object (note/rest/etc) intact.
+
+    Returns (cleaned_source, removed_count).
+    """
+    removed_count = 0
+    search_start = 0
+    output_parts: List[str] = []
+
+    while True:
+        match = RE_FOOTNOTE.search(source, search_start)
+        if not match:
+            output_parts.append(source[search_start:])
+            break
+
+        # Keep everything before the footnote
+        output_parts.append(source[search_start:match.start()])
+        position = match.end()
+
+        # Skip whitespace
+        while position < len(source) and source[position] in " \t":
+            position += 1
+
+        # Remove Scheme expression: #'(...)
+        if position < len(source) and source[position] == "#":
+            position += 1
+            # Skip optional quote mark
+            if position < len(source) and source[position] == "'":
+                position += 1
+            # Skip whitespace
+            while position < len(source) and source[position] in " \t":
+                position += 1
+            # Remove balanced parentheses
+            if position < len(source) and source[position] == "(":
+                end_paren = _grab_balanced(source, position, "(", ")")
+                if end_paren != -1:
+                    position = end_paren + 1
+
+        # Skip whitespace
+        while position < len(source) and source[position] in " \t":
+            position += 1
+
+        # Remove the markup expression
+        position = _skip_markup_expression(source, position)
+
+        search_start = position
+        removed_count += 1
+
+    return "".join(output_parts), removed_count
+
+
 def _eat_after_keyword(
     source: str,
     keyword_regex: re.Pattern,
@@ -1629,7 +1691,11 @@ def _strip_inline_patterns(
     if options.remove_marks:
         text, removed_marks = _eat_after_keyword(text, RE_MARK)
         counts["marks"] += removed_marks
-        
+
+        # Also remove footnotes (annotation markup with Scheme + markup args)
+        text, removed_footnotes = _remove_footnotes(text)
+        counts["marks"] += removed_footnotes
+
         # Also remove performance marks like \soli, \tu, etc.
         text, removed_perf = RE_PERFORMANCE_MARKS.subn("", text)
         counts["marks"] += removed_perf
@@ -1876,6 +1942,11 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, inline_markup_count = _eat_after_keyword(cleaned, RE_MARKUP, deep_markup=True)
         if inline_markup_count:
             print(f"[engrave_strip] removed {inline_markup_count} inline markup token(s)", file=sys.stderr)
+
+        # Step 4e2: Remove footnotes (annotation markup with Scheme + markup args)
+        cleaned, footnote_count = _remove_footnotes(cleaned)
+        if footnote_count:
+            print(f"[engrave_strip] removed {footnote_count} footnote(s)", file=sys.stderr)
 
         # Step 4f: Remove attached/inlined quoted annotations like r8"sempre piano"
         cleaned, attached_quote_count = RE_ATTACHED_QUOTES.subn("", cleaned)
