@@ -422,6 +422,10 @@ def main() -> int:
             return 0
 
         for src in ly_files:
+            # Skip macOS metadata artifacts.
+            if "__MACOSX" in src.parts or src.name.startswith("._"):
+                skipped += 1
+                continue
             rel = src.relative_to(input_root)
             text = src.read_text(encoding="utf-8", errors="ignore")
 
