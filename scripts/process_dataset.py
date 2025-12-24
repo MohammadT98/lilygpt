@@ -8,6 +8,12 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
+# Prefer local source tree when running from the repo (avoid stale installed package).
+_repo_root = Path(__file__).resolve().parents[1]
+_src_dir = _repo_root / "src"
+if _src_dir.exists():
+    sys.path.insert(0, str(_src_dir))
+
 try:
     from lilynorm.utils.options import NormOptions
     from lilynorm.stages import preprocessing
@@ -536,6 +542,30 @@ def main() -> int:
                 cleaned = re.sub(r"(?m)^\s*<<[^>]*$", "", cleaned)
                 # Remove stray ornament tokens like [tr]
                 cleaned = re.sub(r"\[\s*tr\s*\]", "", cleaned)
+
+                # Split glued solfege note names (e.g., faddod, remi2).
+                solfege = r"(?:dod|red|mid|fad|sold|lad|sid|do|re|mi|fa|sol|la|si)"
+                cleaned = re.sub(
+                    rf"\b({solfege})([',]*?)({solfege})([',]*\d*)\b",
+                    r"\1\2 \3\4",
+                    cleaned,
+                )
+
+                # Close any open blocks before top-level assignments.
+                assign_re = re.compile(r"^[A-Za-z_][\w-]*\s*=")
+                lines = cleaned.splitlines()
+                out: list[str] = []
+                depth = 0
+                for line in lines:
+                    if assign_re.match(line) and depth > 0:
+                        out.extend(["}"] * depth)
+                        depth = 0
+                    out.append(line)
+                    line_no_comment = line.split("%", 1)[0]
+                    depth += line_no_comment.count("{") - line_no_comment.count("}")
+                    if depth < 0:
+                        depth = 0
+                cleaned = "\n".join(out) + ("\n" if cleaned.endswith("\n") else "")
                 
                 # Final cleanup: Remove any empty variable assignments that might have been created
                 # during file splitting or other post-processing steps
