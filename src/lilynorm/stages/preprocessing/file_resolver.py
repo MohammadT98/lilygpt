@@ -106,43 +106,40 @@ class FileResolver:
             # Find all include statements and replace them
             def replace_include(match: re.Match) -> str:
                 include_path = match.group(1)
-                include_name = Path(include_path).name
 
                 # Skip excluded patterns (e.g., variabili)
                 if self._should_skip_include(include_path):
                     return match.group(0)  # Keep the include as-is
 
-                # Handle LilyPond language includes (e.g., italiano.ly) without warnings.
-                language_stem = include_name.rsplit(".", 1)[0]
-                if include_name.lower().endswith(".ly"):
-                    lang_map = {
-                        "italiano": "italiano",
-                        "english": "english",
-                        "deutsch": "deutsch",
-                        "francais": "francais",
-                        "espanol": "espanol",
-                        "nederlands": "nederlands",
-                        "norsk": "norsk",
-                        "suomi": "suomi",
-                        "svenska": "svenska",
-                        "vlaams": "vlaams",
-                    }
-                    lang = lang_map.get(language_stem.lower())
-                    if lang:
-                        return f'\\language "{lang}"'
-
                 # Find the actual file
                 resolved_file = self._find_include_file(include_path)
+                include_name = Path(include_path).name
                 if not resolved_file:
+                    # Handle LilyPond language includes (e.g., italiano.ly) without warnings.
+                    language_stem = include_name.rsplit(".", 1)[0]
+                    if include_name.lower().endswith(".ly"):
+                        lang_map = {
+                            "italiano": "italiano",
+                            "english": "english",
+                            "deutsch": "deutsch",
+                            "francais": "francais",
+                            "espanol": "espanol",
+                            "nederlands": "nederlands",
+                            "norsk": "norsk",
+                            "suomi": "suomi",
+                            "svenska": "svenska",
+                            "vlaams": "vlaams",
+                        }
+                        lang = lang_map.get(language_stem.lower())
+                        if lang:
+                            return f'\\language "{lang}"'
                     print(
                         f"WARNING: Include file not found: {include_path} (from {file_path})",
                         file=sys.stderr,
                     )
                     return match.group(0)  # Keep the include as-is
 
-                # Recursively resolve the included file
-                included_content = self._resolve_recursive(resolved_file, depth + 1)
-                return included_content
+                return self._resolve_recursive(resolved_file, depth + 1)
 
             resolved = INCLUDE_RE.sub(replace_include, content)
             self.resolved_cache[file_key] = resolved
@@ -167,7 +164,6 @@ class FileResolver:
 
 
 def run(
-    text: str,
     file_path: Path,
     base_dir: Optional[Path] = None,
     exclude_variabili: bool = False,
@@ -176,7 +172,6 @@ def run(
     Resolve \\include statements in LilyPond text.
 
     Args:
-        text: The LilyPond file content.
         file_path: The path to the LilyPond file (used to infer base_dir).
         base_dir: Base directory for resolving includes. Defaults to file_path.parent.
         exclude_variabili: If True, keep \\include "...variabili..." as-is instead of inlining.

@@ -96,7 +96,7 @@ def main():
         
         try:
             # Stage 0: File resolver
-            stage0 = file_resolver.run(text, src, exclude_variabili=False)
+            stage0 = file_resolver.run(src, exclude_variabili=False)
             
             # Stage 1: Preparse
             stage1 = preparse.run(stage0, opts)

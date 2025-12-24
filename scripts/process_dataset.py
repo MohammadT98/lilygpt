@@ -105,7 +105,7 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
 
     # Stage 0: Resolve all \include statements including variabili.ly
     # (inline everything for training; we need complete, standalone files)
-    stage0 = preprocessing.file_resolver.run(text, path, exclude_variabili=False)
+    stage0 = preprocessing.file_resolver.run(path, exclude_variabili=False)
     
     # Stage 1: Preparse
     stage1 = preprocessing.preparse.run(stage0, opts)

@@ -81,7 +81,7 @@ def main():
         
         try:
             # File resolver only (resolve includes, inline variabili.ly, fix typos, remove -+, dedupe version)
-            resolved = file_resolver.run(text, src, exclude_variabili=False)
+            resolved = file_resolver.run(src, exclude_variabili=False)
 
             # Split files defining multiple forma blocks to mirror full pipeline behavior
             pieces = split_on_multiple_forma(resolved)
