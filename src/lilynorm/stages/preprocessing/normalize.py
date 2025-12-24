@@ -381,6 +381,104 @@ def _inline_named_music_recursive(
 
 
 # ---------------------------------------------------------------------------
+# Variable expansion via LilyPond (parser-based)
+# ---------------------------------------------------------------------------
+
+def _inline_named_music_with_lilypond(
+    source: str,
+    env: Dict[str, str],
+    *,
+    lily_cmd: str,
+    preserve_linebreaks: bool,
+) -> Tuple[str, int]:
+    """
+    Inline named music variables using LilyPond's parser.
+
+    Each variable is resolved via \\displayLilyMusic, then occurrences of
+    \\name are replaced with the expanded music expression.
+    """
+    if not env:
+        return source, 0
+
+    # Build a preamble that defines all collected music variables.
+    preamble_lines = []
+    for name, rhs in env.items():
+        preamble_lines.append(f"{name} = {rhs}")
+    preamble = "\n".join(preamble_lines)
+
+    # Ask LilyPond to expand each variable reference.
+    names = list(env.keys())
+    blocks = [f"\\{name}" for name in names]
+    expanded = _run_lily_batch(
+        blocks,
+        lily_cmd,
+        preserve_linebreaks=preserve_linebreaks,
+        preamble=preamble,
+    )
+
+    # Build replacement map for successful expansions.
+    repl: Dict[str, str] = {}
+    for name, value in zip(names, expanded):
+        if value and _is_safe_music_expansion(value):
+            repl[name] = value
+
+    if not repl:
+        return source, 0
+
+    # Replace occurrences of \name with expanded music.
+    names_sorted = sorted(repl.keys(), key=len, reverse=True)
+    pattern = r"\\(" + "|".join(re.escape(name) for name in names_sorted) + r")\b"
+    count = 0
+
+    def _replace(match: re.Match) -> str:
+        nonlocal count
+        name = match.group(1)
+        if name in repl:
+            count += 1
+            return repl[name]
+        return match.group(0)
+
+    updated = re.sub(pattern, _replace, source)
+    return updated, count
+
+
+def _is_safe_music_expansion(text: str) -> bool:
+    """
+    Heuristic gate: accept only expansions that look like real music and
+    exclude layout/markup/context constructs.
+    """
+    if not text:
+        return False
+
+    forbidden = (
+        "\\markup",
+        "\\paper",
+        "\\header",
+        "\\layout",
+        "\\score",
+        "\\context",
+        "\\set",
+        "\\override",
+        "\\revert",
+        "\\lyricmode",
+        "#(",
+    )
+    if any(tok in text for tok in forbidden):
+        return False
+
+    # Require at least one note/rest token.
+    note_re = re.compile(r"\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[',#isbf]*\d", re.I)
+    if not note_re.search(text):
+        return False
+
+    # Reject empty brace placeholders that can appear in broken output.
+    if "{}" in text or "{ }" in text:
+        return False
+
+    return True
+
+
+# ---------------------------------------------------------------------------
 # Music functions (define-music-function, calls, and snippets)
 # ---------------------------------------------------------------------------
 
@@ -1183,7 +1281,15 @@ def process_string(
     # Inline variables
     if opts.inline_variables:
         env = _collect_named_music(text)
-        text_after_inline, count = _inline_named_music_recursive(text, env)
+        if lily_available(lily_cmd):
+            text_after_inline, count = _inline_named_music_with_lilypond(
+                text,
+                env,
+                lily_cmd=lily_cmd,
+                preserve_linebreaks=opts.preserve_linebreaks,
+            )
+        else:
+            text_after_inline, count = _inline_named_music_recursive(text, env)
         report.variables_inlined = count
         text = text_after_inline
 
