@@ -1115,9 +1115,9 @@ def _light_cleanup(text: str) -> str:
     
     # Handle \tu separately - but NOT when it's part of \tuplet!
     # Use negative lookahead to ensure we don't match \tuplet
-    text = re.sub(r"\\tu(?!plet)\s*", "", text)
-    
-    text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
+    text = re.sub(r"\\tu(?!plet)\s*", " ", text)
+
+    text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", " ", text)
     
     # Fix scheme errors: ## { # } -> remove these malformed empty scheme blocks
     text = re.sub(r"##\s*\{\s*#\s*\}", "", text)
@@ -1208,6 +1208,15 @@ def _light_cleanup(text: str) -> str:
     
     # Remove \vspace from middle of markup strings
     text = re.sub(r'"\\\\vspace[^"]*', r'"', text)
+
+    # Split glued Italian note names (e.g., remi2 -> re mi2, faddod, -> fad dod,)
+    # Covers common accidentals: dod, red, mid, fad, sold, lad, sid.
+    solfege = r"(?:dod|red|mid|fad|sold|lad|sid|do|re|mi|fa|sol|la|si)"
+    text = re.sub(
+        rf"\\b({solfege})([',]*?)({solfege})([',]*\\d*)\\b",
+        r"\\1\\2 \\3\\4",
+        text,
+    )
     
     # Note: \tasto, \fort, \staccatissimo now in unsupported list above
     
@@ -1472,6 +1481,23 @@ def _final_cleanup(text: str) -> str:
     text = re.sub(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*(?:=\s+|$)", r"\1 = {}", text)
     text = re.sub(r"(?m)^\s*=\s+\w+\s*$", "", text)
 
+    # If a top-level assignment appears while still inside an open block,
+    # insert missing closing brace(s) before the assignment.
+    assign_re = re.compile(r"^[A-Za-z_][\w-]*\s*=")
+    lines = text.splitlines()
+    out: List[str] = []
+    depth = 0
+    for line in lines:
+        if assign_re.match(line) and depth > 0:
+            out.extend(["}"] * depth)
+            depth = 0
+        out.append(line)
+        line_no_comment = line.split("%", 1)[0]
+        depth += line_no_comment.count("{") - line_no_comment.count("}")
+        if depth < 0:
+            depth = 0
+    text = "\n".join(out) + ("\n" if text.endswith("\n") else "")
+
     # Musical dotted patterns / figured bass / revert fixes
     text = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", text)
     text = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", text)
@@ -1671,8 +1697,8 @@ def _strip_inline_patterns(
 
     # Attached quotes like ^"text"
     if options.remove_quotes:
-        text, removed_quotes = RE_ATTACHED_QUOTES.subn("", text)
-        text, removed_inline = RE_INLINE_QUOTES.subn("", text)
+        text, removed_quotes = RE_ATTACHED_QUOTES.subn(" ", text)
+        text, removed_inline = RE_INLINE_QUOTES.subn(" ", text)
         counts["quotes"] += removed_quotes + removed_inline
 
     # Header-like metadata
@@ -1697,7 +1723,7 @@ def _strip_inline_patterns(
         counts["marks"] += removed_footnotes
 
         # Also remove performance marks like \soli, \tu, etc.
-        text, removed_perf = RE_PERFORMANCE_MARKS.subn("", text)
+        text, removed_perf = RE_PERFORMANCE_MARKS.subn(" ", text)
         counts["marks"] += removed_perf
 
     # Overrides and related engraving commands
@@ -1741,7 +1767,7 @@ def _strip_inline_patterns(
 
         # Inline overrides/tweaks/shape/omit...
         for regex in RE_OVERRIDES:
-            updated_text, removed = regex.subn("", text)
+            updated_text, removed = regex.subn(" ", text)
             if removed:
                 text = updated_text
                 counts["overrides"] += removed
@@ -1752,11 +1778,11 @@ def _strip_inline_patterns(
 
     # Dynamics & hairpins
     if options.remove_dynamics:
-        text, removed_dynamics = RE_DYNAMICS.subn("", text)
+        text, removed_dynamics = RE_DYNAMICS.subn(" ", text)
         counts["dynamics"] += removed_dynamics
 
     if options.remove_hairpins:
-        text, removed_hairpins = RE_HAIRPINS.subn("", text)
+        text, removed_hairpins = RE_HAIRPINS.subn(" ", text)
         counts["hairpins"] += removed_hairpins
 
     # Remove dataset-specific custom commands and their variable assignments (excluding \forma)
@@ -1949,8 +1975,8 @@ def run(text: str, opts: NormOptions) -> str:
             print(f"[engrave_strip] removed {footnote_count} footnote(s)", file=sys.stderr)
 
         # Step 4f: Remove attached/inlined quoted annotations like r8"sempre piano"
-        cleaned, attached_quote_count = RE_ATTACHED_QUOTES.subn("", cleaned)
-        cleaned, inline_quote_count = RE_INLINE_QUOTES.subn("", cleaned)
+        cleaned, attached_quote_count = RE_ATTACHED_QUOTES.subn(" ", cleaned)
+        cleaned, inline_quote_count = RE_INLINE_QUOTES.subn(" ", cleaned)
         total_quotes = attached_quote_count + inline_quote_count
         if total_quotes:
             print(f"[engrave_strip] removed {total_quotes} inline quoted annotation(s)", file=sys.stderr)
@@ -2008,7 +2034,7 @@ def run(text: str, opts: NormOptions) -> str:
         if STRIP_SCORE_LAYOUT:
             overrides_removed_total = 0
             for regex in RE_OVERRIDES:
-                updated_text, removed = regex.subn("", cleaned)
+                updated_text, removed = regex.subn(" ", cleaned)
                 if removed:
                     cleaned = updated_text
                     overrides_removed_total += removed
