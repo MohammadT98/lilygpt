@@ -532,6 +532,10 @@ def main() -> int:
                 cleaned = re.sub(r'(?m)^\s*\\mark\s*"?[^"\n]*"?\s*$', "", cleaned)
                 # Remove inline empty text blocks like {" "}
                 cleaned = re.sub(r'\{\s*"\s*"\s*\}', "", cleaned)
+                # Remove broken polyphonic openings (<< without >> on the same line)
+                cleaned = re.sub(r"(?m)^\s*<<[^>]*$", "", cleaned)
+                # Remove stray ornament tokens like [tr]
+                cleaned = re.sub(r"\[\s*tr\s*\]", "", cleaned)
                 
                 # Final cleanup: Remove any empty variable assignments that might have been created
                 # during file splitting or other post-processing steps
