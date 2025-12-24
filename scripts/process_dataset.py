@@ -130,7 +130,6 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
         stats["transpose_removed"] += max(0, before["transpose"] - after["transpose"])
         stats["repeat_removed"] += max(0, before["repeat"] - after["repeat"])
         stats["tuplets_removed"] += max(0, before["tuplets"] - after["tuplets"])
-        stats["drums_removed"] += max(0, before["drums"] - after["drums"])
 
     # Stage 3: Strip engraving directives
     stage3 = preprocessing.engrave_strip.run(stage2, opts)
@@ -418,7 +417,6 @@ def main() -> int:
             "transpose_removed": 0,
             "repeat_removed": 0,
             "tuplets_removed": 0,
-            "drums_removed": 0,
             "lily_fail": 0,
             "overrides_removed": 0,
             "markups_removed": 0,
@@ -687,7 +685,7 @@ def main() -> int:
         print(
             f"[normalize] rel_removed:{stats['rel_removed']} vars_removed:{stats['vars_removed']} "
             f"transpose_removed:{stats['transpose_removed']} repeat_removed:{stats['repeat_removed']} "
-            f"tuplets_removed:{stats['tuplets_removed']} drums_removed:{stats['drums_removed']} "
+            f"tuplets_removed:{stats['tuplets_removed']} "
             f"lily_fail:{stats['lily_fail']}"
         )
         print(
