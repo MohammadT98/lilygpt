@@ -24,14 +24,14 @@ from typing import Tuple, List, Dict, Iterable, Optional
 # ============================================================================
 
 # Remove \paper and \header blocks (safe - self-contained metadata)
-REMOVE_PAPER_BLOCKS = True
-REMOVE_HEADER_BLOCKS = True
+REMOVE_PAPER_BLOCKS = False
+REMOVE_HEADER_BLOCKS = False
 
 # Remove \version lines (safe - just metadata)
-REMOVE_VERSION_LINES = True
+REMOVE_VERSION_LINES = False
 
 # Basic whitespace normalization (safe - just formatting)
-ENABLE_WHITESPACE_COMPACTION = True
+ENABLE_WHITESPACE_COMPACTION = False
 DEFAULT_SPACE_MODE = "safe"  # "safe" or "simple"
 
 # Basic syntax fixes from _light_cleanup (safe - fixes compilation errors)
@@ -59,7 +59,7 @@ REMOVE_SCHEME_BLOCKS = False
 
 # Use LilyPond's own parser (Scheme) to strip engraving from music blocks.
 # This is experimental and only touches named music assignments.
-USE_LILYPOND_PARSER_STRIP = True
+USE_LILYPOND_PARSER_STRIP = False
 
 # Remove entire variables that contain ONLY engraving/layout (no musical notes).
 # This is a coarse but safe approach: delete engraving-only variables entirely.
@@ -86,86 +86,86 @@ PARSER_STRIP_REMOVE_NAMES = (
 )
 
 # Clear tweaks on all music events when using parser strip.
-PARSER_STRIP_CLEAR_TWEAKS = True
+PARSER_STRIP_CLEAR_TWEAKS = False
 
 # Remove \with { ... } blocks (engraving context tweaks)
-REMOVE_WITH_BLOCKS = True
+REMOVE_WITH_BLOCKS = False
 
 # Remove \override, \revert, \tweak, \shape, \omit commands
-REMOVE_OVERRIDES = True
+REMOVE_OVERRIDES = False
 
 # Remove dynamics (\p, \f, \mf, etc.)
-REMOVE_DYNAMICS = True
+REMOVE_DYNAMICS = False
 
 # Remove hairpins (\<, \>, \cresc, \dim, etc.)
-REMOVE_HAIRPINS = True
+REMOVE_HAIRPINS = False
 
 # Remove \markup and \mark directives
-REMOVE_MARKUP = True
-REMOVE_MARKS = True
+REMOVE_MARKUP = False
+REMOVE_MARKS = False
 
 # Remove quoted text annotations (e.g., r8"sempre piano")
-REMOVE_QUOTES = True
+REMOVE_QUOTES = False
 
 # ============================================================================
 # CONTENT REMOVAL (Very high risk - likely to break files)
 # ============================================================================
 
 # Remove \lyricmode blocks and assignments
-REMOVE_LYRICS = True
+REMOVE_LYRICS = False
 
 # Remove spacer notes (s1, s2, s4, etc.)
-REMOVE_SPACER_NOTES = True
+REMOVE_SPACER_NOTES = False
 
 # Remove spacer-only subvoices (e.g. "\\\\ { s1 s1 }")
-PRUNE_SPACER_SUBVOICES = True
+PRUNE_SPACER_SUBVOICES = False
 
 # Remove empty figuremode blocks
-REMOVE_EMPTY_FIGUREMODE = True
+REMOVE_EMPTY_FIGUREMODE = False
 
 # ============================================================================
 # MACRO/CUSTOM REMOVAL (Very high risk - dataset specific)
 # ============================================================================
 
 # Remove common macro definitions (tr, dolce, pad, terzine, etc.)
-REMOVE_COMMON_MACROS = True
+REMOVE_COMMON_MACROS = False
 
 # Remove usage of custom macros (e.g., \tr, \solo)
-REMOVE_MACRO_USAGES = True
+REMOVE_MACRO_USAGES = False
 
 # Remove markup-only variable assignments (e.g., ds = _\markup ...)
-REMOVE_MARKUP_ASSIGNMENTS = True
+REMOVE_MARKUP_ASSIGNMENTS = False
 
 # Remove dataset-specific custom commands (notrasp, typeset, etc.)
-REMOVE_CUSTOM_COMMANDS = True
+REMOVE_CUSTOM_COMMANDS = False
 
 # Remove instrument name setters (\set Staff.instrumentName = ...)
-REMOVE_INSTRUMENT_SETTERS = True
+REMOVE_INSTRUMENT_SETTERS = False
 
 # ============================================================================
 # CLEANUP OPERATIONS (Medium risk - may remove too much)
 # ============================================================================
 
 # Remove empty variable assignments (leftover from content removal)
-REMOVE_EMPTY_VARIABLES = True
+REMOVE_EMPTY_VARIABLES = False
 
 # Drop assignments that resolve to empty blocks (e.g. foo = {})
-DROP_EMPTY_ASSIGNMENTS = True
+DROP_EMPTY_ASSIGNMENTS = False
 
 # Remove standalone markup/directive lines
-REMOVE_STANDALONE_MARKUP_LINES = True
+REMOVE_STANDALONE_MARKUP_LINES = False
 
 # Remove standalone quoted lines
-REMOVE_STANDALONE_QUOTED_LINES = True
+REMOVE_STANDALONE_QUOTED_LINES = False
 
 # Remove standalone braced text lines
-REMOVE_STANDALONE_BRACED_TEXT = True
+REMOVE_STANDALONE_BRACED_TEXT = False
 
 # Remove inline strings from music lines
-REMOVE_MUSIC_INLINE_STRINGS = True
+REMOVE_MUSIC_INLINE_STRINGS = False
 
 # Apply aggressive whitespace compaction (reduces empty lines from ~25% to <10%)
-AGGRESSIVE_WHITESPACE_COMPACTION = True
+AGGRESSIVE_WHITESPACE_COMPACTION = False
 
 
 # ---------------------------------------------------------------------------
@@ -1958,25 +1958,23 @@ def _variable_contains_music(rhs_content: str) -> bool:
         "{ c4 d e f }" → True (has notes)
         "{ \\override Stem.length = #7 }" → False (only engraving)
         "^\\markup {Solo}" → False (only markup)
-        "{ \\time 4/4 \\key c \\major s1 }" → True (has spacer note 's')
-        "forma = { \\time 4/4 s1*10 }" → True (structural, keeps for file splitting)
+        "{ \\time 4/4 \\key c \\major s1 }" → False (only layout, no actual notes)
+        "forma = { \\time 4/4 s1*10 }" → False (layout/spacers, removed after splitting)
+        "IvlI = { \\global << \\forma>> }" → False (only references, no notes)
     """
-    # Special case: ALWAYS keep 'forma' - it's used by file_resolver.split_on_multiple_forma()
-    # to split multi-movement works into separate training examples
-    if re.search(r'\bforma\s*=', rhs_content, re.I):
-        return True
-
-    # Check for actual note/rest tokens
-    # Matches: do, re, mi, fa, sol, la, si, a-g, r, s (with optional accidentals, octaves, durations)
-    note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r|s)[is|es|isbf|esbf]*[,\']*\d+\.?\d*'
+    # Check for actual note/rest tokens (but NOT spacer notes 's')
+    # IMPORTANT: Require a digit after the note to avoid matching variable names like "forma", "melodia"
+    # Matches: do4, re8, mi16, c'4, g,,2, r4, fad8, etc.
+    note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[is|es|isbf|esbf]*[,\']*\d'
     if re.search(note_pattern, rhs_content, re.I):
         return True
 
-    # Check for chord notation: < ... >
-    if re.search(r'<[^>]*[a-g][^>]*>', rhs_content, re.I):
+    # Check for chord notation with actual pitches: <note ... note>
+    # Must have at least one note with duration inside the brackets
+    if re.search(r'<[^>]*\b(?:do|re|mi|fa|sol|la|si|[a-g])[is|es|isbf|esbf]*[,\']*\d[^>]*>', rhs_content, re.I):
         return True
 
-    # If we get here, it's likely just engraving/layout
+    # If we get here, it's likely just engraving/layout/references
     return False
 
 
