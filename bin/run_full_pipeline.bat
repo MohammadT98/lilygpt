@@ -5,7 +5,7 @@ setlocal
 pushd "%~dp0\.."
 
 echo === Normalizing + Tokenizing Dataset ===
-uv run python -m scripts.process_dataset --input "data/raw"
+uv run python -m scripts.process_dataset --input "data/raw" --clean-output
 
 echo.
 echo === Building Train/Val/Test Splits ===
