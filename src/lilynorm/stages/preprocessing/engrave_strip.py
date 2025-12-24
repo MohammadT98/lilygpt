@@ -1908,125 +1908,111 @@ def run(text: str, opts: NormOptions) -> str:
     If opts.keep_engraving is True, apply only light cleanup.
     If False, remove \paper blocks for ML training (step 1 of gradual noise removal).
     """
+    messages: list[str] = []
+
+    def _add_count(label: str, count: int) -> None:
+        if count:
+            messages.append(f"{label}={count}")
+
     if getattr(opts, "keep_engraving", True):
-        print("[engrave_strip] keeping engravings", file=sys.stderr)
+        messages.append("mode=keep")
         cleaned = _light_cleanup(text)
         
         # Remove spacer notes (layout placeholders, not real music)
         cleaned, spacer_count = _remove_spacer_notes(cleaned)
-        if spacer_count > 0:
-            print(f"[engrave_strip] removed {spacer_count} spacer note(s)", file=sys.stderr)
+        _add_count("spacers", spacer_count)
         
         # Remove empty variable assignments even when keeping engravings
         cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
-        if empty_var_count > 0:
-            print(f"[engrave_strip] removed {empty_var_count} empty variable assignment(s)", file=sys.stderr)
+        _add_count("empty_vars", empty_var_count)
         
         # Aggressively compact whitespace to reduce noise
         cleaned = _compact_whitespace_aggressive(cleaned)
         cleaned = _final_cleanup(cleaned)
     else:
-        print("[engrave_strip] removing paper, top-level scheme, and common macros", file=sys.stderr)
+        messages.append("mode=strip")
         # Step 1: Remove \paper blocks (safe - self-contained blocks)
         cleaned, paper_count = _remove_block_directive(text, "paper")
-        if paper_count > 0:
-            print(f"[engrave_strip] removed {paper_count} paper block(s)", file=sys.stderr)
+        _add_count("paper", paper_count)
 
         # Step 2: Remove \header blocks (metadata not needed for ML training)
         cleaned, header_count = _remove_block_directive(cleaned, "header")
-        if header_count > 0:
-            print(f"[engrave_strip] removed {header_count} header block(s)", file=sys.stderr)
+        _add_count("header", header_count)
 
         # Step 3: Remove top-level Scheme blocks (set-default-paper-size, set-global-staff-size, custom let)
         cleaned, scheme_count = _remove_top_level_scheme_blocks(cleaned)
-        if scheme_count > 0:
-            print(f"[engrave_strip] removed {scheme_count} scheme block(s)", file=sys.stderr)
+        _add_count("scheme", scheme_count)
 
         # Step 4: Remove common macro definitions (tr, dolce, pad, etc.)
         cleaned, macro_count = _remove_common_macros(cleaned)
-        if macro_count > 0:
-            print(f"[engrave_strip] removed {macro_count} macro definition(s)", file=sys.stderr)
+        _add_count("macros", macro_count)
 
         # Step 4b: Remove dangling usages of those macros (e.g., \tr, \solo)
         cleaned, use_count = _remove_macro_escape_usages(cleaned)
-        if use_count > 0:
-            print(f"[engrave_strip] removed {use_count} macro usage(s)", file=sys.stderr)
+        _add_count("macro_uses", use_count)
 
         # Step 4c: Remove markup-only variable assignments (e.g., ds = _\markup ...)
         cleaned, markup_assign_count = _remove_markup_assignments(cleaned)
-        if markup_assign_count > 0:
-            print(f"[engrave_strip] removed {markup_assign_count} markup assignment(s)", file=sys.stderr)
+        _add_count("markup_assigns", markup_assign_count)
 
         # Step 4d: Remove dataset-specific helper commands and assignments (e.g., notrasp = ...)
         cleaned, removed_custom_cmds = RE_CUSTOM_COMMANDS.subn("", cleaned)
         cleaned, removed_custom_assigns = _remove_custom_assignments(cleaned)
         removed_custom = removed_custom_cmds + removed_custom_assigns
-        if removed_custom:
-            print(f"[engrave_strip] removed {removed_custom} custom helper definition(s)", file=sys.stderr)
+        _add_count("custom_defs", removed_custom)
 
         # Step 4e: Remove remaining inline markups (textual ornaments, directions)
         cleaned, inline_markup_count = _eat_after_keyword(cleaned, RE_MARKUP, deep_markup=True)
-        if inline_markup_count:
-            print(f"[engrave_strip] removed {inline_markup_count} inline markup token(s)", file=sys.stderr)
+        _add_count("inline_markups", inline_markup_count)
 
         # Step 4e2: Remove footnotes (annotation markup with Scheme + markup args)
         cleaned, footnote_count = _remove_footnotes(cleaned)
-        if footnote_count:
-            print(f"[engrave_strip] removed {footnote_count} footnote(s)", file=sys.stderr)
+        _add_count("footnotes", footnote_count)
 
         # Step 4f: Remove attached/inlined quoted annotations like r8"sempre piano"
         cleaned, attached_quote_count = RE_ATTACHED_QUOTES.subn(" ", cleaned)
         cleaned, inline_quote_count = RE_INLINE_QUOTES.subn(" ", cleaned)
         total_quotes = attached_quote_count + inline_quote_count
-        if total_quotes:
-            print(f"[engrave_strip] removed {total_quotes} inline quoted annotation(s)", file=sys.stderr)
+        _add_count("inline_quotes", total_quotes)
 
         # Step 4b: Remove instrument/midi setters in staff blocks
         cleaned, inst_count = _remove_instrument_setters(cleaned)
-        if inst_count > 0:
-            print(f"[engrave_strip] removed {inst_count} instrument/midi setter group(s)", file=sys.stderr)
+        _add_count("instrument_setters", inst_count)
 
         # Step 4: Remove standalone markup/directive lines
         cleaned, markup_count = _remove_standalone_markup_lines(cleaned)
-        if markup_count > 0:
-            print(f"[engrave_strip] pruned {markup_count} markup/directive groups", file=sys.stderr)
+        _add_count("markup_lines", markup_count)
 
         cleaned, quote_line_count = _remove_standalone_quoted_lines(cleaned)
-        if quote_line_count > 0:
-            print(f"[engrave_strip] removed {quote_line_count} standalone quoted line(s)", file=sys.stderr)
+        _add_count("quote_lines", quote_line_count)
 
         cleaned, braced_text_count = _remove_standalone_braced_text_lines(cleaned)
-        if braced_text_count > 0:
-            print(f"[engrave_strip] removed {braced_text_count} standalone braced text line(s)", file=sys.stderr)
+        _add_count("braced_lines", braced_text_count)
 
         cleaned, inline_str_count = _remove_music_inline_strings(cleaned)
-        if inline_str_count > 0:
-            print(f"[engrave_strip] removed {inline_str_count} inline music string(s)", file=sys.stderr)
+        _add_count("inline_strings", inline_str_count)
 
         cleaned, figuremode_count = _remove_empty_figuremode_blocks(cleaned)
-        if figuremode_count > 0:
-            print(f"[engrave_strip] removed {figuremode_count} empty figuremode block(s)", file=sys.stderr)
+        _add_count("empty_figuremode", figuremode_count)
 
         cleaned, empty_book_count = _remove_empty_block_directives(cleaned, ("bookpart", "book"))
-        if empty_book_count > 0:
-            print(f"[engrave_strip] removed {empty_book_count} empty book block(s)", file=sys.stderr)
+        _add_count("empty_book", empty_book_count)
 
         # Step 5-6: Remove \layout/\midi/\score blocks for pure ML training
         if STRIP_SCORE_LAYOUT:
             cleaned, layout_count = _remove_block_directive(cleaned, "layout")
             cleaned, midi_count = _remove_block_directive(cleaned, "midi")
             if layout_count or midi_count:
-                print(f"[engrave_strip] removed layout={layout_count} midi={midi_count} block(s)", file=sys.stderr)
+                messages.append(f"layout={layout_count}")
+                messages.append(f"midi={midi_count}")
 
             cleaned, score_count = _remove_block_directive(cleaned, "score")
-            if score_count:
-                print(f"[engrave_strip] removed {score_count} score block(s)", file=sys.stderr)
+            _add_count("score", score_count)
 
             cleaned, empty_book_count = _remove_empty_block_directives(cleaned, ("bookpart", "book"))
-            if empty_book_count > 0:
-                print(f"[engrave_strip] removed {empty_book_count} empty book block(s)", file=sys.stderr)
+            _add_count("empty_book", empty_book_count)
         else:
-            print("[engrave_strip] keeping score/layout/midi blocks (PDF intact)", file=sys.stderr)
+            messages.append("keep_layout=1")
 
         # Step 7: Remove inline engraving overrides/tweaks/shape/omit directives
         # Only when stripping layout blocks (pure ML training mode)
@@ -2038,26 +2024,26 @@ def run(text: str, opts: NormOptions) -> str:
                 if removed:
                     cleaned = updated_text
                     overrides_removed_total += removed
-            if overrides_removed_total:
-                print(f"[engrave_strip] removed {overrides_removed_total} inline override/tweak directives", file=sys.stderr)
+            _add_count("overrides", overrides_removed_total)
         else:
-            print("[engrave_strip] keeping override directives for layout preservation", file=sys.stderr)
+            messages.append("keep_overrides=1")
 
         # Apply light cleanup for syntax fixes
         cleaned = _light_cleanup(cleaned)
         
         # Remove spacer notes (layout placeholders, not real music)
         cleaned, spacer_count = _remove_spacer_notes(cleaned)
-        if spacer_count > 0:
-            print(f"[engrave_strip] removed {spacer_count} spacer note(s)", file=sys.stderr)
+        _add_count("spacers", spacer_count)
         
         # Final step: Remove empty variable assignments (leftovers from content stripping)
         cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
-        if empty_var_count > 0:
-            print(f"[engrave_strip] removed {empty_var_count} empty variable assignment(s)", file=sys.stderr)
+        _add_count("empty_vars", empty_var_count)
         
         # Aggressively compact whitespace to reduce noise
         cleaned = _compact_whitespace_aggressive(cleaned)
         cleaned = _final_cleanup(cleaned)
+
+    if messages:
+        print("[engrave_strip] " + " ".join(messages), file=sys.stderr)
 
     return cleaned
