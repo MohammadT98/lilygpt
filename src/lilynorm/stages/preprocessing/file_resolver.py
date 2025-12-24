@@ -167,17 +167,19 @@ def run(
     file_path: Path,
     base_dir: Optional[Path] = None,
     exclude_variabili: bool = False,
-) -> str:
+    split_forma: bool = True,
+) -> list[str]:
     """
-    Resolve \\include statements in LilyPond text.
+    Resolve \\include statements in LilyPond text and optionally split by forma blocks.
 
     Args:
         file_path: The path to the LilyPond file (used to infer base_dir).
         base_dir: Base directory for resolving includes. Defaults to file_path.parent.
         exclude_variabili: If True, keep \\include "...variabili..." as-is instead of inlining.
+        split_forma: If True, split files with multiple forma blocks into separate pieces.
 
     Returns:
-        The LilyPond content with includes resolved (except excluded ones).
+        List of resolved text pieces (one per forma block, or single item if no splitting).
     """
     if base_dir is None:
         base_dir = file_path.parent
@@ -185,7 +187,13 @@ def run(
     exclude_pattern = "variabili" if exclude_variabili else None
     resolver = FileResolver(base_dir, exclude_pattern=exclude_pattern)
 
-    return resolver.resolve(file_path)
+    resolved_text = resolver.resolve(file_path)
+
+    # Split on forma blocks if requested
+    if split_forma:
+        return split_on_multiple_forma(resolved_text)
+    else:
+        return [resolved_text]
 
 
 def split_on_multiple_forma(text: str) -> list[str]:

@@ -1959,7 +1959,13 @@ def _variable_contains_music(rhs_content: str) -> bool:
         "{ \\override Stem.length = #7 }" → False (only engraving)
         "^\\markup {Solo}" → False (only markup)
         "{ \\time 4/4 \\key c \\major s1 }" → True (has spacer note 's')
+        "forma = { \\time 4/4 s1*10 }" → True (structural, keeps for file splitting)
     """
+    # Special case: ALWAYS keep 'forma' - it's used by file_resolver.split_on_multiple_forma()
+    # to split multi-movement works into separate training examples
+    if re.search(r'\bforma\s*=', rhs_content, re.I):
+        return True
+
     # Check for actual note/rest tokens
     # Matches: do, re, mi, fa, sol, la, si, a-g, r, s (with optional accidentals, octaves, durations)
     note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r|s)[is|es|isbf|esbf]*[,\']*\d+\.?\d*'

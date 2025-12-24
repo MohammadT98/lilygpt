@@ -94,68 +94,78 @@ def should_process(path: Path, text: str) -> bool:
     return False
 
 
-def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None = None) -> str:
-    """Run the pipeline stages and return the normalized text.
+def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None = None) -> list[str]:
+    """Run the pipeline stages and return list of normalized text pieces.
 
     If a stats dict is provided, it will be updated with simple counters for
     preparse and normalize phases.
+
+    Returns:
+        List of normalized text pieces (one per forma block in the original file).
     """
-    # Stage 0: Resolve all \include statements including variabili.ly
+    # Stage 0: Resolve all \include statements and split on forma blocks
     # (inline everything for training; we need complete, standalone files)
-    stage0 = preprocessing.file_resolver.run(path, exclude_variabili=False)
-    
-    # Stage 1: Preparse
-    stage1 = preprocessing.preparse.run(stage0, opts)
-    if stats is not None:
-        stats["line_removed"] += max(0, len(stage0.splitlines()) - len(stage1.splitlines()))
-        stats["block_removed"] += max(0, stage0.count("{") - stage1.count("{"))
+    # This returns a list of pieces (one per forma block, or single item if no splitting)
+    stage0_pieces = preprocessing.file_resolver.run(path, exclude_variabili=False, split_forma=True)
 
-    # Stage 2: Normalize
-    stage2 = preprocessing.normalize.run(stage1, opts)
-    if stats is not None:
-        def count_occurrences(text: str) -> dict[str, int]:
-            return {
-                "rel": text.count("\\relative"),
-                "vars": len(re.findall(r"(?m)^[A-Za-z_][\\w-]*\\s*=\\s*\\{", text)),
-                "transpose": text.count("\\transpose"),
-                "repeat": text.count("\\repeat"),
-                "tuplets": text.count("\\tuplet") + text.count("\\times"),
-                "drums": text.count("\\drums") + text.count("DrumStaff"),
-            }
+    # Process each piece through the pipeline
+    normalized_pieces = []
 
-        before = count_occurrences(stage1)
-        after = count_occurrences(stage2)
-        stats["rel_removed"] += max(0, before["rel"] - after["rel"])
-        stats["vars_removed"] += max(0, before["vars"] - after["vars"])
-        stats["transpose_removed"] += max(0, before["transpose"] - after["transpose"])
-        stats["repeat_removed"] += max(0, before["repeat"] - after["repeat"])
-        stats["tuplets_removed"] += max(0, before["tuplets"] - after["tuplets"])
+    for piece in stage0_pieces:
+        # Stage 1: Preparse
+        stage1 = preprocessing.preparse.run(piece, opts)
+        if stats is not None:
+            stats["line_removed"] += max(0, len(piece.splitlines()) - len(stage1.splitlines()))
+            stats["block_removed"] += max(0, piece.count("{") - stage1.count("{"))
 
-    # Stage 3: Strip engraving directives
-    stage3 = preprocessing.engrave_strip.run(stage2, opts)
+        # Stage 2: Normalize
+        stage2 = preprocessing.normalize.run(stage1, opts)
+        if stats is not None:
+            def count_occurrences(text: str) -> dict[str, int]:
+                return {
+                    "rel": text.count("\\relative"),
+                    "vars": len(re.findall(r"(?m)^[A-Za-z_][\\w-]*\\s*=\\s*\\{", text)),
+                    "transpose": text.count("\\transpose"),
+                    "repeat": text.count("\\repeat"),
+                    "tuplets": text.count("\\tuplet") + text.count("\\times"),
+                    "drums": text.count("\\drums") + text.count("DrumStaff"),
+                }
 
-    if stats is not None:
-        def count_engraving(text: str) -> dict[str, int]:
-            return {
-                "overrides": text.count("\\override"),
-                "markups": text.count("\\markup"),
-                "marks": text.count("\\mark"),
-                "dynamics": sum(text.count(tok) for tok in ["\\pp", "\\p", "\\mp", "\\mf", "\\f", "\\ff", "\\fp", "\\sfz"]),
-                "hairpins": text.count("\\<") + text.count("\\>"),
-                "quotes": text.count("\\quote"),
-            }
+            before = count_occurrences(stage1)
+            after = count_occurrences(stage2)
+            stats["rel_removed"] += max(0, before["rel"] - after["rel"])
+            stats["vars_removed"] += max(0, before["vars"] - after["vars"])
+            stats["transpose_removed"] += max(0, before["transpose"] - after["transpose"])
+            stats["repeat_removed"] += max(0, before["repeat"] - after["repeat"])
+            stats["tuplets_removed"] += max(0, before["tuplets"] - after["tuplets"])
 
-        before = count_engraving(stage2)
-        after = count_engraving(stage3)
-        stats["overrides_removed"] += max(0, before["overrides"] - after["overrides"])
-        stats["markups_removed"] += max(0, before["markups"] - after["markups"])
-        stats["marks_removed"] += max(0, before["marks"] - after["marks"])
-        stats["dynamics_removed"] += max(0, before["dynamics"] - after["dynamics"])
-        stats["hairpins_removed"] += max(0, before["hairpins"] - after["hairpins"])
-        stats["quotes_removed"] += max(0, before["quotes"] - after["quotes"])
+        # Stage 3: Strip engraving directives
+        stage3 = preprocessing.engrave_strip.run(stage2, opts)
 
-    # Final cleanup now handled inside engraving stage
-    return stage3
+        if stats is not None:
+            def count_engraving(text: str) -> dict[str, int]:
+                return {
+                    "overrides": text.count("\\override"),
+                    "markups": text.count("\\markup"),
+                    "marks": text.count("\\mark"),
+                    "dynamics": sum(text.count(tok) for tok in ["\\pp", "\\p", "\\mp", "\\mf", "\\f", "\\ff", "\\fp", "\\sfz"]),
+                    "hairpins": text.count("\\<") + text.count("\\>"),
+                    "quotes": text.count("\\quote"),
+                }
+
+            before = count_engraving(stage2)
+            after = count_engraving(stage3)
+            stats["overrides_removed"] += max(0, before["overrides"] - after["overrides"])
+            stats["markups_removed"] += max(0, before["markups"] - after["markups"])
+            stats["marks_removed"] += max(0, before["marks"] - after["marks"])
+            stats["dynamics_removed"] += max(0, before["dynamics"] - after["dynamics"])
+            stats["hairpins_removed"] += max(0, before["hairpins"] - after["hairpins"])
+            stats["quotes_removed"] += max(0, before["quotes"] - after["quotes"])
+
+        # Final cleanup now handled inside engraving stage
+        normalized_pieces.append(stage3)
+
+    return normalized_pieces
 
 
 class _Tee:
@@ -446,7 +456,8 @@ def main() -> int:
             print(f"[dataset] processing {rel}")
 
             try:
-                normalized_text = normalize_file(src, opts, stats)
+                # normalize_file now returns a list of pieces (already split by forma)
+                forma_pieces = normalize_file(src, opts, stats)
             except Exception as exc:  # pragma: no cover - defensive
                 print(
                     f"[dataset] ! failed to normalize {rel}: {exc}",
@@ -458,53 +469,46 @@ def main() -> int:
             header_version, header_language, variabili_include = _read_header_metadata(
                 src.parent
             )
-            normalized_text = _ensure_preamble(
-                normalized_text,
-                src_path=src,
-                header_version=header_version,
-                header_language=header_language,
-                variabili_include=variabili_include,
-            )
 
-            # Strip figuremode if requested
-            # DISABLED: Stripping figured bass causes broken references when definitions
-            # are removed but usages remain (e.g., \Ibfn undefined after Ibfn = \figuremode {...} is stripped)
-            # For ML training, figured bass should be preserved as it contains harmonic information.
-            # if not args.keep_figures and not args.keep_engraving:
-            #     normalized_text = FIGURE_ASSIGN_RE.sub("", normalized_text)
-            #     normalized_text = FIGURE_INLINE_RE.sub("", normalized_text)
-            #     normalized_text = normalized_text.replace("<figure>", "").replace(
-            #         "</figure>", ""
-            #     )
+            # Process each piece (apply preamble, single-voice filtering if needed)
+            processed_pieces = []
+            for piece in forma_pieces:
+                normalized_text = _ensure_preamble(
+                    piece,
+                    src_path=src,
+                    header_version=header_version,
+                    header_language=header_language,
+                    variabili_include=variabili_include,
+                )
 
-            selected_voice = None
+                # Optionally keep only a single voice
+                if args.single_voice_only:
+                    voice_blocks = find_voice_blocks(normalized_text)
+                    if not voice_blocks:
+                        single_voice_missing += 1
+                        print(
+                            f"[dataset] ! skipped {rel} (voices=0) "
+                            "due to --single-voice-only"
+                        )
+                        continue
 
-            # Optionally keep only a single voice
-            if args.single_voice_only:
-                voice_blocks = find_voice_blocks(normalized_text)
-                if not voice_blocks:
-                    single_voice_missing += 1
-                    print(
-                        f"[dataset] ! skipped {rel} (voices=0) "
-                        "due to --single-voice-only"
-                    )
-                    continue
+                    selected_voice, block_start, block_end = voice_blocks[0]
+                    prefix = normalized_text[:block_start]
+                    normalized_text = (
+                        prefix + normalized_text[block_start:block_end]
+                    ).rstrip() + "\n"
 
-                selected_voice, block_start, block_end = voice_blocks[0]
-                prefix = normalized_text[:block_start]
-                normalized_text = (
-                    prefix + normalized_text[block_start:block_end]
-                ).rstrip() + "\n"
+                    if len(voice_blocks) > 1:
+                        trimmed_multi_voice += 1
+                        print(
+                            f"[dataset] ! trimmed {rel} to single voice {selected_voice} "
+                            f"(removed {len(voice_blocks) - 1} voices)"
+                        )
 
-                if len(voice_blocks) > 1:
-                    trimmed_multi_voice += 1
-                    print(
-                        f"[dataset] ! trimmed {rel} to single voice {selected_voice} "
-                        f"(removed {len(voice_blocks) - 1} voices)"
-                    )
+                processed_pieces.append(normalized_text)
 
-            # Split files that embed multiple forma blocks into separate pieces
-            forma_pieces = split_on_multiple_forma(normalized_text)
+            # Use the processed pieces (already split by forma in Stage 0)
+            forma_pieces = processed_pieces
 
             if args.dry_run:
                 processed += 1
