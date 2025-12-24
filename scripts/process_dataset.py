@@ -499,6 +499,27 @@ def main() -> int:
 
                 # Remove existing \version declarations, then add \version "2.24.4"
                 cleaned = re.sub(r'(^|\n)\\version\s+"[^"]+"\s*', "", piece)
+
+                # Remove stray caret articulations that break parsing (e.g., mi^ la, dod^ \n mi)
+                note_token = r"(?:do|re|mi|fa|sol|la|si|[a-gr])[a-z]*"
+                cleaned = re.sub(
+                    rf"(\b{note_token}[',]*\d?)\^\s+(?={note_token})",
+                    r"\1 ",
+                    cleaned,
+                    flags=re.MULTILINE,
+                )
+                cleaned = re.sub(
+                    rf"(\b{note_token}[',]*\d?)\^(?=\s*{note_token})",
+                    r"\1",
+                    cleaned,
+                    flags=re.MULTILINE,
+                )
+                cleaned = re.sub(
+                    rf"(\b{note_token}[',]*\d?)\^\s*$",
+                    r"\1",
+                    cleaned,
+                    flags=re.MULTILINE,
+                )
                 
                 # Final cleanup: Remove any empty variable assignments that might have been created
                 # during file splitting or other post-processing steps
