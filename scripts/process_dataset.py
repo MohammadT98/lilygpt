@@ -500,6 +500,8 @@ def main() -> int:
                 processed += 1
                 continue
 
+            removed_empty_total = 0
+            removed_empty_parts = 0
             for idx, piece in enumerate(forma_pieces, start=1):
                 norm_path = norm_root / rel
                 if len(forma_pieces) > 1:
@@ -576,10 +578,18 @@ def main() -> int:
                 from lilynorm.stages.preprocessing.engrave_strip import _remove_empty_variable_assignments
                 cleaned, empty_count = _remove_empty_variable_assignments(cleaned)
                 if empty_count > 0:
-                    print(f"[dataset] removed {empty_count} empty variable assignment(s) from {rel}" + (f"_part{idx}" if len(forma_pieces) > 1 else ""), file=sys.stderr)
+                    removed_empty_total += empty_count
+                    removed_empty_parts += 1
                 
                 output_text = '\\version "2.24.4"\n' + cleaned.lstrip() + "\n"
                 norm_path.write_text(output_text, encoding="utf-8")
+
+            if removed_empty_total > 0:
+                part_note = f" parts={removed_empty_parts}" if removed_empty_parts > 1 else ""
+                print(
+                    f"[dataset] removed {removed_empty_total} empty variable assignment(s) from {rel}{part_note}",
+                    file=sys.stderr,
+                )
 
             # Tokenization output
             if not args.skip_tokenize:
