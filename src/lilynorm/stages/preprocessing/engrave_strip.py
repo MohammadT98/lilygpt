@@ -3,28 +3,156 @@ from __future__ import annotations
 import os
 import re
 import sys
+import subprocess
+import tempfile
+from pathlib import Path
 from dataclasses import dataclass
-from typing import Tuple, List, Dict, Iterable
+from typing import Tuple, List, Dict, Iterable, Optional
 
 
 # ---------------------------------------------------------------------------
-# Configuration flags
+# Configuration flags - FEATURE GATING
 # ---------------------------------------------------------------------------
+#
+# IMPORTANT: Most features are DISABLED by default for safety.
+# Enable them one at a time, test thoroughly, then enable the next one.
+# This prevents mass file corruption from aggressive/buggy patterns.
+#
 
-# If enabled, drop assignments that resolve to empty blocks (e.g. foo = {}).
-DROP_EMPTY_ASSIGNMENTS = False
+# ============================================================================
+# CORE SAFE OPERATIONS (Always enabled - well tested)
+# ============================================================================
 
-# If enabled, remove spacer-only subvoices (e.g. "\\\\ { s1 s1 }").
-PRUNE_SPACER_SUBVOICES = True
+# Remove \paper and \header blocks (safe - self-contained metadata)
+REMOVE_PAPER_BLOCKS = True
+REMOVE_HEADER_BLOCKS = True
 
-# Controls whitespace compaction strategy ("safe" or "simple").
-DEFAULT_SPACE_MODE = "safe"
+# Remove \version lines (safe - just metadata)
+REMOVE_VERSION_LINES = True
+
+# Basic whitespace normalization (safe - just formatting)
+ENABLE_WHITESPACE_COMPACTION = True
+DEFAULT_SPACE_MODE = "safe"  # "safe" or "simple"
+
+# Basic syntax fixes from _light_cleanup (safe - fixes compilation errors)
+# WARNING: DISABLED because _light_cleanup() is actually DESTROYING valid code!
+# It removes \markup keywords, removes valid assignments, and causes 100+ errors per file.
+# See FIX_LIGHT_CLEANUP.md for details.
+ENABLE_LIGHT_CLEANUP = False  # TODO: Create truly safe minimal version
+
+# ============================================================================
+# LAYOUT/SCORE REMOVAL (Moderate risk - test with caution)
+# ============================================================================
 
 # Toggle removal of \score/\layout/\midi wrappers (training-only noise).
 # Set to False to keep layout blocks for PDF generation/verification.
 # Set to True for pure ML training to maximize noise removal.
 # Can be overridden by LILYNORM_KEEP_LAYOUT environment variable.
-STRIP_SCORE_LAYOUT = True if not os.environ.get("LILYNORM_KEEP_LAYOUT") else False
+STRIP_SCORE_LAYOUT = False if not os.environ.get("LILYNORM_KEEP_LAYOUT") else False
+
+# Remove top-level Scheme blocks like #(set-default-paper-size ...)
+REMOVE_SCHEME_BLOCKS = False
+
+# ============================================================================
+# ENGRAVING REMOVAL (High risk - disable until tested)
+# ============================================================================
+
+# Use LilyPond's own parser (Scheme) to strip engraving from music blocks.
+# This is experimental and only touches named music assignments.
+USE_LILYPOND_PARSER_STRIP = True
+
+# Music event names to remove when using the parser strip.
+# Keep this conservative until validated on your dataset.
+PARSER_STRIP_REMOVE_NAMES = (
+    "OverrideProperty",
+    "RevertProperty",
+    "PropertySet",
+    "PropertyUnset",
+    "ApplyContext",
+    "ContextSpeccedMusic",
+)
+
+# Clear tweaks on all music events when using parser strip.
+PARSER_STRIP_CLEAR_TWEAKS = True
+
+# Remove \with { ... } blocks (engraving context tweaks)
+REMOVE_WITH_BLOCKS = True
+
+# Remove \override, \revert, \tweak, \shape, \omit commands
+REMOVE_OVERRIDES = True
+
+# Remove dynamics (\p, \f, \mf, etc.)
+REMOVE_DYNAMICS = True
+
+# Remove hairpins (\<, \>, \cresc, \dim, etc.)
+REMOVE_HAIRPINS = True
+
+# Remove \markup and \mark directives
+REMOVE_MARKUP = True
+REMOVE_MARKS = True
+
+# Remove quoted text annotations (e.g., r8"sempre piano")
+REMOVE_QUOTES = True
+
+# ============================================================================
+# CONTENT REMOVAL (Very high risk - likely to break files)
+# ============================================================================
+
+# Remove \lyricmode blocks and assignments
+REMOVE_LYRICS = True
+
+# Remove spacer notes (s1, s2, s4, etc.)
+REMOVE_SPACER_NOTES = True
+
+# Remove spacer-only subvoices (e.g. "\\\\ { s1 s1 }")
+PRUNE_SPACER_SUBVOICES = True
+
+# Remove empty figuremode blocks
+REMOVE_EMPTY_FIGUREMODE = True
+
+# ============================================================================
+# MACRO/CUSTOM REMOVAL (Very high risk - dataset specific)
+# ============================================================================
+
+# Remove common macro definitions (tr, dolce, pad, terzine, etc.)
+REMOVE_COMMON_MACROS = True
+
+# Remove usage of custom macros (e.g., \tr, \solo)
+REMOVE_MACRO_USAGES = True
+
+# Remove markup-only variable assignments (e.g., ds = _\markup ...)
+REMOVE_MARKUP_ASSIGNMENTS = True
+
+# Remove dataset-specific custom commands (notrasp, typeset, etc.)
+REMOVE_CUSTOM_COMMANDS = True
+
+# Remove instrument name setters (\set Staff.instrumentName = ...)
+REMOVE_INSTRUMENT_SETTERS = True
+
+# ============================================================================
+# CLEANUP OPERATIONS (Medium risk - may remove too much)
+# ============================================================================
+
+# Remove empty variable assignments (leftover from content removal)
+REMOVE_EMPTY_VARIABLES = True
+
+# Drop assignments that resolve to empty blocks (e.g. foo = {})
+DROP_EMPTY_ASSIGNMENTS = True
+
+# Remove standalone markup/directive lines
+REMOVE_STANDALONE_MARKUP_LINES = True
+
+# Remove standalone quoted lines
+REMOVE_STANDALONE_QUOTED_LINES = True
+
+# Remove standalone braced text lines
+REMOVE_STANDALONE_BRACED_TEXT = True
+
+# Remove inline strings from music lines
+REMOVE_MUSIC_INLINE_STRINGS = True
+
+# Apply aggressive whitespace compaction (reduces empty lines from ~25% to <10%)
+AGGRESSIVE_WHITESPACE_COMPACTION = True
 
 
 # ---------------------------------------------------------------------------
@@ -58,6 +186,30 @@ def _grab_balanced(
         index += 1
 
     return -1
+
+
+def _grab_angles(text: str, start: int) -> int:
+    """
+    Given an index `start` pointing at a '<<' opener, return the index
+    immediately after the matching '>>', handling nested blocks.
+
+    Returns -1 if the text ends before a matching '>>' is found.
+    """
+    depth = 1
+    index = start + 2
+    length = len(text)
+
+    while index < length and depth > 0:
+        if text.startswith("<<", index):
+            depth += 1
+            index += 2
+        elif text.startswith(">>", index):
+            depth -= 1
+            index += 2
+        else:
+            index += 1
+
+    return index if depth == 0 else -1
 
 
 def _protect_scheme_expressions(text: str) -> Tuple[str, Dict[str, str]]:
@@ -1437,6 +1589,15 @@ def _final_cleanup(text: str) -> str:
 
     Runs after engraving stripping (or directly if engravings are kept).
     """
+    # Remove empty Scheme calls (e.g., #(set-default-paper-size ))
+    text = re.sub(r"#\(\s*[A-Za-z0-9_-]+\s*\)", "", text)
+
+    # Remove stray standalone closing braces
+    text = re.sub(r"(?m)^\s*\}\s*$", "", text)
+
+    # Drop malformed assignment lines missing '=' (e.g., "IIvlIni4 do8")
+    text = re.sub(r"(?m)^\s*[A-Za-z_][\w-]*\s+[^\s=][^\n]*$", "", text)
+
     # Remove unsupported custom commands and movement-local roman macros
     # NOTE: 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
     unsupported = (
@@ -1683,6 +1844,226 @@ def _eat_after_keyword(
 
 
 # ---------------------------------------------------------------------------
+# LilyPond parser-based engraving strip (experimental)
+# ---------------------------------------------------------------------------
+
+RE_ASSIGNMENT = re.compile(r"(^|[^\w-])([A-Za-z][\w-]*)\s*=\s*", re.M)
+
+
+def _find_music_assignments(text: str) -> List[Tuple[int, int, str, str]]:
+    """
+    Locate named music assignments and return spans for RHS replacement.
+
+    Returns a list of (rhs_start, rhs_end, var_name, rhs_text).
+    """
+    results: List[Tuple[int, int, str, str]] = []
+    search_start = 0
+    length = len(text)
+
+    while search_start < length:
+        match = RE_ASSIGNMENT.search(text, search_start)
+        if not match:
+            break
+
+        rhs_start = match.end()
+        while rhs_start < length and text[rhs_start].isspace():
+            rhs_start += 1
+
+        name = match.group(2)
+
+        # Skip markup assignments (start with _ or ^).
+        if rhs_start < length and text[rhs_start] in ("_", "^"):
+            search_start = rhs_start + 1
+            continue
+
+        # name = \relative ...
+        if text.startswith("\\relative", rhs_start):
+            rel_match = re.search(r"\\relative\b(?:\s+[^\s{}%]+)?\s*\{", text[rhs_start:], re.I)
+            if not rel_match:
+                search_start = rhs_start + 1
+                continue
+            brace_open = rhs_start + rel_match.end() - 1
+            brace_close = _grab_balanced(text, brace_open, "{", "}")
+            if brace_close == -1:
+                search_start = rhs_start + 1
+                continue
+            rhs_end = brace_close + 1
+            results.append((rhs_start, rhs_end, name, text[rhs_start:rhs_end]))
+            search_start = rhs_end
+            continue
+
+        # name = \transpose ...
+        if text.startswith("\\transpose", rhs_start):
+            tr_match = re.search(r"\\transpose\b(?:\s+[^\s{}%]+){2}\s*\{", text[rhs_start:], re.I)
+            if not tr_match:
+                search_start = rhs_start + 1
+                continue
+            brace_open = rhs_start + tr_match.end() - 1
+            brace_close = _grab_balanced(text, brace_open, "{", "}")
+            if brace_close == -1:
+                search_start = rhs_start + 1
+                continue
+            rhs_end = brace_close + 1
+            results.append((rhs_start, rhs_end, name, text[rhs_start:rhs_end]))
+            search_start = rhs_end
+            continue
+
+        # name = { ... }
+        if rhs_start < length and text[rhs_start] == "{":
+            brace_close = _grab_balanced(text, rhs_start, "{", "}")
+            if brace_close == -1:
+                search_start = rhs_start + 1
+                continue
+            rhs_end = brace_close + 1
+            results.append((rhs_start, rhs_end, name, text[rhs_start:rhs_end]))
+            search_start = rhs_end
+            continue
+
+        # name = << ... >>
+        if text.startswith("<<", rhs_start):
+            angle_close = _grab_angles(text, rhs_start)
+            if angle_close == -1:
+                search_start = rhs_start + 1
+                continue
+            results.append((rhs_start, angle_close, name, text[rhs_start:angle_close]))
+            search_start = angle_close
+            continue
+
+        search_start = rhs_start + 1
+
+    return results
+
+
+def _build_parser_strip_preamble() -> str:
+    """
+    Build Scheme preamble for removing engraving events in LilyPond.
+    """
+    remove_list = " ".join(PARSER_STRIP_REMOVE_NAMES)
+    clear_tweaks = "#t" if PARSER_STRIP_CLEAR_TWEAKS else "#f"
+
+    return "\n".join(
+        [
+            "% Parser-based engraving strip (auto-generated)",
+            "#(define (strip-engraving music)",
+            "  (define remove-names '(" + remove_list + "))",
+            "  (define (strip-one m)",
+            "    (if (not (ly:music? m)) m",
+            "        (let* ((name (ly:music-property m 'name))",
+            "               (elts (ly:music-property m 'elements))",
+            "               (elt (ly:music-property m 'element)))",
+            "          (if (memq name remove-names)",
+            "              #f",
+            "              (begin",
+            f"                (if {clear_tweaks} (ly:music-set-property! m 'tweaks '()))",
+            "                (if (ly:music? elt)",
+            "                    (ly:music-set-property! m 'element (strip-one elt)))",
+            "                (if (pair? elts)",
+            "                    (ly:music-set-property! m 'elements",
+            "                      (filter ly:music?",
+            "                        (map strip-one elts))))",
+            "                m)))))",
+            "  (let ((clean (strip-one music)))",
+            "    (if (ly:music? clean) clean (make-music 'SequentialMusic 'elements '()))))",
+        ]
+    )
+
+
+def _run_lily_parser_strip(
+    blocks: List[str],
+    lily_cmd: str,
+) -> List[Optional[str]]:
+    """
+    Use LilyPond to strip engraving from music blocks via Scheme.
+    """
+    parts: List[str] = ['\\version "2.24.4"']
+    parts.append(_build_parser_strip_preamble())
+
+    def var_name(idx: int) -> str:
+        return f"music{idx}"
+
+    for idx, block in enumerate(blocks):
+        parts.append(f"{var_name(idx)} = {block}")
+
+    for idx in range(len(blocks)):
+        parts.append(f"#(display \"===BEGIN_{idx}===\\n\")")
+        parts.append(f"\\displayLilyMusic #(strip-engraving {var_name(idx)})")
+        parts.append(f"#(display \"===END_{idx}===\\n\")")
+
+    ly_source = "\n".join(parts) + "\n"
+    result_output = ""
+
+    with tempfile.TemporaryDirectory() as temp_dir:
+        tmp_path = Path(temp_dir, "input.ly")
+        tmp_path.write_text(ly_source, encoding="utf-8")
+
+        try:
+            proc = subprocess.run(
+                [
+                    lily_cmd,
+                    "-dno-print-pages",
+                    "-dbackend=null",
+                    "-o",
+                    str(Path(temp_dir, "dump")),
+                    str(tmp_path),
+                ],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                timeout=120,
+                encoding="utf-8",
+            )
+            result_output = (proc.stdout or "") + "\n" + (proc.stderr or "")
+        except Exception:
+            return [None] * len(blocks)
+
+    result_output = result_output.replace("\r\n", "\n")
+    results: List[Optional[str]] = [None] * len(blocks)
+
+    for idx in range(len(blocks)):
+        match = re.search(
+            rf"===BEGIN_{idx}===\n(.*?)===END_{idx}===\n?",
+            result_output,
+            re.S,
+        )
+        if not match:
+            continue
+
+        segment = match.group(1).strip()
+        results[idx] = segment if segment else None
+
+    return results
+
+
+def _strip_engraving_with_lilypond(text: str) -> Tuple[str, int]:
+    """
+    Strip engraving by running LilyPond's parser on named music assignments.
+    """
+    assignments = _find_music_assignments(text)
+    if not assignments:
+        return text, 0
+
+    try:
+        from lilynorm.stages.preprocessing.normalize import resolve_lily_cmd, lily_available
+    except Exception:
+        return text, 0
+
+    lily_cmd = resolve_lily_cmd()
+    if not lily_available(lily_cmd):
+        return text, 0
+
+    blocks = [rhs for _, _, _, rhs in assignments]
+    cleaned_blocks = _run_lily_parser_strip(blocks, lily_cmd=lily_cmd)
+
+    replaced = 0
+    for (rhs_start, rhs_end, _, _), cleaned in reversed(list(zip(assignments, cleaned_blocks))):
+        if cleaned is None:
+            continue
+        text = text[:rhs_start] + cleaned + text[rhs_end:]
+        replaced += 1
+
+    return text, replaced
+
+
+# ---------------------------------------------------------------------------
 # Main stripping logic
 # ---------------------------------------------------------------------------
 
@@ -1693,6 +2074,10 @@ def _strip_inline_patterns(
     """
     Strip engraving-related patterns (overrides, dynamics, markups, etc.) from
     LilyPond source according to StripOptions.
+
+    NOTE: This function is now LEGACY. The main entry point is run() which uses
+    the global feature flags defined at the top of this file. This function is
+    kept for backward compatibility with clean_lilypond().
 
     Returns (cleaned_text, removal_counts).
     """
@@ -1928,89 +2313,139 @@ def run(text: str, opts: NormOptions) -> str:
 
     if getattr(opts, "keep_engraving", True):
         messages.append("mode=keep")
-        cleaned = _light_cleanup(text)
-        
-        # Remove spacer notes (layout placeholders, not real music)
-        cleaned, spacer_count = _remove_spacer_notes(cleaned)
-        _add_count("spacers", spacer_count)
-        
-        # Remove empty variable assignments even when keeping engravings
-        cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
-        _add_count("empty_vars", empty_var_count)
-        
-        # Aggressively compact whitespace to reduce noise
-        cleaned = _compact_whitespace_aggressive(cleaned)
+        cleaned = text
+
+        # Remove \paper blocks (safe - self-contained metadata)
+        if REMOVE_PAPER_BLOCKS:
+            cleaned, paper_count = _remove_block_directive(cleaned, "paper")
+            _add_count("paper", paper_count)
+
+        # Remove \header blocks (safe - self-contained metadata)
+        if REMOVE_HEADER_BLOCKS:
+            cleaned, header_count = _remove_block_directive(cleaned, "header")
+            _add_count("header", header_count)
+
+        # Apply light cleanup only if enabled (safe syntax fixes)
+        if ENABLE_LIGHT_CLEANUP:
+            cleaned = _light_cleanup(cleaned)
+
+        # Remove spacer notes (layout placeholders, not real music) - ONLY if enabled
+        if REMOVE_SPACER_NOTES:
+            cleaned, spacer_count = _remove_spacer_notes(cleaned)
+            _add_count("spacers", spacer_count)
+
+        # Remove empty variable assignments - ONLY if enabled
+        if REMOVE_EMPTY_VARIABLES:
+            cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
+            _add_count("empty_vars", empty_var_count)
+
+        # Aggressively compact whitespace - ONLY if enabled
+        if AGGRESSIVE_WHITESPACE_COMPACTION:
+            cleaned = _compact_whitespace_aggressive(cleaned)
+        elif ENABLE_WHITESPACE_COMPACTION:
+            # Use safe whitespace compaction
+            if DEFAULT_SPACE_MODE == "simple":
+                cleaned = _compact_spaces_simple(cleaned)
+            else:
+                cleaned = _compact_spaces_safe(cleaned)
+
+        # Apply final cleanup
         cleaned = _final_cleanup(cleaned)
     else:
         messages.append("mode=strip")
+        cleaned = text
+
         # Step 1: Remove \paper blocks (safe - self-contained blocks)
-        cleaned, paper_count = _remove_block_directive(text, "paper")
-        _add_count("paper", paper_count)
+        if REMOVE_PAPER_BLOCKS:
+            cleaned, paper_count = _remove_block_directive(cleaned, "paper")
+            _add_count("paper", paper_count)
 
         # Step 2: Remove \header blocks (metadata not needed for ML training)
-        cleaned, header_count = _remove_block_directive(cleaned, "header")
-        _add_count("header", header_count)
+        if REMOVE_HEADER_BLOCKS:
+            cleaned, header_count = _remove_block_directive(cleaned, "header")
+            _add_count("header", header_count)
 
         # Step 3: Remove top-level Scheme blocks (set-default-paper-size, set-global-staff-size, custom let)
-        cleaned, scheme_count = _remove_top_level_scheme_blocks(cleaned)
-        _add_count("scheme", scheme_count)
+        if REMOVE_SCHEME_BLOCKS:
+            cleaned, scheme_count = _remove_top_level_scheme_blocks(cleaned)
+            _add_count("scheme", scheme_count)
 
         # Step 4: Remove common macro definitions (tr, dolce, pad, etc.)
-        cleaned, macro_count = _remove_common_macros(cleaned)
-        _add_count("macros", macro_count)
+        if REMOVE_COMMON_MACROS:
+            cleaned, macro_count = _remove_common_macros(cleaned)
+            _add_count("macros", macro_count)
 
         # Step 4b: Remove dangling usages of those macros (e.g., \tr, \solo)
-        cleaned, use_count = _remove_macro_escape_usages(cleaned)
-        _add_count("macro_uses", use_count)
+        if REMOVE_MACRO_USAGES:
+            cleaned, use_count = _remove_macro_escape_usages(cleaned)
+            _add_count("macro_uses", use_count)
 
         # Step 4c: Remove markup-only variable assignments (e.g., ds = _\markup ...)
-        cleaned, markup_assign_count = _remove_markup_assignments(cleaned)
-        _add_count("markup_assigns", markup_assign_count)
+        if REMOVE_MARKUP_ASSIGNMENTS:
+            cleaned, markup_assign_count = _remove_markup_assignments(cleaned)
+            _add_count("markup_assigns", markup_assign_count)
 
         # Step 4d: Remove dataset-specific helper commands and assignments (e.g., notrasp = ...)
-        cleaned, removed_custom_cmds = RE_CUSTOM_COMMANDS.subn("", cleaned)
-        cleaned, removed_custom_assigns = _remove_custom_assignments(cleaned)
-        removed_custom = removed_custom_cmds + removed_custom_assigns
-        _add_count("custom_defs", removed_custom)
+        if REMOVE_CUSTOM_COMMANDS:
+            cleaned, removed_custom_cmds = RE_CUSTOM_COMMANDS.subn("", cleaned)
+            cleaned, removed_custom_assigns = _remove_custom_assignments(cleaned)
+            removed_custom = removed_custom_cmds + removed_custom_assigns
+            _add_count("custom_defs", removed_custom)
+
+        # Step 4d2: Parser-based engraving strip (named music assignments only)
+        if USE_LILYPOND_PARSER_STRIP:
+            cleaned, parser_count = _strip_engraving_with_lilypond(cleaned)
+            _add_count("parser_strip", parser_count)
 
         # Step 4e: Remove remaining inline markups (textual ornaments, directions)
-        cleaned, inline_markup_count = _eat_after_keyword(cleaned, RE_MARKUP, deep_markup=True)
-        _add_count("inline_markups", inline_markup_count)
+        if REMOVE_MARKUP:
+            cleaned, inline_markup_count = _eat_after_keyword(cleaned, RE_MARKUP, deep_markup=True)
+            _add_count("inline_markups", inline_markup_count)
 
         # Step 4e2: Remove footnotes (annotation markup with Scheme + markup args)
-        cleaned, footnote_count = _remove_footnotes(cleaned)
-        _add_count("footnotes", footnote_count)
+        if REMOVE_MARKS:
+            cleaned, footnote_count = _remove_footnotes(cleaned)
+            _add_count("footnotes", footnote_count)
 
         # Step 4f: Remove attached/inlined quoted annotations like r8"sempre piano"
-        cleaned, attached_quote_count = RE_ATTACHED_QUOTES.subn(" ", cleaned)
-        cleaned, inline_quote_count = RE_INLINE_QUOTES.subn(" ", cleaned)
-        total_quotes = attached_quote_count + inline_quote_count
-        _add_count("inline_quotes", total_quotes)
+        if REMOVE_QUOTES:
+            cleaned, attached_quote_count = RE_ATTACHED_QUOTES.subn(" ", cleaned)
+            cleaned, inline_quote_count = RE_INLINE_QUOTES.subn(" ", cleaned)
+            total_quotes = attached_quote_count + inline_quote_count
+            _add_count("inline_quotes", total_quotes)
 
-        # Step 4b: Remove instrument/midi setters in staff blocks
-        cleaned, inst_count = _remove_instrument_setters(cleaned)
-        _add_count("instrument_setters", inst_count)
+        # Step 4g: Remove instrument/midi setters in staff blocks
+        if REMOVE_INSTRUMENT_SETTERS:
+            cleaned, inst_count = _remove_instrument_setters(cleaned)
+            _add_count("instrument_setters", inst_count)
 
-        # Step 4: Remove standalone markup/directive lines
-        cleaned, markup_count = _remove_standalone_markup_lines(cleaned)
-        _add_count("markup_lines", markup_count)
+        # Step 5: Remove standalone markup/directive lines
+        if REMOVE_STANDALONE_MARKUP_LINES:
+            cleaned, markup_count = _remove_standalone_markup_lines(cleaned)
+            _add_count("markup_lines", markup_count)
 
-        cleaned, quote_line_count = _remove_standalone_quoted_lines(cleaned)
-        _add_count("quote_lines", quote_line_count)
+        if REMOVE_STANDALONE_QUOTED_LINES:
+            cleaned, quote_line_count = _remove_standalone_quoted_lines(cleaned)
+            _add_count("quote_lines", quote_line_count)
 
-        cleaned, braced_text_count = _remove_standalone_braced_text_lines(cleaned)
-        _add_count("braced_lines", braced_text_count)
+        if REMOVE_STANDALONE_BRACED_TEXT:
+            cleaned, braced_text_count = _remove_standalone_braced_text_lines(cleaned)
+            _add_count("braced_lines", braced_text_count)
 
-        cleaned, inline_str_count = _remove_music_inline_strings(cleaned)
-        _add_count("inline_strings", inline_str_count)
+        if REMOVE_MUSIC_INLINE_STRINGS:
+            cleaned, inline_str_count = _remove_music_inline_strings(cleaned)
+            _add_count("inline_strings", inline_str_count)
 
-        cleaned, figuremode_count = _remove_empty_figuremode_blocks(cleaned)
-        _add_count("empty_figuremode", figuremode_count)
+        if REMOVE_EMPTY_FIGUREMODE:
+            cleaned, figuremode_count = _remove_empty_figuremode_blocks(cleaned)
+            _add_count("empty_figuremode", figuremode_count)
 
+        # Remove empty book/bookpart blocks
         cleaned, empty_book_count = _remove_empty_block_directives(cleaned, ("bookpart", "book"))
-        _add_count("empty_book", empty_book_count)
+        if empty_book_count > 0:
+            _add_count("empty_book", empty_book_count)
 
-        # Step 5-6: Remove \layout/\midi/\score blocks for pure ML training
+        # Step 6: Remove \layout/\midi/\score blocks for pure ML training
         if STRIP_SCORE_LAYOUT:
             cleaned, layout_count = _remove_block_directive(cleaned, "layout")
             cleaned, midi_count = _remove_block_directive(cleaned, "midi")
@@ -2022,14 +2457,13 @@ def run(text: str, opts: NormOptions) -> str:
             _add_count("score", score_count)
 
             cleaned, empty_book_count = _remove_empty_block_directives(cleaned, ("bookpart", "book"))
-            _add_count("empty_book", empty_book_count)
+            if empty_book_count > 0:
+                _add_count("empty_book_after_score", empty_book_count)
         else:
             messages.append("keep_layout=1")
 
         # Step 7: Remove inline engraving overrides/tweaks/shape/omit directives
-        # Only when stripping layout blocks (pure ML training mode)
-        # When keeping layout, preserve all overrides for proper PDF rendering
-        if STRIP_SCORE_LAYOUT:
+        if REMOVE_OVERRIDES:
             overrides_removed_total = 0
             for regex in RE_OVERRIDES:
                 updated_text, removed = regex.subn(" ", cleaned)
@@ -2037,22 +2471,51 @@ def run(text: str, opts: NormOptions) -> str:
                     cleaned = updated_text
                     overrides_removed_total += removed
             _add_count("overrides", overrides_removed_total)
-        else:
-            messages.append("keep_overrides=1")
+
+        # Remove dynamics
+        if REMOVE_DYNAMICS:
+            cleaned, removed_dynamics = RE_DYNAMICS.subn(" ", cleaned)
+            _add_count("dynamics", removed_dynamics)
+
+        # Remove hairpins
+        if REMOVE_HAIRPINS:
+            cleaned, removed_hairpins = RE_HAIRPINS.subn(" ", cleaned)
+            _add_count("hairpins", removed_hairpins)
+
+        # Remove lyrics
+        if REMOVE_LYRICS:
+            cleaned, _ = _strip_lyricmode_assignments(cleaned)
+            cleaned, _ = _strip_inline_lyricmode(cleaned)
+
+        # Remove \with blocks
+        if REMOVE_WITH_BLOCKS:
+            cleaned, removed_with_blocks = _remove_with_blocks(cleaned)
+            _add_count("with_blocks", removed_with_blocks)
 
         # Apply light cleanup for syntax fixes
-        cleaned = _light_cleanup(cleaned)
-        
+        if ENABLE_LIGHT_CLEANUP:
+            cleaned = _light_cleanup(cleaned)
+
         # Remove spacer notes (layout placeholders, not real music)
-        cleaned, spacer_count = _remove_spacer_notes(cleaned)
-        _add_count("spacers", spacer_count)
-        
+        if REMOVE_SPACER_NOTES:
+            cleaned, spacer_count = _remove_spacer_notes(cleaned)
+            _add_count("spacers", spacer_count)
+
         # Final step: Remove empty variable assignments (leftovers from content stripping)
-        cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
-        _add_count("empty_vars", empty_var_count)
-        
-        # Aggressively compact whitespace to reduce noise
-        cleaned = _compact_whitespace_aggressive(cleaned)
+        if REMOVE_EMPTY_VARIABLES:
+            cleaned, empty_var_count = _remove_empty_variable_assignments(cleaned)
+            _add_count("empty_vars", empty_var_count)
+
+        # Compact whitespace
+        if AGGRESSIVE_WHITESPACE_COMPACTION:
+            cleaned = _compact_whitespace_aggressive(cleaned)
+        elif ENABLE_WHITESPACE_COMPACTION:
+            if DEFAULT_SPACE_MODE == "simple":
+                cleaned = _compact_spaces_simple(cleaned)
+            else:
+                cleaned = _compact_spaces_safe(cleaned)
+
+        # Apply final cleanup
         cleaned = _final_cleanup(cleaned)
 
     if messages:
