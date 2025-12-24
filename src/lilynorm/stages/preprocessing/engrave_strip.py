@@ -1156,6 +1156,9 @@ def _light_cleanup(text: str) -> str:
     # Fix figured bass broken syntax: '+[' and variants
     text = re.sub(r"\s*\+\[", " \\\\[ ", text)
     text = re.sub(r"\s*\+\]", " \\\\] ", text)
+
+    # Fix malformed figuremode tokens that leave a dangling close brace
+    text = re.sub(r"\\figuremode\s*}", "}", text)
     
     # Remove malformed variable assignments with -align, empty markup, or ^{ patterns
     text = re.sub(r'^[a-z]+\s*=\s*\^-align\s+"[^"]*"\s*$', '', text, flags=re.MULTILINE)
@@ -1169,6 +1172,13 @@ def _light_cleanup(text: str) -> str:
     # Fix note names with sharp/natural/flat modifiers: "mi!16" -> "mi16", "fa#2" -> "fa2"
     # These are malformed - the modifier should be after duration or part of syntax
     text = re.sub(r"((?:do|re|mi|fa|sol|la|si)[',]*?)([!#b]+)(\d+)", r"\1\3", text)
+
+    # Fix missing space in key declarations: \key mi\minor -> \key mi \minor
+    text = re.sub(
+        r"(\\key\s+(?:do|re|mi|fa|sol|la|si))\\(major|minor)\b",
+        r"\1 \\\2",
+        text,
+    )
     
     # Fix orphaned "r" rest on its own line appearing as note name
     # Pattern: lines that are just "r" or "r8" or "r4" when they should be rests within music
@@ -1184,6 +1194,8 @@ def _light_cleanup(text: str) -> str:
 
     # Remove stray + characters that cling to notes (e.g., la+)
     text = re.sub(r"((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d?)\+", r"\1", text)
+    # Remove invalid "-+" attached to notes (e.g., si4-+)
+    text = re.sub(r"((?:do|re|mi|fa|sol|la|si|[a-gr])[',]*\d*\.?)-\+", r"\1", text)
     # Remove leading + tokens at line starts before notes
     text = re.sub(r"(?m)^[ \t]*\+(?=\s*[a-gr])", "", text)
     # Collapse standalone + or - tokens between whitespace
