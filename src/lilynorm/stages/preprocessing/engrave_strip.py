@@ -1466,14 +1466,73 @@ def _final_cleanup(text: str) -> str:
     text = re.sub(r'\\once\s*', '', text)
 
     # Remove general \override commands (engraving-only layout overrides)
-    # Two syntax forms:
-    #   1. \override Context.Property = #value
-    #   2. \override Context #'property = #value
-    # Examples: \override Score.RehearsalMark.X-offset = #3
-    #           \override Rest #'staff-position = #-0
-    # CAREFUL: Only remove inline overrides, not those in variable definitions
-    # Pattern: \override + (Context.Property OR Context #'property) + = + value
-    text = re.sub(r"\\override\s+\S+(?:\.\S+|(?:\s+#'[\w\-]+)?)\s*=\s*#[#']?[\w\-+.]+\s*", '', text)
+    # IMPORTANT: Only remove INLINE overrides, NOT those inside \with { ... } blocks
+    # \with blocks define staff context properties (like ossia staves) and must be preserved
+    #
+    # Strategy:
+    # 1. Protect \with { ... } blocks with placeholders
+    # 2. Remove inline \override commands
+    # 3. Restore \with blocks
+    #
+    # Inline override patterns to remove:
+    #   \override Context.Property = #value
+    #   \override Context #'property = #value
+    #   \override NoteHead #'duration-log = 1  (numeric value without #)
+    #   \override TrillSpanner.bound-details.left.text = #'()  (empty list)
+    #   \override Score.RehearsalMark.extra-offset = #'(-20 . +2)  (pair value)
+
+    # Step 1: Protect \with blocks by replacing them with placeholders
+    with_blocks = []
+    placeholder_template = "<<<WITH_BLOCK_{}>>>"
+
+    result = []
+    i = 0
+    while i < len(text):
+        # Check for \with
+        if text[i:i+5] == r'\with':
+            # Find opening brace
+            j = i + 5
+            while j < len(text) and text[j] in ' \t\n':
+                j += 1
+
+            if j < len(text) and text[j] == '{':
+                # Balance braces to find the end of the \with block
+                brace_count = 1
+                k = j + 1
+                while k < len(text) and brace_count > 0:
+                    if text[k] == '{':
+                        brace_count += 1
+                    elif text[k] == '}':
+                        brace_count -= 1
+                    k += 1
+
+                # Save this \with block
+                with_block = text[i:k]
+                idx = len(with_blocks)
+                with_blocks.append(with_block)
+                result.append(placeholder_template.format(idx))
+                i = k
+                continue
+
+        result.append(text[i])
+        i += 1
+
+    text = ''.join(result)
+
+    # Step 2: Remove inline \override commands
+    # Updated pattern handles all value types:
+    # - Simple numbers: 1, -3
+    # - Hash values: #3, #-0, ##t, ##f
+    # - Complex values: #'(), #'(-20 . +2), #'property
+    text = re.sub(
+        r"\\override\s+\S+(?:\.[^\s=]+)*(?:\s+#'[\w\-]+)?\s*=\s*(?:#'?\([\s\w\d.+\-]*\)|#[#']?[\w\-+.]+|\d+)\s*",
+        '',
+        text
+    )
+
+    # Step 3: Restore \with blocks
+    for idx, with_block in enumerate(with_blocks):
+        text = text.replace(placeholder_template.format(idx), with_block)
 
     # Remove \revert commands (reverse a previous \override)
     # Pattern: \revert Context.Property
