@@ -1429,7 +1429,8 @@ def _final_cleanup(text: str) -> str:
     text = re.sub(r"-?\\parenthesize\s+", "", text)
 
     # Remove \noBeam directive (engraving-only, prevents automatic beaming)
-    text = re.sub(r"\\noBeam\b\s*", "", text)
+    # Only remove horizontal whitespace (not newlines) to preserve line structure
+    text = re.sub(r"\\noBeam\b[ \t]*", "", text)
 
     # Remove cautionary/reminder accidentals (? and ! after note names)
     # These are engraving hints to force showing accidentals for clarity
