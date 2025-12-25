@@ -1421,6 +1421,11 @@ def _final_cleanup(text: str) -> str:
     text = re.sub(r"\\once\s+\\override\s+Stem\s+#'transparent\s+=\s+##t\s*", "", text)
     text = re.sub(r"\\override\s+Stem\s+#'transparent\s+=\s+##t\s*", "", text)
     text = re.sub(r"\\revert\s+Stem\.#'transparent\s*", "", text)
+    # Also handle the version already normalized by earlier cleanup (with space after dot)
+    text = re.sub(r"\\revert\s+Stem\s+#'transparent\s*", "", text)
+
+    # Remove \parenthesize directive (engraving-only, makes symbols appear in parentheses)
+    text = re.sub(r"-?\\parenthesize\s+", "", text)
 
     # Strip leftover markup tokens that can survive markup removal and break parsing
     text = re.sub(
