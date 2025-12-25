@@ -343,9 +343,21 @@ def _remove_custom_assignments(text: str) -> Tuple[str, int]:
 
 def _remove_metadata_headers(text: str) -> Tuple[str, int]:
     r"""Drop header-style metadata lines that add noise for training (keep \language for pitch names)."""
-    pattern = re.compile(r"(?m)^\s*\\version\b.*$")
-    cleaned, removed = pattern.subn("", text)
-    return cleaned, removed
+    removed_count = 0
+
+    # Remove \version lines
+    pattern_version = re.compile(r"(?m)^\s*\\version\b.*$")
+    cleaned, count = pattern_version.subn("", text)
+    removed_count += count
+
+    # Remove metadata header lines like: { "GPT231020 baroquemusic.it""Title""License"}
+    # These appear after \version and before \language
+    # Pattern: line starting with { followed by quoted strings
+    pattern_metadata = re.compile(r'(?m)^\s*\{\s*"[^"]*"[^}]*\}\s*$')
+    cleaned, count = pattern_metadata.subn("", cleaned)
+    removed_count += count
+
+    return cleaned, removed_count
 
 
 # ---------------------------------------------------------------------------
@@ -2246,6 +2258,11 @@ def run(text: str, opts: NormOptions) -> str:
     else:
         messages.append("mode=strip")
         cleaned = text
+
+        # Remove metadata headers first (version, GPT/AS headers)
+        cleaned, metadata_count = _remove_metadata_headers(cleaned)
+        _add_count("metadata", metadata_count)
+
         cleaned, engrave_var_count = _remove_engraving_only_variables(cleaned)
         _add_count("engrave_vars", engrave_var_count)
 
