@@ -1416,6 +1416,12 @@ def _final_cleanup(text: str) -> str:
         "etc",
     )
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
+
+    # Remove Stem transparency overrides (engraving-only commands)
+    text = re.sub(r"\\once\s+\\override\s+Stem\s+#'transparent\s+=\s+##t\s*", "", text)
+    text = re.sub(r"\\override\s+Stem\s+#'transparent\s+=\s+##t\s*", "", text)
+    text = re.sub(r"\\revert\s+Stem\.#'transparent\s*", "", text)
+
     # Strip leftover markup tokens that can survive markup removal and break parsing
     text = re.sub(
         r"\\(?:super|bold|italic|center-align|column|musicglyph|parentSlur|fill-line|smaller|larger)\b",
