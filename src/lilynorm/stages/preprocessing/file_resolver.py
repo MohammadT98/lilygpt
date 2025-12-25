@@ -240,6 +240,6 @@ def split_on_multiple_forma(text: str) -> list[str]:
             "",
             piece,
         )
-        normalized.append('\\version "2.24.4"\n' + cleaned.lstrip())
+        normalized.append('\\version "2.24.4"\n\n' + cleaned.lstrip())
 
     return normalized
