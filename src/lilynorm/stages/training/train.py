@@ -201,7 +201,7 @@ def main() -> int:
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
-        target_modules=["c_attn", "c_proj"],  # GPT-OSS specific; adjust if needed
+        target_modules="all-linear",  # Apply to all linear layers (works with any architecture)
         bias="none",
     )
     model = get_peft_model(model, lora_config)
