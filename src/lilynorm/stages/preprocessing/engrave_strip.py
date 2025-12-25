@@ -1437,6 +1437,56 @@ def _final_cleanup(text: str) -> str:
     # Match note name (Italian: do/re/mi/fa/sol/la/si OR English: a-g) + accidentals (d/b/is/es) + octave + duration + ? or !
     text = re.sub(r"(\b(?:do|re|mi|fa|sol|la|si|[a-g])(?:d|b|is|es|isbf|esbf)?[',]*(?:\d+\.*)?)[?!]", r"\1", text, flags=re.I)
 
+    # =========================================================================
+    # Additional engraving noise cleanup (2025-12-25)
+    # =========================================================================
+
+    # Remove inline markup annotations: ^\markup"text" or _\markup{text}
+    # These are visual text labels (tempo, dynamics, etc.) that don't affect musical content
+    # Pattern 1: ^\markup"quoted text" or _\markup"quoted text"
+    text = re.sub(r'[\^_-]\\markup\s*"[^"]*"', '', text)
+    # Pattern 2: ^\markup { text } or _\markup { text } (single level braces only for safety)
+    text = re.sub(r'[\^_-]\\markup\s*\{[^{}]*\}', '', text)
+    # Pattern 3: ^\markup\modifier"text" (e.g., ^\markup\italic"Adagio")
+    text = re.sub(r'[\^_-]\\markup\s*\\[A-Za-z]+\s*"[^"]*"', '', text)
+
+    # Remove stem/slur/tie direction commands (visual-only)
+    # Examples: \stemUp, \stemDown, \slurUp, \tieDown, \shiftOn, etc.
+    # These control visual appearance but don't affect musical content
+    # IMPORTANT: Remove these BEFORE \once removal, so \once\stemUp becomes \once then gets removed
+    text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
+
+    # Remove \once prefix from various commands
+    # \once is a visual override that applies only to the next element
+    # Examples: \once\stemUp, \once\override, etc.
+    # This is safe because the commands after \once are either:
+    # 1. Already removed by other patterns (\override, \stemUp, etc.) - see above
+    # 2. Or are musical and will remain without the \once prefix
+    # Pattern: \once followed by optional whitespace (the command may have already been removed)
+    text = re.sub(r'\\once\s*', '', text)
+
+    # Remove general \override commands (engraving-only layout overrides)
+    # Two syntax forms:
+    #   1. \override Context.Property = #value
+    #   2. \override Context #'property = #value
+    # Examples: \override Score.RehearsalMark.X-offset = #3
+    #           \override Rest #'staff-position = #-0
+    # CAREFUL: Only remove inline overrides, not those in variable definitions
+    # Pattern: \override + (Context.Property OR Context #'property) + = + value
+    text = re.sub(r"\\override\s+\S+(?:\.\S+|(?:\s+#'[\w\-]+)?)\s*=\s*#[#']?[\w\-+.]+\s*", '', text)
+
+    # Remove \revert commands (reverse a previous \override)
+    # Pattern: \revert Context.Property
+    text = re.sub(r'\\revert\s+\S+', '', text)
+
+    # Remove \set Staff commands (selective - only engraving-related ones)
+    # Keep: \set Staff.midiInstrument (affects MIDI playback - musical)
+    # Remove: \set Staff.ottavation, \set Staff.instrumentName (visual labels)
+    # Pattern: \set Staff.X where X is not midiInstrument
+    text = re.sub(r'\\set\s+Staff\.(?!midiInstrument\b)\S+\s*=\s*[^\n\\]+', '', text)
+
+    # =========================================================================
+
     # Strip leftover markup tokens that can survive markup removal and break parsing
     text = re.sub(
         r"\\(?:super|bold|italic|center-align|column|musicglyph|parentSlur|fill-line|smaller|larger)\b",
