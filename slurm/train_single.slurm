@@ -3,7 +3,7 @@
 #SBATCH --partition=allgroups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --gres gpu:a40:1
+#SBATCH --gres gpu:a40:2
 #SBATCH --mem=64G
 #SBATCH --time=24:00:00
 #SBATCH --output=logs/slurm-%j.out
@@ -29,11 +29,11 @@ python -m lilynorm.stages.training.train \
     --train "data/splits/train.jsonl" \
     --val "data/splits/val.jsonl" \
     --output-dir "runs/lora_exp1" \
-    --batch-size 8 \
-    --gradient-accumulation-steps 4 \
+    --batch-size 4 \
+    --gradient-accumulation-steps 8 \
     --learning-rate 2e-4 \
     --epochs 3 \
-    --max-length 1024 \
+    --max-length 512 \
     --lora-r 8 \
     --lora-alpha 32 \
     --lora-dropout 0.1 \
