@@ -20,7 +20,10 @@ from transformers import (
 )
 from peft import LoraConfig, get_peft_model, TaskType
 
-from lilynorm.stages.tokenization import LilyTokensDataset, collate_batch
+from lilynorm.stages.tokenization.dataset_continuation import (
+    LilyContinuationDataset,
+    collate_continuation_batch
+)
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -153,26 +156,34 @@ def main() -> int:
         print(f"[train] val split not found: {val_path}", file=sys.stderr)
         return 2
 
+    # Load tokenizer FIRST (needed for dataset)
+    print(f"[train] loading tokenizer: {args.model_name}")
+    tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
+
+    if tokenizer.pad_token is None:
+        tokenizer.pad_token = tokenizer.eos_token
+
+    pad_token_id = tokenizer.pad_token_id
+    print(f"[train] pad_token_id: {pad_token_id}")
+
     print(f"[train] loading datasets...")
     print(f"  train: {train_path}")
     print(f"  val:   {val_path}")
 
-    # Load datasets
-    train_dataset = LilyTokensDataset(train_path)
-    val_dataset = LilyTokensDataset(val_path)
+    # Load datasets (continuation-style)
+    train_dataset = LilyContinuationDataset(
+        train_path,
+        tokenizer=tokenizer,
+        max_length=args.max_length
+    )
+    val_dataset = LilyContinuationDataset(
+        val_path,
+        tokenizer=tokenizer,
+        max_length=args.max_length
+    )
 
     print(f"[train] train samples: {len(train_dataset)}")
     print(f"[train] val samples:   {len(val_dataset)}")
-
-    # Load tokenizer
-    print(f"[train] loading tokenizer: {args.model_name}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
-    
-    if tokenizer.pad_token is None:
-        tokenizer.pad_token = tokenizer.eos_token
-    
-    pad_token_id = tokenizer.pad_token_id
-    print(f"[train] pad_token_id: {pad_token_id}")
 
     # Load model
     print(f"[train] loading model: {args.model_name}")
@@ -196,9 +207,9 @@ def main() -> int:
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
 
-    # Custom collate function
+    # Custom collate function for continuation examples
     def collate_fn(batch):
-        return collate_batch(batch, pad_token_id=pad_token_id, max_length=args.max_length)
+        return collate_continuation_batch(batch, pad_token_id=pad_token_id)
 
     # Training arguments
     training_args = TrainingArguments(
