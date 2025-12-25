@@ -1603,6 +1603,8 @@ def _final_cleanup(text: str) -> str:
 
     Runs after engraving stripping (or directly if engravings are kept).
     """
+    # Remove specific paper size directive to avoid mis-tokenizing "a4" as a note.
+    text = re.sub(r'(?m)^\s*#\(set-default-paper-size\s+"a4"\)\s*\r?\n?', "", text)
     # Remove empty Scheme calls (e.g., #(set-default-paper-size ))
     text = re.sub(r"#\(\s*[A-Za-z0-9_-]+\s*\)", "", text)
 
