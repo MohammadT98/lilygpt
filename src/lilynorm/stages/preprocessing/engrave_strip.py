@@ -1294,8 +1294,9 @@ def _light_cleanup(text: str) -> str:
     text = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", text)
 
     # Dotted duration inheritance issues
-    text = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", text)
-    text = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", text)
+    # DISABLED: These patterns can accidentally transform valid music sequences
+    # text = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", text)
+    # text = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", text)
 
     # Missing dot in revert paths: \revert Stem #'transparent -> \revert Stem.#'transparent
     text = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", text)
@@ -1609,7 +1610,9 @@ def _final_cleanup(text: str) -> str:
     text = re.sub(r"(?m)^\s*\}\s*$", "", text)
 
     # Drop malformed assignment lines missing '=' (e.g., "IIvlIni4 do8")
-    text = re.sub(r"(?m)^\s*[A-Za-z_][\w-]*\s+[^\s=][^\n]*$", "", text)
+    # IMPORTANT: Only match lines that START with uppercase/underscore (variable names),
+    # NOT lowercase (which could be music notes like "sol2 re8 mi4")
+    text = re.sub(r"(?m)^\s*[A-Z_][\w-]*\s+[^\s=][^\n]*$", "", text)
 
     # Remove unsupported custom commands and movement-local roman macros
     # NOTE: 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
@@ -1685,8 +1688,9 @@ def _final_cleanup(text: str) -> str:
     text = "\n".join(out) + ("\n" if text.endswith("\n") else "")
 
     # Musical dotted patterns / figured bass / revert fixes
-    text = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", text)
-    text = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", text)
+    # DISABLED: These patterns can accidentally transform valid music sequences
+    # text = re.sub(r"(\d+)\.(\([a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s*\))", r"\1\2\3\4\5", text)
+    # text = re.sub(r"(\d+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.(\s+[a-z_]+)\.", r"\1\2\3\4", text)
     text = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", text)
     text = re.sub(r"(\\revert\s+\w+)\s+#'", r"\1.#'", text)
 
@@ -2115,6 +2119,9 @@ def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
     Remove paragraphs (text blocks separated by blank lines) that contain
     ONLY engraving/layout commands, no actual musical content.
 
+    IMPORTANT: Variable assignments are handled by _remove_engraving_only_variables()
+    and should be skipped here to avoid splitting them incorrectly.
+
     A paragraph is defined as text between two consecutive newlines.
 
     Examples of paragraphs that will be removed:
@@ -2130,14 +2137,30 @@ def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
 
     Returns (cleaned_text, removed_count).
     """
+    # First, find all variable assignments to avoid splitting them
+    assignments = _find_all_variable_assignments(text)
+    assignment_ranges = [(start, end) for start, end, _, _ in assignments]
+
+    def is_inside_assignment(pos):
+        """Check if position is inside a variable assignment."""
+        for start, end in assignment_ranges:
+            if start <= pos < end:
+                return True
+        return False
+
     # Split into paragraphs (separated by blank lines - two consecutive newlines)
     # Keep the separators so we can rebuild
     paragraphs = re.split(r'(\n\s*\n)', text)
 
     result_parts = []
     removed_count = 0
+    current_pos = 0
 
     for i, para in enumerate(paragraphs):
+        para_start = current_pos
+        para_end = current_pos + len(para)
+        current_pos = para_end
+
         # If this is a separator (blank line), keep it conditionally
         if re.match(r'^\n\s*\n$', para):
             # Only keep if we have content before and after
@@ -2147,6 +2170,12 @@ def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
 
         # Skip empty paragraphs
         if not para.strip():
+            continue
+
+        # Skip paragraphs that are part of a variable assignment
+        # (they're already handled by _remove_engraving_only_variables)
+        if is_inside_assignment(para_start):
+            result_parts.append(para)
             continue
 
         # Check if paragraph contains music
