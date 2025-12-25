@@ -16,6 +16,8 @@ src/lilynorm/inference/generator.py
 src/lilynorm/stages/__init__.py
 src/lilynorm/stages/preprocessing/__init__.py
 src/lilynorm/stages/preprocessing/engrave_strip.py
+src/lilynorm/stages/preprocessing/engrave_strip_SAFE.py
+src/lilynorm/stages/preprocessing/file_resolver.py
 src/lilynorm/stages/preprocessing/normalize.py
 src/lilynorm/stages/preprocessing/preparse.py
 src/lilynorm/stages/splitting/__init__.py
@@ -26,4 +28,5 @@ src/lilynorm/stages/tokenization/tokenize_gpt.py
 src/lilynorm/stages/training/__init__.py
 src/lilynorm/stages/training/train.py
 src/lilynorm/utils/__init__.py
+src/lilynorm/utils/formatting.py
 src/lilynorm/utils/options.py
