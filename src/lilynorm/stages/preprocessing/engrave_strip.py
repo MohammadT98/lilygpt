@@ -1612,7 +1612,7 @@ def _final_cleanup(text: str) -> str:
     # Drop malformed assignment lines missing '=' (e.g., "IIvlIni4 do8")
     # IMPORTANT: Only match lines that START with uppercase/underscore (variable names),
     # NOT lowercase (which could be music notes like "sol2 re8 mi4")
-    text = re.sub(r"(?m)^\s*[A-Z_][\w-]*\s+[^\s=][^\n]*$", "", text)
+    text = re.sub(r"(?m)^[ \t]*[A-Z_][\w-]*[ \t]+[^\s=][^\n]*$", "", text)
 
     # Remove unsupported custom commands and movement-local roman macros
     # NOTE: 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
