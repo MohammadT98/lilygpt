@@ -67,9 +67,9 @@ def process_text(
     Run the in-process normalization pipeline on a single LilyPond string.
 
     Stages:
-      1) preparse
-      2) normalize
-      3) engrave_strip (optional, depending on keep_engraving)
+      1) normalize
+      2) engrave_strip (optional, depending on keep_engraving)
+      3) preparse
       4) tokenize_gpt (optional)
 
     Returns a dict with keys among:
@@ -78,38 +78,38 @@ def process_text(
     """
     stage_outputs: Dict[str, Any] = {}
 
-    # --- Stage 1: PREPARSE ---
-    print(banner("STAGE 1 | PREPARSE"))
-    preparse_text = preprocessing.preparse.run(text, opts)
-    if show_stages:
-        print(preparse_text.rstrip())
-    stage_outputs["preparse"] = preparse_text
-    if stop_at == 1:
-        return stage_outputs
-
-    # --- Stage 2: NORMALIZE ---
-    print(banner("STAGE 2 | NORMALIZE"))
-    normalized_text = preprocessing.normalize.run(preparse_text, opts)
+    # --- Stage 1: NORMALIZE ---
+    print(banner("STAGE 1 | NORMALIZE"))
+    normalized_text = preprocessing.normalize.run(text, opts)
     if show_stages:
         print(normalized_text.rstrip())
     stage_outputs["normalize"] = normalized_text
-    if stop_at == 2:
+    if stop_at == 1:
         return stage_outputs
 
-    # --- Stage 3: ENGRAVING (strip or keep) ---
-    print(banner("STAGE 3 | ENGRAVING"))
+    # --- Stage 2: ENGRAVING (strip or keep) ---
+    print(banner("STAGE 2 | ENGRAVING"))
     final_text = (
         normalized_text if opts.keep_engraving else preprocessing.engrave_strip.run(normalized_text, opts)
     )
     if show_stages:
         print(final_text.rstrip())
     stage_outputs["final"] = final_text
+    if stop_at == 2:
+        return stage_outputs
+
+    # --- Stage 3: PREPARSE ---
+    print(banner("STAGE 3 | PREPARSE"))
+    preparse_text = preprocessing.preparse.run(final_text, opts)
+    if show_stages:
+        print(preparse_text.rstrip())
+    stage_outputs["preparse"] = preparse_text
     if stop_at == 3 or skip_tokenize:
         return stage_outputs
 
     # --- Stage 4: GPT TOKENIZE ---
     print(banner("STAGE 4 | GPT TOKENIZE"))
-    token_ids: List[int] = tokenize_gpt.run(final_text, model_name=tokenizer_model)
+    token_ids: List[int] = tokenize_gpt.run(preparse_text, model_name=tokenizer_model)
     stage_outputs["tokens"] = token_ids
 
     if show_stages:
@@ -162,10 +162,10 @@ def cmd_run(
     Run the full normalization pipeline on a file or folder of LilyPond sources.
 
     Writes:
-      - normalized/*.ly       (final normalized output)
+      - normalized/*.ly         (final normalized output)
       - tokenized/*.tokens.json (if tokenization is enabled)
-      - cleaned/*.ly          (optional, Stage 1)
-      - normalized_stage2/*.ly (optional, Stage 2)
+      - cleaned/*.ly            (optional, Stage 3)
+      - normalized_stage2/*.ly  (optional, Stage 1)
     """
     input_path_obj = Path(input_path)
     if not input_path_obj.exists():
@@ -294,7 +294,7 @@ def make_parser() -> argparse.ArgumentParser:
     run_parser.add_argument(
         "--save-intermediate",
         action="store_true",
-        help="Also write Stage 1/2 outputs.",
+        help="Also write Stage 1/3 outputs.",
     )
     run_parser.add_argument(
         "--skip-tokenize",
