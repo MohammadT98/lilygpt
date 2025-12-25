@@ -2184,6 +2184,10 @@ def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
         if _variable_contains_music(para):
             result_parts.append(para)
         else:
+            # Keep \language because pitch names depend on it (e.g., do/re/mi).
+            if re.search(r"\\language\b", para, re.I):
+                result_parts.append(para)
+                continue
             # Check if it's a comment-only paragraph (should keep)
             lines = para.strip().split('\n')
             all_comments = all(line.strip().startswith('%') or not line.strip() for line in lines)
