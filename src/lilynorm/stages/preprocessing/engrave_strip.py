@@ -1771,17 +1771,41 @@ def _variable_contains_music(rhs_content: str) -> bool:
         "{ \\time 4/4 \\key c \\major s1 }" → False (only layout, no actual notes)
         "forma = { \\time 4/4 s1*10 }" → False (layout/spacers, removed after splitting)
         "IvlI = { \\global << \\forma>> }" → False (only references, no notes)
+        "\\incipit { r4 fa'2 }" → False (visual-only incipit notes)
     """
+    # Remove \incipit blocks first (they contain visual-only notes that aren't real music)
+    # Pattern: \incipit { ... } where braces may be nested
+    content = rhs_content
+    while True:
+        # Find \incipit followed by a brace block
+        match = re.search(r'\\incipit\s*\{', content)
+        if not match:
+            break
+
+        brace_start = match.end() - 1  # Position of opening brace
+        brace_end = _grab_balanced(content, brace_start, "{", "}")
+
+        if brace_end != -1:
+            # Remove the entire \incipit { ... } block
+            content = content[:match.start()] + content[brace_end + 1:]
+        else:
+            # Couldn't find matching brace, just remove the \incipit keyword
+            content = content[:match.start()] + content[match.end():]
+            break
+
     # Check for actual note/rest tokens (but NOT spacer notes 's')
     # IMPORTANT: Require a digit after the note to avoid matching variable names like "forma", "melodia"
     # Matches: do4, re8, mi16, c'4, g,,2, r4, fad8, etc.
     note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[is|es|isbf|esbf]*[,\']*\d'
-    if re.search(note_pattern, rhs_content, re.I):
+    if re.search(note_pattern, content, re.I):
         return True
 
     # Check for chord notation with actual pitches: <note ... note>
-    # Must have at least one note with duration inside the brackets
-    if re.search(r'<[^>]*\b(?:do|re|mi|fa|sol|la|si|[a-g])[is|es|isbf|esbf]*[,\']*\d[^>]*>', rhs_content, re.I):
+    # Duration can be inside the chord (e.g., <do4 mi4 sol4>) OR after closing > (e.g., <do mi sol>4)
+    # Pattern: < ... at least one note name ... > with optional duration after
+    # IMPORTANT: Use negative lookbehind/lookahead to avoid matching << >> (simultaneous music delimiters)
+    chord_pattern = r'(?<![<>])<[^<>]*\b(?:do|re|mi|fa|sol|la|si|[a-g])[is|es|isbf|esbf]*[,\']*\d?[^<>]*>(?![<>])(?:\d+)?'
+    if re.search(chord_pattern, content, re.I):
         return True
 
     # If we get here, it's likely just engraving/layout/references
@@ -2007,6 +2031,77 @@ def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
 
 
 # ---------------------------------------------------------------------------
+def _remove_engraving_only_top_level(text: str) -> Tuple[str, int]:
+    """
+    Remove top-level lines/statements that contain ONLY engraving/layout commands,
+    no actual musical content.
+
+    This applies the same logic as _remove_engraving_only_paragraphs but at the
+    statement/line level to catch structural blocks like:
+        - \\new Staff <<...>>
+        - \\new ChoirStaff <<...>>
+        - \\set Staff.instrumentName = ...
+        - Pure \\markup lines
+        - ^\\markup or _\\markup text annotations
+
+    Variable assignments are already handled by _remove_engraving_only_variables()
+    and should be skipped here.
+
+    Returns (cleaned_text, removed_count).
+    """
+    # Find all variable assignments to avoid processing them here
+    assignments = _find_all_variable_assignments(text)
+    assignment_ranges = [(start, end) for start, end, _, _ in assignments]
+
+    def is_inside_assignment(pos):
+        """Check if position is inside a variable assignment."""
+        for start, end in assignment_ranges:
+            if start <= pos < end:
+                return True
+        return False
+
+    # Split into lines for line-by-line processing
+    lines = text.split('\n')
+    result_lines = []
+    removed_count = 0
+    current_pos = 0
+
+    for line in lines:
+        line_start = current_pos
+        line_end = current_pos + len(line) + 1  # +1 for newline
+        current_pos = line_end
+
+        # Skip empty lines (keep them for structure)
+        if not line.strip():
+            result_lines.append(line)
+            continue
+
+        # Skip lines that are part of a variable assignment
+        # (they're already handled by _remove_engraving_only_variables)
+        if is_inside_assignment(line_start):
+            result_lines.append(line)
+            continue
+
+        # Keep essential directives
+        if re.search(r'\\version\b|\\language\b', line, re.I):
+            result_lines.append(line)
+            continue
+
+        # Keep comment lines
+        if line.strip().startswith('%'):
+            result_lines.append(line)
+            continue
+
+        # Check if line contains music
+        if _variable_contains_music(line):
+            result_lines.append(line)
+        else:
+            # This is an engraving-only line - remove it
+            removed_count += 1
+
+    return '\n'.join(result_lines), removed_count
+
+
 # Integration with lilynorm NormOptions
 # ---------------------------------------------------------------------------
 
@@ -2047,6 +2142,9 @@ def run(text: str, opts: NormOptions) -> str:
 
         cleaned, engrave_para_count = _remove_engraving_only_paragraphs(cleaned)
         _add_count("engrave_paras", engrave_para_count)
+
+        cleaned, engrave_lines_count = _remove_engraving_only_top_level(cleaned)
+        _add_count("engrave_lines", engrave_lines_count)
 
         cleaned = _final_cleanup(cleaned)
 
