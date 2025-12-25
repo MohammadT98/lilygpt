@@ -1414,6 +1414,7 @@ def _final_cleanup(text: str) -> str:
         "senza",
         "notrasp",
         "etc",
+        "tu",  # Tutti marking (performance/engraving directive)
     )
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
 
@@ -1426,6 +1427,14 @@ def _final_cleanup(text: str) -> str:
 
     # Remove \parenthesize directive (engraving-only, makes symbols appear in parentheses)
     text = re.sub(r"-?\\parenthesize\s+", "", text)
+
+    # Remove \noBeam directive (engraving-only, prevents automatic beaming)
+    text = re.sub(r"\\noBeam\b\s*", "", text)
+
+    # Remove cautionary/reminder accidentals (? and ! after note names)
+    # These are engraving hints to force showing accidentals for clarity
+    # Match note name (Italian: do/re/mi/fa/sol/la/si OR English: a-g) + accidentals (d/b/is/es) + octave + duration + ? or !
+    text = re.sub(r"(\b(?:do|re|mi|fa|sol|la|si|[a-g])(?:d|b|is|es|isbf|esbf)?[',]*(?:\d+\.*)?)[?!]", r"\1", text, flags=re.I)
 
     # Strip leftover markup tokens that can survive markup removal and break parsing
     text = re.sub(
