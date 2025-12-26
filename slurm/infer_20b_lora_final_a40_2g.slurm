@@ -22,8 +22,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 
 BASE_MODEL = "openai/gpt-oss-20b"
-LORA_PATH  = "runs/20b_lora_a40_2g/final"
-OUT_PATH   = "runs/20b_lora_a40_2g/infer_last.ly"
+LORA_PATH  = "runs/lora_exp1/final"  # Updated to use NEW continuation-trained model
+OUT_PATH   = "runs/lora_exp1/infer_last.ly"
 
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True)
 
