@@ -36,12 +36,9 @@ base = AutoModelForCausalLM.from_pretrained(
 model = PeftModel.from_pretrained(base, LORA_PATH)
 model.eval()
 
-prompt = "
 prompt = """violinoI = \\relative do'' {
 do4 re mi
 """
-
-"
 
 inputs = tokenizer(prompt, return_tensors="pt")
 inputs = {k: v.to(next(model.parameters()).device) for k, v in inputs.items()}
