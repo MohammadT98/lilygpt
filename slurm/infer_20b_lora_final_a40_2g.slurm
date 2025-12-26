@@ -44,19 +44,19 @@ inputs = tokenizer(prompt, return_tensors="pt")
 inputs = {k: v.to(next(model.parameters()).device) for k, v in inputs.items()}
 
 with torch.no_grad():
-out = model.generate(
-    **inputs,
-    max_new_tokens=500,       # don’t let it run forever
-    do_sample=True,
-    temperature=1.0,
-    top_p=0.92,
-    repetition_penalty=1.15,
-    no_repeat_ngram_size=6,
-    eos_token_id=tokenizer.eos_token_id,
-    pad_token_id=tokenizer.eos_token_id,
-)
+    out = model.generate(
+        **inputs,
+        max_new_tokens=500,       # don't let it run forever
+        do_sample=True,
+        temperature=1.0,
+        top_p=0.92,
+        repetition_penalty=1.15,
+        no_repeat_ngram_size=6,
+        eos_token_id=tokenizer.eos_token_id,
+        pad_token_id=tokenizer.eos_token_id,
+    )
 
-text = tokenizer.decode(out[0], skip_special_tokens=True)
+    text = tokenizer.decode(out[0], skip_special_tokens=True)
 
 with open(OUT_PATH, "w", encoding="utf-8") as f:
     f.write(text + "\n")
