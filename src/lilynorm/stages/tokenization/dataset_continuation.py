@@ -85,22 +85,24 @@ class LilyContinuationDataset(Dataset):
                 output_text = obj.get('output', '')
                 split_point = obj.get('split_point', 'unknown')
 
-                # Tokenize input and output separately
-                input_ids_input = self.tokenizer.encode(
+                # CRITICAL: Tokenize FULL text together to preserve token boundaries
+                # Tokenizing input+output separately breaks continuity at the split point
+                full_text = input_text + output_text
+                input_ids = self.tokenizer.encode(
+                    full_text,
+                    add_special_tokens=False,
+                )
+
+                # Find where to split labels by tokenizing input alone
+                input_ids_only = self.tokenizer.encode(
                     input_text,
                     add_special_tokens=False,
                 )
-                input_ids_output = self.tokenizer.encode(
-                    output_text,
-                    add_special_tokens=False,
-                )
+                input_len = len(input_ids_only)
 
-                # Combine: input_ids = input + output
-                input_ids = input_ids_input + input_ids_output
-
-                # Labels: mask input part with -100, keep output part
+                # Labels: mask first input_len tokens with -100, keep rest for loss
                 # -100 is the ignore_index in cross-entropy loss
-                labels = [-100] * len(input_ids_input) + input_ids_output
+                labels = [-100] * input_len + input_ids[input_len:]
 
                 # Truncate if too long
                 if len(input_ids) > self.max_length:
