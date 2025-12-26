@@ -28,18 +28,18 @@ echo ""
 python -m lilynorm.stages.training.train \
     --train "data/splits/train.jsonl" \
     --val "data/splits/val.jsonl" \
-    --output-dir "runs/lora_exp1" \
+    --output-dir "runs/lora_exp2_lr5e5" \
     --batch-size 4 \
     --gradient-accumulation-steps 8 \
-    --learning-rate 2e-4 \
+    --learning-rate 5e-5 \
     --epochs 3 \
     --max-length 512 \
     --lora-r 8 \
     --lora-alpha 32 \
     --lora-dropout 0.1 \
     --bf16 \
-    --save-steps 500 \
-    --eval-steps 500 \
+    --save-steps 250 \
+    --eval-steps 250 \
     --logging-steps 10 \
     --warmup-steps 100
 
