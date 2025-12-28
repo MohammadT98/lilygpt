@@ -54,9 +54,6 @@ echo   - data/splits/train.jsonl
 echo   - data/splits/val.jsonl
 echo   - data/splits/test.jsonl
 echo.
-echo Next step: Update training script and train the model
-echo See: CONTINUATION_TRAINING_GUIDE.md
-echo.
 
 popd
 endlocal

@@ -596,8 +596,10 @@ def main() -> int:
                     removed_empty_parts += 1
 
                 # Remove Staff context blocks that may have been added by LilyPond's displayLilyMusic
-                # Pattern: "Staff  {  VerticalAxisGroup... } { \key ..." -> "{ \key ..."
-                cleaned = re.sub(r'Staff\s+\{.*?\}\s*(\{)', r'\1', cleaned)
+                # Patterns vary: "Staff { props } } more_props {" or "Staff {props}<<" without closing
+                # Match from "Staff {" to the next opening brace/bracket or just remove the whole block
+                # Use DOTALL flag so . matches newlines (Staff blocks can span multiple lines)
+                cleaned = re.sub(r'Staff\s+\{[^}]*\}[^{<]*(\{|<<)', r'\1', cleaned, flags=re.DOTALL)
 
                 output_text = cleaned.lstrip() + "\n"
                 norm_path.write_text(output_text, encoding="utf-8")

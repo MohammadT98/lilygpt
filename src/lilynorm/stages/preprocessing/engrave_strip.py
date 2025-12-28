@@ -1498,7 +1498,8 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
     text = re.sub(r'\(([^)\\]*)\\\)', r'(\1)', text)
     text = re.sub(r'\\\[([^\]\\]*)\]', r'[\1]', text)
     text = re.sub(r'\[([^\]\\]*)\\\]', r'[\1]', text)
-    text = re.sub(r'\\tr\b', '', text)
+    # Remove \tr trill marks - don't use \b because \tr can appear without spaces: fa'\trfa8
+    text = re.sub(r'\\tr', '', text)
     text = re.sub(r'\?', '', text)
     text = re.sub(r'\\[<>!,]', '', text)
     text = re.sub(r'\bmbreak\b', '', text)
