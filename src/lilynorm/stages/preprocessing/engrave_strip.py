@@ -1428,6 +1428,9 @@ def _final_cleanup(text: str) -> str:
 
     Runs after engraving stripping (or directly if engravings are kept).
     """
+    import sys
+    print(f"[DEBUG] _final_cleanup called, text has {text.count('re,8_')} instances of 're,8_'", file=sys.stderr)
+
     # Remove specific paper size directive to avoid mis-tokenizing "a4" as a note.
     text = re.sub(r'(?m)^\s*#\(set-default-paper-size\s+"a4"\)\s*\r?\n?', "", text)
     # Remove empty Scheme calls (e.g., #(set-default-paper-size ))
@@ -1483,10 +1486,15 @@ def _final_cleanup(text: str) -> str:
     text = re.sub(r'[\^_]"[^"]*"', '', text)
     text = re.sub(r'[\^_]\s*\{[^}]*\}', '', text)
 
+    # Remove standalone dynamic markings
+    text = re.sub(r'\b(pp?p?p?|ff?f?f?|mf|mp|sf|sfz|rfz|fz)\b', '', text)
+
+    # Remove standalone quoted strings (NOT preceded by #)
+    text = re.sub(r'(?<!#)"[^"]*"', '', text)
+
     text = re.sub(r'\\grace\s+(?:\S+|\{[^}]*\})\s*', '', text)
     text = re.sub(r'\\appoggiatura(?:\s+\S+|\{[^}]*\})\s*', '', text)
 
-    text = re.sub(r'([a-z]+\d+\.*)_(?=\s|[)\]]|$)', r'\1', text)
     text = re.sub(r"([a-z]+)\s+([',]+)", r'\1\2', text)
     text = re.sub(r'-[!.+^_-]', '', text)
 
@@ -1634,8 +1642,23 @@ def _final_cleanup(text: str) -> str:
     if whitelist_removed > 0:
         print(f"[engrave_strip] whitelist_filter removed {whitelist_removed} commands", file=sys.stderr)
 
+    # Remove trailing _ or ^ after notes (must come AFTER whitelist filter)
+    import sys
+    before_count = text.count('re,8_')
+    if before_count > 0:
+        idx = text.find('re,8_')
+        context = text[max(0, idx-10):idx+20]
+        print(f"[DEBUG] Context: {repr(context)}", file=sys.stderr)
+    text = re.sub(r"([a-z]+[',]*\d*\.*)[\^_]+(?=\s|[)\]]|$)", r'\1', text)
+    after_count = text.count('re,8_')
+    if before_count > 0:
+        print(f"[DEBUG] re,8_ before={before_count}, after={after_count}", file=sys.stderr)
+
     text = re.sub(r' ?\{\s*\}', "", text)
     text = re.sub(r'(?:\s*-\s*)+(?=\s|$)', ' ', text)
+
+    # Remove orphaned backslashes (from removed commands)
+    text = re.sub(r'\\\s+', ' ', text)
 
     return text
 
