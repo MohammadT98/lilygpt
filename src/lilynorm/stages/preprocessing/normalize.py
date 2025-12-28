@@ -675,7 +675,7 @@ def _run_lily_batch(
       - normalized string, or
       - None if LilyPond failed for that block.
     """
-    parts: List[str] = ['\\version "2.24.4"']
+    parts: List[str] = []
     if preamble:
         parts.append(preamble)
 

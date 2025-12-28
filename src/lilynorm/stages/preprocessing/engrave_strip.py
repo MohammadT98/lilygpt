@@ -1395,7 +1395,6 @@ def _remove_empty_figuremode_blocks(text: str) -> Tuple[str, int]:
 
 def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
     WHITELIST = {
-        'version',
         'relative',
         'absolute',
         'time',

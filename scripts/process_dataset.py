@@ -595,7 +595,7 @@ def main() -> int:
                     removed_empty_total += empty_count
                     removed_empty_parts += 1
                 
-                output_text = '\\version "2.24.4"\n' + cleaned.lstrip() + "\n"
+                output_text = cleaned.lstrip() + "\n"
                 norm_path.write_text(output_text, encoding="utf-8")
 
             if removed_empty_total > 0:
