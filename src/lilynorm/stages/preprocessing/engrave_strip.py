@@ -1725,6 +1725,10 @@ def _final_cleanup(text: str) -> str:
     # This ensures patterns like "R2.^ { }" from stripped markup are fully cleaned
     text = re.sub(r' ?\{\s*\}', "", text)
 
+    # Remove stray hyphens left from offset directive removal (e.g., "- -" or "- - -")
+    # These are leftover separators after removing Y-offset/X-offset text
+    text = re.sub(r'(?:\s*-\s*)+(?=\s|$)', ' ', text)
+
     return text
 
 
