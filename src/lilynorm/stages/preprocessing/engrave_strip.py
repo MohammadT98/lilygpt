@@ -1463,10 +1463,18 @@ def _final_cleanup(text: str) -> str:
     # These include: music glyphs/symbols, MIDI metadata, voice names - all noise for fine-tuning
     text = re.sub(r'#"[^"]*"', "", text)
 
+    # Remove Scheme empty block expressions: #{ } or #{\s*}
+    # These appear in contexts like "R2.^ #{ }" and need to be removed before cleaning up leftover braces
+    text = re.sub(r'#\{\s*\}', "", text)
+
     # Remove curly braces that only contain whitespace (leftover after removing Scheme strings)
     # Pattern: optional space before {, any whitespace inside { }, but preserve newlines
     # This handles cases like "R2.^ { }" -> "R2.^" while keeping the line break intact
     text = re.sub(r' ?\{[ \t]*\}', "", text)
+
+    # Remove leftover alignment directives (e.g., "^-align", "_-align", "-align")
+    # These are left after removing \markup\center-align {...} constructs
+    text = re.sub(r'[\^_-]*-?align\b', "", text)
 
     # Remove stray standalone closing braces
     text = re.sub(r"(?m)^\s*\}\s*$", "", text)
@@ -1699,6 +1707,10 @@ def _final_cleanup(text: str) -> str:
     text, whitelist_removed = _remove_non_whitelisted_commands(text)
     if whitelist_removed > 0:
         print(f"[engrave_strip] whitelist_filter removed {whitelist_removed} commands", file=sys.stderr)
+
+    # FINAL PASS: Remove any remaining empty braces that may have been created during cleanup
+    # This ensures patterns like "R2.^ { }" from stripped markup are fully cleaned
+    text = re.sub(r' ?\{\s*\}', "", text)
 
     return text
 
