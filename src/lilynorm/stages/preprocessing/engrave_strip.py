@@ -1428,20 +1428,17 @@ def _final_cleanup(text: str) -> str:
 
     Runs after engraving stripping (or directly if engravings are kept).
     """
-    import sys
-    print(f"[DEBUG] _final_cleanup called, text has {text.count('re,8_')} instances of 're,8_'", file=sys.stderr)
-
-    # Remove specific paper size directive to avoid mis-tokenizing "a4" as a note.
     text = re.sub(r'(?m)^\s*#\(set-default-paper-size\s+"a4"\)\s*\r?\n?', "", text)
     # Remove empty Scheme calls (e.g., #(set-default-paper-size ))
     text = re.sub(r"#\(\s*[A-Za-z0-9_-]+\s*\)", "", text)
 
     # Remove Scheme string literals: #"..." (e.g., #"scripts.ufermata", MIDI instrument names)
-    # These include: music glyphs/symbols, MIDI metadata, voice names - all noise for fine-tuning
     text = re.sub(r'#"[^"]*"', "", text)
 
+    # Remove Scheme number literals (e.g., #0.5, #-1.2, #3)
+    text = re.sub(r'#[+-]?\d+(?:\.\d+)?', '', text)
+
     # Remove Scheme empty block expressions: #{ } or #{\s*}
-    # These appear in contexts like "R2.^ #{ }" and need to be removed before cleaning up leftover braces
     text = re.sub(r'#\{\s*\}', "", text)
 
     # Remove empty braces
@@ -1636,6 +1633,9 @@ def _final_cleanup(text: str) -> str:
             if not version_line.rstrip().endswith('"'):
                 text = version_line.rstrip() + '"' + text[quote_end:]
 
+    # Remove incomplete/malformed \language lines (missing value)
+    text = re.sub(r'(?m)^\\language\s*$', '', text)
+
     # Apply whitelist filter to remove all non-essential backslash commands
     # This catches any remaining dynamics, articulations, performance marks, etc.
     text, whitelist_removed = _remove_non_whitelisted_commands(text)
@@ -1643,16 +1643,7 @@ def _final_cleanup(text: str) -> str:
         print(f"[engrave_strip] whitelist_filter removed {whitelist_removed} commands", file=sys.stderr)
 
     # Remove trailing _ or ^ after notes (must come AFTER whitelist filter)
-    import sys
-    before_count = text.count('re,8_')
-    if before_count > 0:
-        idx = text.find('re,8_')
-        context = text[max(0, idx-10):idx+20]
-        print(f"[DEBUG] Context: {repr(context)}", file=sys.stderr)
     text = re.sub(r"([a-z]+[',]*\d*\.*)[\^_]+(?=\s|[)\]]|$)", r'\1', text)
-    after_count = text.count('re,8_')
-    if before_count > 0:
-        print(f"[DEBUG] re,8_ before={before_count}, after={after_count}", file=sys.stderr)
 
     text = re.sub(r' ?\{\s*\}', "", text)
     text = re.sub(r'(?:\s*-\s*)+(?=\s|$)', ' ', text)
