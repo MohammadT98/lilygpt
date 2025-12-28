@@ -1459,6 +1459,15 @@ def _final_cleanup(text: str) -> str:
     # Remove empty Scheme calls (e.g., #(set-default-paper-size ))
     text = re.sub(r"#\(\s*[A-Za-z0-9_-]+\s*\)", "", text)
 
+    # Remove Scheme string literals: #"..." (e.g., #"scripts.ufermata", MIDI instrument names)
+    # These include: music glyphs/symbols, MIDI metadata, voice names - all noise for fine-tuning
+    text = re.sub(r'#"[^"]*"', "", text)
+
+    # Remove curly braces that only contain whitespace (leftover after removing Scheme strings)
+    # Pattern: optional space before {, any whitespace inside { }, but preserve newlines
+    # This handles cases like "R2.^ { }" -> "R2.^" while keeping the line break intact
+    text = re.sub(r' ?\{[ \t]*\}', "", text)
+
     # Remove stray standalone closing braces
     text = re.sub(r"(?m)^\s*\}\s*$", "", text)
 
