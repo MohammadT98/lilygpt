@@ -100,14 +100,29 @@ class LilyContinuationDataset(Dataset):
                 )
                 input_len = len(input_ids_only)
 
+                # CRITICAL: Skip examples where input alone exceeds max_length
+                # Otherwise all labels become -100 after truncation, causing NaN loss
+                if input_len >= self.max_length:
+                    print(f"Warning: Skipping example {example_id} - input ({input_len} tokens) >= max_length ({self.max_length})")
+                    continue
+
+                # Truncate if too long, but keep some output tokens for training
+                if len(input_ids) > self.max_length:
+                    # Calculate how many output tokens we can keep
+                    max_output_tokens = self.max_length - input_len
+                    if max_output_tokens < 10:  # Need at least 10 output tokens to train
+                        print(f"Warning: Skipping example {example_id} - insufficient output tokens after truncation")
+                        continue
+
+                    input_ids = input_ids[:self.max_length]
+
                 # Labels: mask first input_len tokens with -100, keep rest for loss
                 # -100 is the ignore_index in cross-entropy loss
                 labels = [-100] * input_len + input_ids[input_len:]
 
-                # Truncate if too long
-                if len(input_ids) > self.max_length:
-                    input_ids = input_ids[:self.max_length]
-                    labels = labels[:self.max_length]
+                # Ensure labels match input_ids length
+                if len(labels) > len(input_ids):
+                    labels = labels[:len(input_ids)]
 
                 # Attention mask: 1 for all tokens (we'll handle padding in collate)
                 attention_mask = [1] * len(input_ids)
