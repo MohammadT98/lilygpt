@@ -1503,6 +1503,21 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
     text = re.sub(r'\\[<>!,]', '', text)
     text = re.sub(r'\bmbreak\b', '', text)
 
+    # Remove Staff context blocks: "Staff  {  VerticalAxisGroup... } { \key ..."
+    # Match Staff followed by its property block, then replace with just the opening brace
+    # This must come BEFORE the Staff.property removal to avoid partial matches
+    # Use .*? non-greedy match to handle nested braces in property values
+    before_staff = text.count('Staff  {')
+    text = re.sub(r'Staff\s+\{.*?\}\s*(\{)', r'\1', text)
+    after_staff = text.count('Staff  {')
+    if before_staff > 0:
+        import sys
+        print(f"[DEBUG] Staff blocks before:{before_staff} after:{after_staff}", file=sys.stderr)
+
+    # Remove Staff.midiInstrument = lines and other Staff settings
+    text = re.sub(r'\s*Staff\.midiInstrument\s*=\s*', ' ', text)
+    text = re.sub(r'\s*Staff\.\w+\s*', ' ', text)
+
     text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
 
     text = re.sub(r'\\once\s*', '', text)

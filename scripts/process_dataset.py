@@ -594,7 +594,11 @@ def main() -> int:
                 if empty_count > 0:
                     removed_empty_total += empty_count
                     removed_empty_parts += 1
-                
+
+                # Remove Staff context blocks that may have been added by LilyPond's displayLilyMusic
+                # Pattern: "Staff  {  VerticalAxisGroup... } { \key ..." -> "{ \key ..."
+                cleaned = re.sub(r'Staff\s+\{.*?\}\s*(\{)', r'\1', cleaned)
+
                 output_text = cleaned.lstrip() + "\n"
                 norm_path.write_text(output_text, encoding="utf-8")
 
