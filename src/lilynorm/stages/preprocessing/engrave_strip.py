@@ -1494,6 +1494,11 @@ def _final_cleanup(text: str) -> str:
 
     text = re.sub(r"([a-z]+)\s+([',]+)", r'\1\2', text)
     text = re.sub(r'-[!.+^_-]', '', text)
+    text = re.sub(r'\\~', '', text)
+    text = re.sub(r'\\\(([^)\\]*)\)', r'(\1)', text)
+    text = re.sub(r'\(([^)\\]*)\\\)', r'(\1)', text)
+    text = re.sub(r'\\\[([^\]\\]*)\]', r'[\1]', text)
+    text = re.sub(r'\[([^\]\\]*)\\\]', r'[\1]', text)
 
     text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
 
