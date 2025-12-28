@@ -445,16 +445,6 @@ def main():
     print(f"Saving {len(all_examples)} examples to {output_file}...")
     save_examples_jsonl(all_examples, output_file)
 
-    print()
-    print("="*80)
-    print("NEXT STEPS")
-    print("="*80)
-    print("1. Review the generated examples in:", output_file)
-    print("2. Tokenize the examples with: python -m lilynorm.stages.tokenization.tokenize_gpt")
-    print("3. Create train/val/test splits with: python -m lilynorm.stages.splitting.build_splits")
-    print("4. Train the model with: python -m lilynorm.stages.training.train")
-    print("="*80)
-
     return 0
 
 
