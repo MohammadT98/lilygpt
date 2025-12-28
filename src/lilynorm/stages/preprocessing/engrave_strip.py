@@ -1535,6 +1535,19 @@ def _final_cleanup(text: str) -> str:
     # Pattern 3: ^\markup\modifier"text" (e.g., ^\markup\italic"Adagio")
     text = re.sub(r'[\^_-]\\markup\s*\\[A-Za-z]+\s*"[^"]*"', '', text)
 
+    # Remove positioning offset directives (e.g., "- Y-offset #-1 - X-offset # +3")
+    # These are engraving tweaks for fine-tuning vertical/horizontal position of elements
+    # Pattern matches one or more offset directives (to handle sequences like Y-offset + X-offset)
+    text = re.sub(r'(?:-?\s*[XY]-offset\s*#\s*[+-]?\d+(?:\.\d+)?)+', '', text)
+
+    # Remove underscore/caret text markup: _"text" or ^"text"
+    # These are text annotations above/below notes (tempo marks, fingerings, etc.)
+    text = re.sub(r'[\^_]"[^"]*"', '', text)
+
+    # Remove grace notes with spacer rests: \grace s1, \grace s2, etc.
+    # These are invisible placeholder grace notes used for timing/spacing only
+    text = re.sub(r'\\grace\s+s\d+\.*', '', text)
+
     # Remove stem/slur/tie direction commands (visual-only)
     # Examples: \stemUp, \stemDown, \slurUp, \tieDown, \shiftOn, etc.
     # These control visual appearance but don't affect musical content
