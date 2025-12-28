@@ -1548,6 +1548,19 @@ def _final_cleanup(text: str) -> str:
     # These are invisible placeholder grace notes used for timing/spacing only
     text = re.sub(r'\\grace\s+s\d+\.*', '', text)
 
+    # Remove \appoggiatura ornaments (embellishments)
+    # These are ornamental notes that should be removed as engraving noise
+    # Handles both simple form (\appoggiatura re') and braced form (\appoggiatura{la'16[si]})
+    text = re.sub(r'\\appoggiatura(?:\s+\S+|\{[^}]*\})\s*', '', text)
+
+    # Remove underscore/caret articulation marks after notes (e.g., mi8_ → mi8)
+    # These are direction indicators for slurs/ties that are visual-only
+    text = re.sub(r'([a-z]+\d+\.*)_(?=\s|[)\]]|$)', r'\1', text)
+
+    # Fix spaces in octave markers (e.g., "fad ' dod" → "fad' dod")
+    # Octave markers should be directly attached to note names without spaces
+    text = re.sub(r"([a-z]+)\s+([',]+)", r'\1\2', text)
+
     # Remove stem/slur/tie direction commands (visual-only)
     # Examples: \stemUp, \stemDown, \slurUp, \tieDown, \shiftOn, etc.
     # These control visual appearance but don't affect musical content
