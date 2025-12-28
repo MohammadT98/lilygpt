@@ -6,16 +6,6 @@ setlocal
 pushd "%~dp0\.."
 
 echo ========================================
-echo FULL TRAINING PIPELINE (Continuation)
-echo ========================================
-echo.
-echo This pipeline will:
-echo   1. Normalize raw .ly files (cleanup)
-echo   2. Create continuation examples (3x per piece)
-echo   3. Split into train/val/test
-echo.
-
-echo ========================================
 echo STEP 1: Normalize Raw Files
 echo ========================================
 echo.
