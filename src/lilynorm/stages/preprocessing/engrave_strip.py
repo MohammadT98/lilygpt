@@ -1499,6 +1499,8 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
     text = re.sub(r'\(([^)\\]*)\\\)', r'(\1)', text)
     text = re.sub(r'\\\[([^\]\\]*)\]', r'[\1]', text)
     text = re.sub(r'\[([^\]\\]*)\\\]', r'[\1]', text)
+    text = re.sub(r'\\tr', '', text)
+    text = re.sub(r'\?', '', text)
 
     text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
 
