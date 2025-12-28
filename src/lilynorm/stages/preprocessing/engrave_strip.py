@@ -1396,7 +1396,6 @@ def _remove_empty_figuremode_blocks(text: str) -> Tuple[str, int]:
 def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
     WHITELIST = {
         'version',
-        'language',
         'relative',
         'absolute',
         'time',
@@ -1423,10 +1422,11 @@ def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
     return result, removal_count
 
 
-def _final_cleanup(text: str) -> str:
+def _final_cleanup(text: str) -> Tuple[str, int]:
     """Dataset-tail cleanup that used to live in the driver.
 
     Runs after engraving stripping (or directly if engravings are kept).
+    Returns: (cleaned_text, whitelist_removed_count)
     """
     text = re.sub(r'(?m)^\s*#\(set-default-paper-size\s+"a4"\)\s*\r?\n?', "", text)
     # Remove empty Scheme calls (e.g., #(set-default-paper-size ))
@@ -1644,8 +1644,6 @@ def _final_cleanup(text: str) -> str:
     # Apply whitelist filter to remove all non-essential backslash commands
     # This catches any remaining dynamics, articulations, performance marks, etc.
     text, whitelist_removed = _remove_non_whitelisted_commands(text)
-    if whitelist_removed > 0:
-        print(f"[engrave_strip] whitelist_filter removed {whitelist_removed} commands", file=sys.stderr)
 
     # Remove trailing _ or ^ after notes (must come AFTER whitelist filter)
     text = re.sub(r"([a-z]+[',]*\d*\.*)\s*[\^_]+(?=\s|[)\]]|$)", r'\1', text)
@@ -1659,7 +1657,7 @@ def _final_cleanup(text: str) -> str:
     # Remove orphaned backslashes (from removed commands)
     text = re.sub(r'\\\s+', ' ', text)
 
-    return text
+    return text, whitelist_removed
 
 
 def _remove_footnotes(source: str) -> Tuple[str, int]:
@@ -2284,7 +2282,8 @@ def run(text: str, opts: NormOptions) -> str:
     if getattr(opts, "keep_engraving", True):
         messages.append("mode=keep")
         cleaned = text
-        cleaned = _final_cleanup(cleaned)
+        cleaned, whitelist_count = _final_cleanup(cleaned)
+        _add_count("whitelist", whitelist_count)
     else:
         messages.append("mode=strip")
         cleaned = text
@@ -2302,7 +2301,8 @@ def run(text: str, opts: NormOptions) -> str:
         cleaned, engrave_lines_count = _remove_engraving_only_top_level(cleaned)
         _add_count("engrave_lines", engrave_lines_count)
 
-        cleaned = _final_cleanup(cleaned)
+        cleaned, whitelist_count = _final_cleanup(cleaned)
+        _add_count("whitelist", whitelist_count)
 
     if messages:
         print("[engrave_strip] " + " ".join(messages), file=sys.stderr)
