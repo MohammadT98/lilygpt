@@ -82,14 +82,14 @@ def main():
         print(f"[{processed + 1}] Processing: {rel}")
         
         try:
-            # Stage 0: File resolver
-            stage0 = file_resolver.run(src, exclude_variabili=False)
-            
-            # Stage 1: Preparse
-            stage1 = preparse.run(stage0, opts)
+            # Stage 0: File resolver (returns list of strings)
+            stage0_pieces = file_resolver.run(src, exclude_variabili=False)
 
-            # Split multi-forma files to match full pipeline behavior
-            pieces = split_on_multiple_forma(stage1)
+            # Stage 1: Preparse each piece
+            pieces = []
+            for piece in stage0_pieces:
+                stage1 = preparse.run(piece, opts)
+                pieces.append(stage1)
 
             for idx, piece in enumerate(pieces, start=1):
                 out_path = output_root / rel

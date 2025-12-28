@@ -81,10 +81,8 @@ def main():
         
         try:
             # File resolver only (resolve includes, inline variabili.ly, fix typos, remove -+, dedupe version)
-            resolved = file_resolver.run(src, exclude_variabili=False)
-
-            # Split files defining multiple forma blocks to mirror full pipeline behavior
-            pieces = split_on_multiple_forma(resolved)
+            # Returns list of strings (already split by forma blocks)
+            pieces = file_resolver.run(src, exclude_variabili=False)
             
             for idx, piece in enumerate(pieces, start=1):
                 out_path = output_root / rel
@@ -103,11 +101,7 @@ def main():
     print()
     print(f"=== Processed {processed}/{len(ly_files)} files ===")
     print(f"Output saved to: {output_root}")
-    
-
-
-if __name__ == "__main__":
-    sys.exit(main())
+    return 0
 
 
 if __name__ == "__main__":

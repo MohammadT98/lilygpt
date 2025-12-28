@@ -95,37 +95,39 @@ def main():
         print(f"[{processed + 1}] Processing: {rel}")
         
         try:
-            # Stage 0: File resolver
-            stage0 = file_resolver.run(src, exclude_variabili=False)
-            
-            # Stage 1: Preparse
-            stage1 = preparse.run(stage0, opts)
-            
-            # Track preparse changes
-            if len(stage1.splitlines()) < len(stage0.splitlines()):
-                stats["line_removed"] += 1
-            if stage1.count("{") < stage0.count("{"):
-                stats["block_removed"] += 1
-            
-            # Stage 2: Normalize
-            stage2 = norm_module.run(stage1, opts)
-            
-            # Track normalize features (heuristic detection)
-            if "\\relative" in stage2:
-                stats["rel"] += 1
-            if "=" in stage2 and "{" in stage2:
-                stats["vars"] += 1
-            if "\\transpose" in stage2:
-                stats["transpose_ok"] += 1
-            if "\\repeat" in stage2:
-                stats["repeat"] += 1
-            if "\\tuplet" in stage2 or "\\times" in stage2:
-                stats["tuplets"] += 1
-            if "\\drums" in stage2 or "DrumStaff" in stage2:
-                stats["drums"] += 1
-            
-            # Split multi-forma files to match full pipeline behavior
-            pieces = split_on_multiple_forma(stage2)
+            # Stage 0: File resolver (returns list of strings)
+            stage0_pieces = file_resolver.run(src, exclude_variabili=False)
+
+            # Process each piece through preparse and normalize
+            pieces = []
+            for stage0 in stage0_pieces:
+                # Stage 1: Preparse
+                stage1 = preparse.run(stage0, opts)
+
+                # Track preparse changes
+                if len(stage1.splitlines()) < len(stage0.splitlines()):
+                    stats["line_removed"] += 1
+                if stage1.count("{") < stage0.count("{"):
+                    stats["block_removed"] += 1
+
+                # Stage 2: Normalize
+                stage2 = norm_module.run(stage1, opts)
+
+                # Track normalize features (heuristic detection)
+                if "\\relative" in stage2:
+                    stats["rel"] += 1
+                if "=" in stage2 and "{" in stage2:
+                    stats["vars"] += 1
+                if "\\transpose" in stage2:
+                    stats["transpose_ok"] += 1
+                if "\\repeat" in stage2:
+                    stats["repeat"] += 1
+                if "\\tuplet" in stage2 or "\\times" in stage2:
+                    stats["tuplets"] += 1
+                if "\\drums" in stage2 or "DrumStaff" in stage2:
+                    stats["drums"] += 1
+
+                pieces.append(stage2)
 
             # Save output
             for idx, piece in enumerate(pieces, start=1):
