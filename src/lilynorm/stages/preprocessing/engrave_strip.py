@@ -1394,22 +1394,6 @@ def _remove_empty_figuremode_blocks(text: str) -> Tuple[str, int]:
 
 
 def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
-    r"""
-    Remove all backslash commands that are NOT in the whitelist.
-
-    Whitelist contains only structural/essential LilyPond commands:
-    - \version, \language (metadata)
-    - \relative, \absolute (pitch mode)
-    - \time, \key (time/key signatures)
-    - \partial (pickup measures)
-    - \repeat, \alternative (repeats)
-    - \tuplet (tuplets)
-
-    All other backslash commands (dynamics, articulations, performance marks,
-    ornaments like \grace/\appoggiatura, etc.) are considered noise for
-    fine-tuning and will be removed.
-    """
-    # Define the whitelist of allowed commands
     WHITELIST = {
         'version',
         'language',
@@ -1423,26 +1407,19 @@ def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
         'tuplet',
     }
 
-    # Pattern to match backslash commands: \commandname
-    # Match backslash followed by alphabetic characters (command name)
     pattern = r'\\([a-zA-Z]+)\b'
-
     removal_count = 0
 
     def replace_if_not_whitelisted(match):
         nonlocal removal_count
         command_name = match.group(1)
-
         if command_name in WHITELIST:
-            # Keep the command
             return match.group(0)
         else:
-            # Remove the command
             removal_count += 1
             return ''
 
     result = re.sub(pattern, replace_if_not_whitelisted, text)
-
     return result, removal_count
 
 
@@ -1464,25 +1441,15 @@ def _final_cleanup(text: str) -> str:
     # These appear in contexts like "R2.^ #{ }" and need to be removed before cleaning up leftover braces
     text = re.sub(r'#\{\s*\}', "", text)
 
-    # Remove curly braces that only contain whitespace (leftover after removing Scheme strings)
-    # Pattern: optional space before {, any whitespace inside { }, but preserve newlines
-    # This handles cases like "R2.^ { }" -> "R2.^" while keeping the line break intact
+    # Remove empty braces
     text = re.sub(r' ?\{[ \t]*\}', "", text)
 
-    # Remove leftover alignment directives (e.g., "^-align", "_-align", "-align")
-    # These are left after removing \markup\center-align {...} constructs
+    # Remove leftover alignment directives
     text = re.sub(r'[\^_-]*-?align\b', "", text)
 
-    # Remove stray standalone closing braces
-    text = re.sub(r"(?m)^\s*\}\s*$", "", text)
-
-    # Drop malformed assignment lines missing '=' (e.g., "IIvlIni4 do8")
-    # IMPORTANT: Only match lines that START with uppercase/underscore (variable names),
-    # NOT lowercase (which could be music notes like "sol2 re8 mi4")
+    # Drop malformed assignment lines missing '='
     text = re.sub(r"(?m)^[ \t]*[A-Z_][\w-]*[ \t]+[^\s=][^\n]*$", "", text)
 
-    # Remove unsupported custom commands and movement-local roman macros
-    # NOTE: 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
     unsupported = (
         "mbreak",
         "trasp",
@@ -1490,111 +1457,42 @@ def _final_cleanup(text: str) -> str:
         "typeset",
         "notypeset",
         "Voice",
-        # "forma",  # REMOVED: contains \key and \time (key signatures) - essential for music
         "terzine",
         "con",
         "senza",
         "notrasp",
         "etc",
-        "tu",  # Tutti marking (performance/engraving directive)
+        "tu",
     )
     text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
 
-    # Remove Stem transparency overrides (engraving-only commands)
     text = re.sub(r"\\once\s+\\override\s+Stem\s+#'transparent\s+=\s+##t\s*", "", text)
     text = re.sub(r"\\override\s+Stem\s+#'transparent\s+=\s+##t\s*", "", text)
     text = re.sub(r"\\revert\s+Stem\.#'transparent\s*", "", text)
-    # Also handle the version already normalized by earlier cleanup (with space after dot)
     text = re.sub(r"\\revert\s+Stem\s+#'transparent\s*", "", text)
 
-    # Remove \parenthesize directive (engraving-only, makes symbols appear in parentheses)
     text = re.sub(r"-?\\parenthesize\s+", "", text)
-
-    # Remove \noBeam directive (engraving-only, prevents automatic beaming)
-    # Only remove horizontal whitespace (not newlines) to preserve line structure
     text = re.sub(r"\\noBeam\b[ \t]*", "", text)
-
-    # Remove cautionary/reminder accidentals (? and ! after note names)
-    # These are engraving hints to force showing accidentals for clarity
-    # Match note name (Italian: do/re/mi/fa/sol/la/si OR English: a-g) + accidentals (d/b/is/es) + octave + duration + ? or !
     text = re.sub(r"(\b(?:do|re|mi|fa|sol|la|si|[a-g])(?:d|b|is|es|isbf|esbf)?[',]*(?:\d+\.*)?)[?!]", r"\1", text, flags=re.I)
 
-    # =========================================================================
-    # Additional engraving noise cleanup (2025-12-25)
-    # =========================================================================
-
-    # Remove inline markup annotations: ^\markup"text" or _\markup{text}
-    # These are visual text labels (tempo, dynamics, etc.) that don't affect musical content
-    # Pattern 1: ^\markup"quoted text" or _\markup"quoted text"
     text = re.sub(r'[\^_-]\\markup\s*"[^"]*"', '', text)
-    # Pattern 2: ^\markup { text } or _\markup { text } (single level braces only for safety)
     text = re.sub(r'[\^_-]\\markup\s*\{[^{}]*\}', '', text)
-    # Pattern 3: ^\markup\modifier"text" (e.g., ^\markup\italic"Adagio")
     text = re.sub(r'[\^_-]\\markup\s*\\[A-Za-z]+\s*"[^"]*"', '', text)
 
-    # Remove positioning offset directives (e.g., "- Y-offset #-1 - X-offset # +3")
-    # These are engraving tweaks for fine-tuning vertical/horizontal position of elements
-    # Pattern matches one or more offset directives (to handle sequences like Y-offset + X-offset)
     text = re.sub(r'(?:-?\s*[XY]-offset\s*#\s*[+-]?\d+(?:\.\d+)?)+', '', text)
-
-    # Remove underscore/caret text markup: _"text" or ^"text"
-    # These are text annotations above/below notes (tempo marks, fingerings, etc.)
     text = re.sub(r'[\^_]"[^"]*"', '', text)
+    text = re.sub(r'[\^_]\s*\{[^}]*\}', '', text)
 
-    # Remove ALL grace notes: \grace s1, \grace do, \grace {do16[re]}, etc.
-    # Grace notes are ornamental embellishments (both spacer rests and actual notes)
-    # Handles: \grace s1, \grace note, \grace {note_group}
     text = re.sub(r'\\grace\s+(?:\S+|\{[^}]*\})\s*', '', text)
-
-    # Remove \appoggiatura ornaments (embellishments)
-    # These are ornamental notes that should be removed as engraving noise
-    # Handles both simple form (\appoggiatura re') and braced form (\appoggiatura{la'16[si]})
     text = re.sub(r'\\appoggiatura(?:\s+\S+|\{[^}]*\})\s*', '', text)
 
-    # Remove underscore/caret articulation marks after notes (e.g., mi8_ → mi8)
-    # These are direction indicators for slurs/ties that are visual-only
     text = re.sub(r'([a-z]+\d+\.*)_(?=\s|[)\]]|$)', r'\1', text)
-
-    # Fix spaces in octave markers (e.g., "fad ' dod" → "fad' dod")
-    # Octave markers should be directly attached to note names without spaces
     text = re.sub(r"([a-z]+)\s+([',]+)", r'\1\2', text)
-
-    # Remove articulation marks: -!, -., -+, -^, -_, etc.
-    # These are staccato, staccatissimo, tenuto, accent marks that are visual-only
     text = re.sub(r'-[!.+^_-]', '', text)
 
-    # Remove stem/slur/tie direction commands (visual-only)
-    # Examples: \stemUp, \stemDown, \slurUp, \tieDown, \shiftOn, etc.
-    # These control visual appearance but don't affect musical content
-    # IMPORTANT: Remove these BEFORE \once removal, so \once\stemUp becomes \once then gets removed
     text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
 
-    # Remove \once prefix from various commands
-    # \once is a visual override that applies only to the next element
-    # Examples: \once\stemUp, \once\override, etc.
-    # This is safe because the commands after \once are either:
-    # 1. Already removed by other patterns (\override, \stemUp, etc.) - see above
-    # 2. Or are musical and will remain without the \once prefix
-    # Pattern: \once followed by optional whitespace (the command may have already been removed)
     text = re.sub(r'\\once\s*', '', text)
-
-    # Remove general \override commands (engraving-only layout overrides)
-    # IMPORTANT: Only remove INLINE overrides, NOT those inside \with { ... } blocks
-    # \with blocks define staff context properties (like ossia staves) and must be preserved
-    #
-    # Strategy:
-    # 1. Protect \with { ... } blocks with placeholders
-    # 2. Remove inline \override commands
-    # 3. Restore \with blocks
-    #
-    # Inline override patterns to remove:
-    #   \override Context.Property = #value
-    #   \override Context #'property = #value
-    #   \override NoteHead #'duration-log = 1  (numeric value without #)
-    #   \override TrillSpanner.bound-details.left.text = #'()  (empty list)
-    #   \override Score.RehearsalMark.extra-offset = #'(-20 . +2)  (pair value)
-
-    # Step 1: Protect \with blocks by replacing them with placeholders
     with_blocks = []
     placeholder_template = "<<<WITH_BLOCK_{}>>>"
 
@@ -1736,12 +1634,7 @@ def _final_cleanup(text: str) -> str:
     if whitelist_removed > 0:
         print(f"[engrave_strip] whitelist_filter removed {whitelist_removed} commands", file=sys.stderr)
 
-    # FINAL PASS: Remove any remaining empty braces that may have been created during cleanup
-    # This ensures patterns like "R2.^ { }" from stripped markup are fully cleaned
     text = re.sub(r' ?\{\s*\}', "", text)
-
-    # Remove stray hyphens left from offset directive removal (e.g., "- -" or "- - -")
-    # These are leftover separators after removing Y-offset/X-offset text
     text = re.sub(r'(?:\s*-\s*)+(?=\s|$)', ' ', text)
 
     return text
