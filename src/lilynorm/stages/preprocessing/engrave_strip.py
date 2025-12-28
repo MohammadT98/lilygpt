@@ -1393,6 +1393,62 @@ def _remove_empty_figuremode_blocks(text: str) -> Tuple[str, int]:
     return text, removed
 
 
+def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
+    r"""
+    Remove all backslash commands that are NOT in the whitelist.
+
+    Whitelist contains only structural/essential LilyPond commands:
+    - \version, \language (metadata)
+    - \relative, \absolute (pitch mode)
+    - \time, \key (time/key signatures)
+    - \partial (pickup measures)
+    - \repeat, \alternative (repeats)
+    - \tuplet (tuplets)
+    - \grace, \acciaccatura, \appoggiatura (grace notes)
+
+    All other backslash commands (dynamics, articulations, performance marks, etc.)
+    are considered noise for fine-tuning and will be removed.
+    """
+    # Define the whitelist of allowed commands
+    WHITELIST = {
+        'version',
+        'language',
+        'relative',
+        'absolute',
+        'time',
+        'key',
+        'partial',
+        'repeat',
+        'alternative',
+        'tuplet',
+        'grace',
+        'acciaccatura',
+        'appoggiatura',
+    }
+
+    # Pattern to match backslash commands: \commandname
+    # Match backslash followed by alphabetic characters (command name)
+    pattern = r'\\([a-zA-Z]+)\b'
+
+    removal_count = 0
+
+    def replace_if_not_whitelisted(match):
+        nonlocal removal_count
+        command_name = match.group(1)
+
+        if command_name in WHITELIST:
+            # Keep the command
+            return match.group(0)
+        else:
+            # Remove the command
+            removal_count += 1
+            return ''
+
+    result = re.sub(pattern, replace_if_not_whitelisted, text)
+
+    return result, removal_count
+
+
 def _final_cleanup(text: str) -> str:
     """Dataset-tail cleanup that used to live in the driver.
 
@@ -1628,6 +1684,12 @@ def _final_cleanup(text: str) -> str:
             version_line = text[:quote_end + 1]
             if not version_line.rstrip().endswith('"'):
                 text = version_line.rstrip() + '"' + text[quote_end:]
+
+    # Apply whitelist filter to remove all non-essential backslash commands
+    # This catches any remaining dynamics, articulations, performance marks, etc.
+    text, whitelist_removed = _remove_non_whitelisted_commands(text)
+    if whitelist_removed > 0:
+        print(f"[engrave_strip] whitelist_filter removed {whitelist_removed} commands", file=sys.stderr)
 
     return text
 
