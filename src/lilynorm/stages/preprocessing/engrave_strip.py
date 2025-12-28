@@ -1648,7 +1648,10 @@ def _final_cleanup(text: str) -> str:
         print(f"[engrave_strip] whitelist_filter removed {whitelist_removed} commands", file=sys.stderr)
 
     # Remove trailing _ or ^ after notes (must come AFTER whitelist filter)
-    text = re.sub(r"([a-z]+[',]*\d*\.*)[\^_]+(?=\s|[)\]]|$)", r'\1', text)
+    text = re.sub(r"([a-z]+[',]*\d*\.*)\s*[\^_]+(?=\s|[)\]]|$)", r'\1', text)
+
+    # Remove Y-offset and X-offset text
+    text = re.sub(r'\s*[XY]-offset\s*', ' ', text)
 
     text = re.sub(r' ?\{\s*\}', "", text)
     text = re.sub(r'(?:\s*-\s*)+(?=\s|$)', ' ', text)
