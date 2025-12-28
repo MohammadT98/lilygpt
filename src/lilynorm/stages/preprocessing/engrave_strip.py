@@ -1404,10 +1404,10 @@ def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
     - \partial (pickup measures)
     - \repeat, \alternative (repeats)
     - \tuplet (tuplets)
-    - \grace, \acciaccatura, \appoggiatura (grace notes)
 
-    All other backslash commands (dynamics, articulations, performance marks, etc.)
-    are considered noise for fine-tuning and will be removed.
+    All other backslash commands (dynamics, articulations, performance marks,
+    ornaments like \grace/\appoggiatura, etc.) are considered noise for
+    fine-tuning and will be removed.
     """
     # Define the whitelist of allowed commands
     WHITELIST = {
@@ -1421,9 +1421,6 @@ def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
         'repeat',
         'alternative',
         'tuplet',
-        'grace',
-        'acciaccatura',
-        'appoggiatura',
     }
 
     # Pattern to match backslash commands: \commandname
@@ -1544,9 +1541,10 @@ def _final_cleanup(text: str) -> str:
     # These are text annotations above/below notes (tempo marks, fingerings, etc.)
     text = re.sub(r'[\^_]"[^"]*"', '', text)
 
-    # Remove grace notes with spacer rests: \grace s1, \grace s2, etc.
-    # These are invisible placeholder grace notes used for timing/spacing only
-    text = re.sub(r'\\grace\s+s\d+\.*', '', text)
+    # Remove ALL grace notes: \grace s1, \grace do, \grace {do16[re]}, etc.
+    # Grace notes are ornamental embellishments (both spacer rests and actual notes)
+    # Handles: \grace s1, \grace note, \grace {note_group}
+    text = re.sub(r'\\grace\s+(?:\S+|\{[^}]*\})\s*', '', text)
 
     # Remove \appoggiatura ornaments (embellishments)
     # These are ornamental notes that should be removed as engraving noise
@@ -1560,6 +1558,10 @@ def _final_cleanup(text: str) -> str:
     # Fix spaces in octave markers (e.g., "fad ' dod" → "fad' dod")
     # Octave markers should be directly attached to note names without spaces
     text = re.sub(r"([a-z]+)\s+([',]+)", r'\1\2', text)
+
+    # Remove articulation marks: -!, -., -+, -^, -_, etc.
+    # These are staccato, staccatissimo, tenuto, accent marks that are visual-only
+    text = re.sub(r'-[!.+^_-]', '', text)
 
     # Remove stem/slur/tie direction commands (visual-only)
     # Examples: \stemUp, \stemDown, \slurUp, \tieDown, \shiftOn, etc.
