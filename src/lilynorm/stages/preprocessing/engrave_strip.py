@@ -1498,8 +1498,10 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
     text = re.sub(r'\(([^)\\]*)\\\)', r'(\1)', text)
     text = re.sub(r'\\\[([^\]\\]*)\]', r'[\1]', text)
     text = re.sub(r'\[([^\]\\]*)\\\]', r'[\1]', text)
-    text = re.sub(r'\\tr', '', text)
+    text = re.sub(r'\\tr\b', '', text)
     text = re.sub(r'\?', '', text)
+    text = re.sub(r'\\[<>!,]', '', text)
+    text = re.sub(r'\bmbreak\b', '', text)
 
     text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
 
@@ -1651,6 +1653,9 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
 
     # Remove Y-offset and X-offset text
     text = re.sub(r'\s*[XY]-offset\s*', ' ', text)
+
+    # Fix extra spaces before dots in note durations (e.g., "sib  ." -> "sib.")
+    text = re.sub(r'([a-z]+[,\']*)\s+\.', r'\1.', text)
 
     text = re.sub(r' ?\{\s*\}', "", text)
     text = re.sub(r'(?:\s*-\s*)+(?=\s|$)', ' ', text)
