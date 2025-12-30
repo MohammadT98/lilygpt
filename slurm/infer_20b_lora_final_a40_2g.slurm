@@ -22,8 +22,8 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 
 BASE_MODEL = "openai/gpt-oss-20b"
-LORA_PATH  = "runs/lora_exp2_lr5e5/final"  # Testing exp2 final model
-OUT_PATH   = "runs/lora_exp2_lr5e5/infer_final.ly"
+LORA_PATH  = "runs/lora_exp3_len2048/checkpoint-2250"  # Testing exp3 checkpoint-2250
+OUT_PATH   = "runs/lora_exp3_len2048/infer_ckpt2250.ly"
 
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True)
 
