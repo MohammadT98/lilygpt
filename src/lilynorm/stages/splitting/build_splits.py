@@ -21,7 +21,7 @@ except ModuleNotFoundError:
         sys.path.insert(0, str(src_dir))
 
 
-DEFAULT_TOKENIZED_ROOT = "data/tokenized_dataset"
+DEFAULT_INPUT_JSONL = "data/continuation_dataset/all_examples.jsonl"
 DEFAULT_OUTPUT_DIR = "data/splits"
 DEFAULT_TRAIN_RATIO = 0.8
 DEFAULT_VAL_RATIO = 0.1
@@ -30,68 +30,44 @@ DEFAULT_SEED = 42
 
 @dataclass
 class Sample:
-    """Representation of a single tokenized LilyPond piece."""
+    """Representation of a single LilyPond training example (raw or tokenized)."""
     id: str
-    rel_path: str
-    input_ids: List[int]
-    attention_mask: List[int] | None
-    token_count: int | None
-    truncated: bool | None
+    source_file: str | None  # Used to track source file for proper splitting
+    raw_data: Dict[str, Any]  # Store the entire JSON object to write back
 
 
-def _load_token_file(path: Path, tokenized_root: Path) -> Sample:
-    """Load a single *.tokens.json file and wrap it into a Sample."""
-    with path.open("r", encoding="utf-8") as f:
-        obj: Dict[str, Any] = json.load(f)
-
-    # Old files might only have input_ids; handle that gracefully.
-    input_ids = obj.get("input_ids")
-    if not isinstance(input_ids, list):
-        raise ValueError(f"{path} does not contain 'input_ids' list")
-
-    attention_mask = obj.get("attention_mask")
-    if attention_mask is not None and not isinstance(attention_mask, list):
-        attention_mask = None
-
-    token_count = obj.get("token_count")
-    if not isinstance(token_count, int):
-        token_count = len(input_ids)
-
-    truncated = obj.get("truncated")
-    if not isinstance(truncated, bool):
-        truncated = False
-
-    rel_path = str(path.relative_to(tokenized_root))
-    sample_id = path.stem.replace(".tokens", "")
-
-    return Sample(
-        id=sample_id,
-        rel_path=rel_path,
-        input_ids=input_ids,
-        attention_mask=attention_mask,
-        token_count=token_count,
-        truncated=truncated,
-    )
-
-
-def _scan_tokenized(tokenized_root: Path) -> List[Sample]:
-    """Collect all tokenized pieces under tokenized_root."""
-    token_files = sorted(tokenized_root.rglob("*.tokens.json"))
+def _load_from_jsonl(jsonl_path: Path) -> List[Sample]:
+    """Load all samples from a JSONL file (works with both raw and tokenized data)."""
     samples: List[Sample] = []
 
-    if not token_files:
-        raise RuntimeError(f"No *.tokens.json files found under {tokenized_root}")
+    with jsonl_path.open("r", encoding="utf-8") as f:
+        for line_num, line in enumerate(f, 1):
+            line = line.strip()
+            if not line:
+                continue
 
-    for path in token_files:
-        try:
-            sample = _load_token_file(path, tokenized_root)
-        except Exception as exc:
-            print(f"[build_splits] ! skipping {path} due to error: {exc}")
-            continue
-        samples.append(sample)
+            try:
+                obj: Dict[str, Any] = json.loads(line)
+            except json.JSONDecodeError as exc:
+                print(f"[build_splits] ! skipping line {line_num} due to JSON error: {exc}")
+                continue
+
+            # Extract ID and source_file for splitting
+            sample_id = obj.get("id", f"sample_{line_num}")
+            source_file = obj.get("source_file")
+
+            if not isinstance(source_file, str):
+                source_file = None
+
+            # Store entire object to write back unchanged
+            samples.append(Sample(
+                id=sample_id,
+                source_file=source_file,
+                raw_data=obj,
+            ))
 
     if not samples:
-        raise RuntimeError("No valid tokenized samples were loaded")
+        raise RuntimeError(f"No valid samples loaded from {jsonl_path}")
 
     return samples
 
@@ -102,23 +78,71 @@ def _train_val_test_split(
     val_ratio: float,
     seed: int,
 ) -> tuple[List[Sample], List[Sample], List[Sample]]:
-    """Randomly split samples into train/val/test."""
+    """Randomly split samples into train/val/test BY SOURCE FILE to prevent data leakage.
+
+    This ensures that all examples from the same source file end up in the same split,
+    preventing the model from seeing variations of the same piece in both train and val.
+    """
     rng = random.Random(seed)
-    indices = list(range(len(samples)))
-    rng.shuffle(indices)
 
-    n = len(indices)
-    n_train = int(n * train_ratio)
-    n_val = int(n * val_ratio)
+    # Group samples by source_file
+    file_to_samples: Dict[str, List[Sample]] = {}
+    no_source_samples: List[Sample] = []
 
-    train_idx = indices[:n_train]
-    val_idx = indices[n_train:n_train + n_val]
-    test_idx = indices[n_train + n_val:]
+    for sample in samples:
+        if sample.source_file:
+            if sample.source_file not in file_to_samples:
+                file_to_samples[sample.source_file] = []
+            file_to_samples[sample.source_file].append(sample)
+        else:
+            # Fallback: samples without source_file info
+            no_source_samples.append(sample)
 
-    def select(idxs: List[int]) -> List[Sample]:
-        return [samples[i] for i in idxs]
+    # Get list of unique source files and shuffle them
+    source_files = list(file_to_samples.keys())
+    rng.shuffle(source_files)
 
-    return select(train_idx), select(val_idx), select(test_idx)
+    # Split source files into train/val/test
+    n_files = len(source_files)
+    n_train_files = int(n_files * train_ratio)
+    n_val_files = int(n_files * val_ratio)
+
+    train_files = source_files[:n_train_files]
+    val_files = source_files[n_train_files:n_train_files + n_val_files]
+    test_files = source_files[n_train_files + n_val_files:]
+
+    # Collect all samples from each file group
+    train_samples = []
+    val_samples = []
+    test_samples = []
+
+    for f in train_files:
+        train_samples.extend(file_to_samples[f])
+    for f in val_files:
+        val_samples.extend(file_to_samples[f])
+    for f in test_files:
+        test_samples.extend(file_to_samples[f])
+
+    # Handle samples without source_file (split them randomly as fallback)
+    if no_source_samples:
+        rng.shuffle(no_source_samples)
+        n = len(no_source_samples)
+        n_train = int(n * train_ratio)
+        n_val = int(n * val_ratio)
+
+        train_samples.extend(no_source_samples[:n_train])
+        val_samples.extend(no_source_samples[n_train:n_train + n_val])
+        test_samples.extend(no_source_samples[n_train + n_val:])
+
+        print(f"[build_splits] WARNING: {len(no_source_samples)} samples without source_file, "
+              f"split randomly (may cause leakage)")
+
+    print(f"[build_splits] Split by source file:")
+    print(f"  train: {len(train_files)} files -> {len(train_samples)} samples")
+    print(f"  val:   {len(val_files)} files -> {len(val_samples)} samples")
+    print(f"  test:  {len(test_files)} files -> {len(test_samples)} samples")
+
+    return train_samples, val_samples, test_samples
 
 
 def _write_jsonl(samples: List[Sample], path: Path) -> None:
@@ -126,49 +150,32 @@ def _write_jsonl(samples: List[Sample], path: Path) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         for s in samples:
-            obj: Dict[str, Any] = {
-                "id": s.id,
-                "rel_path": s.rel_path,
-                "input_ids": s.input_ids,
-            }
-            if s.attention_mask is not None:
-                obj["attention_mask"] = s.attention_mask
-            if s.token_count is not None:
-                obj["token_count"] = s.token_count
-            if s.truncated is not None:
-                obj["truncated"] = s.truncated
-
-            f.write(json.dumps(obj, ensure_ascii=False) + "\n")
+            # Write the original data unchanged
+            f.write(json.dumps(s.raw_data, ensure_ascii=False) + "\n")
 
 
 def _print_stats(name: str, samples: List[Sample]) -> None:
-    lengths = [len(s.input_ids) for s in samples]
-    if not lengths:
+    if not samples:
         print(f"[build_splits] {name}: empty set")
         return
 
-    avg_len = sum(lengths) / len(lengths)
-    max_len = max(lengths)
-    min_len = min(lengths)
-    truncated_count = sum(1 for s in samples if s.truncated)
+    # Count unique source files
+    source_files = set(s.source_file for s in samples if s.source_file)
 
     print(
         f"[build_splits] {name}: "
-        f"n={len(samples)} "
-        f"avg_len={avg_len:.1f} "
-        f"min_len={min_len} max_len={max_len} "
-        f"truncated={truncated_count}"
+        f"n={len(samples)} samples from {len(source_files)} unique source files"
     )
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Build train/val/test splits from tokenized LilyPond dataset."
+        description="Build train/val/test splits from tokenized LilyPond dataset (BY SOURCE FILE)."
     )
     parser.add_argument(
-        "--tokenized-root",
-        default=DEFAULT_TOKENIZED_ROOT,
-        help=f"Root directory containing *.tokens.json files (default: {DEFAULT_TOKENIZED_ROOT}).",
+        "--input-jsonl",
+        default=DEFAULT_INPUT_JSONL,
+        help=f"Input JSONL file with tokenized examples (default: {DEFAULT_INPUT_JSONL}).",
     )
     parser.add_argument(
         "--output-dir",
@@ -179,14 +186,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--train-ratio",
         type=float,
         default=DEFAULT_TRAIN_RATIO,
-        help=f"Fraction of samples to use for training (default: {DEFAULT_TRAIN_RATIO}).",
+        help=f"Fraction of SOURCE FILES to use for training (default: {DEFAULT_TRAIN_RATIO}).",
     )
     parser.add_argument(
         "--val-ratio",
         type=float,
         default=DEFAULT_VAL_RATIO,
-        help=f"Fraction of samples to use for validation (default: {DEFAULT_VAL_RATIO}). "
-             "The remaining samples are used for test.",
+        help=f"Fraction of SOURCE FILES to use for validation (default: {DEFAULT_VAL_RATIO}). "
+             "The remaining files are used for test.",
     )
     parser.add_argument(
         "--seed",
@@ -200,11 +207,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_arg_parser().parse_args()
 
-    tokenized_root = Path(args.tokenized_root).expanduser().resolve()
+    input_jsonl = Path(args.input_jsonl).expanduser().resolve()
     output_dir = Path(args.output_dir).expanduser().resolve()
 
-    if not tokenized_root.exists():
-        print(f"[build_splits] tokenized root not found: {tokenized_root}")
+    if not input_jsonl.exists():
+        print(f"[build_splits] input JSONL not found: {input_jsonl}")
         return 2
 
     if args.train_ratio <= 0 or args.val_ratio < 0 or args.train_ratio + args.val_ratio >= 1.0:
@@ -214,11 +221,12 @@ def main() -> int:
         )
         return 2
 
-    print(f"[build_splits] loading tokenized samples from {tokenized_root}")
-    samples = _scan_tokenized(tokenized_root)
+    print(f"[build_splits] loading samples from {input_jsonl}")
+    samples = _load_from_jsonl(input_jsonl)
+    print(f"[build_splits] loaded {len(samples)} total samples")
 
     print(
-        f"[build_splits] splitting {len(samples)} samples "
+        f"[build_splits] splitting BY SOURCE FILE "
         f"(train={args.train_ratio}, val={args.val_ratio}, "
         f"test={1.0 - args.train_ratio - args.val_ratio})"
     )
@@ -238,9 +246,9 @@ def main() -> int:
     _write_jsonl(test, test_path)
 
     print(f"[build_splits] wrote:")
-    print(f"  train → {train_path}")
-    print(f"  val   → {val_path}")
-    print(f"  test  → {test_path}")
+    print(f"  train -> {train_path}")
+    print(f"  val   -> {val_path}")
+    print(f"  test  -> {test_path}")
 
     _print_stats("train", train)
     _print_stats("val", val)

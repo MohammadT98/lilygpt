@@ -6,8 +6,6 @@ Saves both console output and final statistics to a log file.
 
 import subprocess
 import sys
-import json
-import random
 from pathlib import Path
 from datetime import datetime
 
@@ -58,67 +56,52 @@ def run_continuation_preparation(log_file):
 
 
 def split_dataset(log_file):
-    """Split the dataset into train/val/test."""
+    """Split the dataset into train/val/test BY SOURCE FILE (no leakage)."""
 
     log_file.write("\n" + "=" * 80 + "\n")
-    log_file.write("STEP 2: Split into Train/Val/Test\n")
+    log_file.write("STEP 2: Split into Train/Val/Test (BY SOURCE FILE)\n")
     log_file.write("=" * 80 + "\n\n")
 
     print()
     print("=" * 80)
-    print("STEP 2: Split into Train/Val/Test")
+    print("STEP 2: Split into Train/Val/Test (BY SOURCE FILE)")
     print("=" * 80)
     print()
 
     try:
-        # Load examples
-        print("Loading examples...")
-        log_file.write("Loading examples...\n")
+        # Use the fixed build_splits.py script
+        cmd = [
+            sys.executable,
+            "src/lilynorm/stages/splitting/build_splits.py",
+            "--input-jsonl", "data/continuation_dataset/all_examples.jsonl",
+            "--output-dir", "data/splits"
+        ]
 
-        with open('data/continuation_dataset/all_examples.jsonl', encoding='utf-8') as f:
-            examples = [json.loads(line) for line in f if line.strip()]
-
-        msg = f"Total examples: {len(examples)}\n"
+        msg = "Running build_splits.py (splits by source_file to prevent leakage)...\n"
         print(msg, end='')
         log_file.write(msg)
 
-        # Shuffle
-        random.seed(42)
-        random.shuffle(examples)
+        process = subprocess.Popen(
+            cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            encoding='utf-8',
+            errors='replace',
+            bufsize=1
+        )
 
-        # Split: 80% train, 10% val, 10% test
-        n = len(examples)
-        train_size = int(0.8 * n)
-        val_size = int(0.1 * n)
+        # Stream output to both console and log
+        for line in process.stdout:
+            print(line, end='', flush=True)
+            log_file.write(line)
+            log_file.flush()
 
-        train = examples[:train_size]
-        val = examples[train_size:train_size + val_size]
-        test = examples[train_size + val_size:]
+        process.wait()
 
-        msg = f"Train: {len(train)} examples\n"
-        print(msg, end='')
-        log_file.write(msg)
-
-        msg = f"Val:   {len(val)} examples\n"
-        print(msg, end='')
-        log_file.write(msg)
-
-        msg = f"Test:  {len(test)} examples\n"
-        print(msg, end='')
-        log_file.write(msg)
-
-        # Save
-        Path('data/splits').mkdir(exist_ok=True)
-
-        for split_name, split_data in [('train', train), ('val', val), ('test', test)]:
-            output_path = f'data/splits/{split_name}.jsonl'
-            with open(output_path, 'w', encoding='utf-8') as f:
-                for ex in split_data:
-                    f.write(json.dumps(ex, ensure_ascii=False) + '\n')
-
-            msg = f"Saved {split_name}.jsonl\n"
-            print(msg, end='')
-            log_file.write(msg)
+        if process.returncode != 0:
+            log_file.write(f"\nERROR: Process exited with code {process.returncode}\n")
+            return False
 
         print()
         log_file.write("\n")
