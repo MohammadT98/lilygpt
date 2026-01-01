@@ -116,9 +116,9 @@ def split_dataset(log_file):
 
 
 def main():
-    # Create logs directory
-    logs_dir = Path("logs")
-    logs_dir.mkdir(exist_ok=True)
+    # Create logs directory under data/logs
+    logs_dir = Path("data") / "logs" / "continuation_pipeline"
+    logs_dir.mkdir(parents=True, exist_ok=True)
 
     # Generate log filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
