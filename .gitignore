@@ -41,6 +41,19 @@ logs/
 *.log
 temp_path.txt
 lilypond-*/
+*.bak
+*.backup
+
+# Jupyter
+.ipynb_checkpoints/
+*/.ipynb_checkpoints/
+notebooks/**/outputs/
+
+# Testing
+.pytest_cache/
+.mypy_cache/
+.coverage
+htmlcov/
 
 # OS
 .DS_Store
