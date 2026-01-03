@@ -14,7 +14,7 @@ src_dir = repo_root / "src"
 if src_dir.exists():
     sys.path.insert(0, str(src_dir))
 
-from lilynorm.stages.normalization import file_resolver, preparse, normalize as norm_module
+from lilynorm.stages.normalization import file_resolver, preparse, expand as expand_module
 from lilynorm.stages.normalization.file_resolver import split_on_multiple_forma
 from lilynorm.utils.options import NormOptions
 
@@ -111,7 +111,7 @@ def main():
                     stats["block_removed"] += 1
 
                 # Stage 2: Normalize
-                stage2 = norm_module.run(stage1, opts)
+                stage2 = expand_module.run(stage1, opts)
 
                 # Track normalize features (heuristic detection)
                 if "\\relative" in stage2:
