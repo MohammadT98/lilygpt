@@ -36,7 +36,7 @@ echo STEP 3: Split into Train/Val/Test
 echo ========================================
 echo.
 
-uv run python -c "import json; import random; from pathlib import Path; print('Loading examples...'); examples = [json.loads(line) for line in open('data/continuation_dataset/all_examples.jsonl', encoding='utf-8') if line.strip()]; print(f'Total examples: {len(examples)}'); random.seed(42); random.shuffle(examples); n = len(examples); train_size = int(0.8 * n); val_size = int(0.1 * n); train = examples[:train_size]; val = examples[train_size:train_size + val_size]; test = examples[train_size + val_size:]; print(f'Train: {len(train)} examples'); print(f'Val:   {len(val)} examples'); print(f'Test:  {len(test)} examples'); Path('data/splits').mkdir(exist_ok=True); [open(f'data/splits/{split_name}.jsonl', 'w', encoding='utf-8').writelines(json.dumps(ex, ensure_ascii=False) + '\n' for ex in split_data) for split_name, split_data in [('train', train), ('val', val), ('test', test)]]; print('Done!')"
+uv run python src/lilynorm/stages/splitting/build_splits.py --input-jsonl "data/continuation_dataset/all_examples.jsonl" --output-dir "data/splits"
 
 if errorlevel 1 (
     echo ERROR: Splitting failed!
