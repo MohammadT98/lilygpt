@@ -7,7 +7,7 @@ import re
 from pathlib import Path
 
 from lilynorm.utils.options import NormOptions
-from lilynorm.stages import preprocessing
+from lilynorm.stages import normalization
 
 
 def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None = None) -> list[str]:
@@ -16,23 +16,22 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
 
     Returns a list of normalized pieces (one per forma block, or single item if no splitting).
     """
-    from lilynorm.stages.preprocessing.postfix import apply_postprocessing_fixes
-    from lilynorm.stages.preprocessing.engrave_strip import _remove_empty_variable_assignments
+    from lilynorm.stages.normalization.postprocessing import apply_postprocessing_fixes, remove_empty_variable_assignments
 
     # Stage 0: Resolve includes and split on forma blocks
-    stage0_pieces = preprocessing.file_resolver.run(path, exclude_variabili=False, split_forma=True)
+    stage0_pieces = normalization.file_resolver.run(path, exclude_variabili=False, split_forma=True)
 
     normalized_pieces = []
 
     for piece in stage0_pieces:
         # Stage 1: Preparse (remove comments, clean whitespace)
-        stage1 = preprocessing.preparse.run(piece, opts)
+        stage1 = normalization.preparse.run(piece, opts)
         if stats is not None:
             stats["line_removed"] += max(0, len(piece.splitlines()) - len(stage1.splitlines()))
             stats["block_removed"] += max(0, piece.count("{") - stage1.count("{"))
 
         # Stage 2: Normalize (expand relative notation, transpositions, repeats)
-        stage2 = preprocessing.normalize.run(stage1, opts)
+        stage2 = normalization.normalize.run(stage1, opts)
         if stats is not None:
             def count_occurrences(text: str) -> dict[str, int]:
                 return {
@@ -53,7 +52,7 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
             stats["tuplets_removed"] += max(0, before["tuplets"] - after["tuplets"])
 
         # Stage 3: Strip engraving directives
-        stage3 = preprocessing.engrave_strip.run(stage2, opts)
+        stage3 = normalization.engrave_strip.run(stage2, opts)
 
         if stats is not None:
             def count_engraving(text: str) -> dict[str, int]:
@@ -79,7 +78,7 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
         stage4 = apply_postprocessing_fixes(stage3)
 
         # Stage 5: Remove empty variable assignments
-        stage5, _ = _remove_empty_variable_assignments(stage4)
+        stage5, _ = remove_empty_variable_assignments(stage4)
 
         normalized_pieces.append(stage5)
 
