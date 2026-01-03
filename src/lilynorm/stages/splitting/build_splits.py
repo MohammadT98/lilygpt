@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,6 +35,14 @@ class Sample:
     id: str
     source_file: str | None  # Used to track source file for proper splitting
     raw_data: Dict[str, Any]  # Store the entire JSON object to write back
+
+
+def _get_base_work(source_file: str) -> str:
+    """Extract base work name by removing _partN suffix.
+
+    Example: 'vivaldi_concerto_score_part3' -> 'vivaldi_concerto_score'
+    """
+    return re.sub(r'_part\d+$', '', source_file)
 
 
 def _load_from_jsonl(jsonl_path: Path) -> List[Sample]:
@@ -78,50 +87,51 @@ def _train_val_test_split(
     val_ratio: float,
     seed: int,
 ) -> tuple[List[Sample], List[Sample], List[Sample]]:
-    """Randomly split samples into train/val/test BY SOURCE FILE to prevent data leakage.
+    """Randomly split samples into train/val/test BY BASE WORK to prevent data leakage.
 
-    This ensures that all examples from the same source file end up in the same split,
-    preventing the model from seeing variations of the same piece in both train and val.
+    This ensures that all parts/examples from the same musical work end up in the same split.
+    For example, 'vivaldi_concerto_part1', 'vivaldi_concerto_part2', 'vivaldi_concerto_part3'
+    all get grouped together and assigned to the same split.
     """
     rng = random.Random(seed)
 
-    # Group samples by source_file
-    file_to_samples: Dict[str, List[Sample]] = {}
+    # Group samples by base work (removing _partN suffix)
+    work_to_samples: Dict[str, List[Sample]] = {}
     no_source_samples: List[Sample] = []
 
     for sample in samples:
         if sample.source_file:
-            if sample.source_file not in file_to_samples:
-                file_to_samples[sample.source_file] = []
-            file_to_samples[sample.source_file].append(sample)
+            base_work = _get_base_work(sample.source_file)
+            if base_work not in work_to_samples:
+                work_to_samples[base_work] = []
+            work_to_samples[base_work].append(sample)
         else:
-            # Fallback: samples without source_file info
             no_source_samples.append(sample)
 
-    # Get list of unique source files and shuffle them
-    source_files = list(file_to_samples.keys())
-    rng.shuffle(source_files)
+    # Get list of unique base works and shuffle them
+    base_works = list(work_to_samples.keys())
+    rng.shuffle(base_works)
 
-    # Split source files into train/val/test
-    n_files = len(source_files)
-    n_train_files = int(n_files * train_ratio)
-    n_val_files = int(n_files * val_ratio)
+    # Split base works into train/val/test
+    n_works = len(base_works)
+    n_train_works = int(n_works * train_ratio)
+    n_val_works = int(n_works * val_ratio)
 
-    train_files = source_files[:n_train_files]
-    val_files = source_files[n_train_files:n_train_files + n_val_files]
-    test_files = source_files[n_train_files + n_val_files:]
+    train_works = base_works[:n_train_works]
+    val_works = base_works[n_train_works:n_train_works + n_val_works]
+    test_works = base_works[n_train_works + n_val_works:]
 
-    # Collect all samples from each file group
+    # Collect all samples from each work group
     train_samples = []
     val_samples = []
     test_samples = []
 
-    for f in train_files:
-        train_samples.extend(file_to_samples[f])
-    for f in val_files:
-        val_samples.extend(file_to_samples[f])
-    for f in test_files:
-        test_samples.extend(file_to_samples[f])
+    for work in train_works:
+        train_samples.extend(work_to_samples[work])
+    for work in val_works:
+        val_samples.extend(work_to_samples[work])
+    for work in test_works:
+        test_samples.extend(work_to_samples[work])
 
     # Handle samples without source_file (split them randomly as fallback)
     if no_source_samples:
@@ -137,10 +147,10 @@ def _train_val_test_split(
         print(f"[build_splits] WARNING: {len(no_source_samples)} samples without source_file, "
               f"split randomly (may cause leakage)")
 
-    print(f"[build_splits] Split by source file:")
-    print(f"  train: {len(train_files)} files -> {len(train_samples)} samples")
-    print(f"  val:   {len(val_files)} files -> {len(val_samples)} samples")
-    print(f"  test:  {len(test_files)} files -> {len(test_samples)} samples")
+    print(f"[build_splits] Split by base work (grouped _partN files):")
+    print(f"  train: {len(train_works)} works -> {len(train_samples)} samples")
+    print(f"  val:   {len(val_works)} works -> {len(val_samples)} samples")
+    print(f"  test:  {len(test_works)} works -> {len(test_samples)} samples")
 
     return train_samples, val_samples, test_samples
 
@@ -159,18 +169,18 @@ def _print_stats(name: str, samples: List[Sample]) -> None:
         print(f"[build_splits] {name}: empty set")
         return
 
-    # Count unique source files
-    source_files = set(s.source_file for s in samples if s.source_file)
+    # Count unique base works
+    base_works = set(_get_base_work(s.source_file) for s in samples if s.source_file)
 
     print(
         f"[build_splits] {name}: "
-        f"n={len(samples)} samples from {len(source_files)} unique source files"
+        f"n={len(samples)} samples from {len(base_works)} unique base works"
     )
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
-        description="Build train/val/test splits from tokenized LilyPond dataset (BY SOURCE FILE)."
+        description="Build train/val/test splits from tokenized LilyPond dataset (BY BASE WORK)."
     )
     parser.add_argument(
         "--input-jsonl",
@@ -186,14 +196,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--train-ratio",
         type=float,
         default=DEFAULT_TRAIN_RATIO,
-        help=f"Fraction of SOURCE FILES to use for training (default: {DEFAULT_TRAIN_RATIO}).",
+        help=f"Fraction of BASE WORKS to use for training (default: {DEFAULT_TRAIN_RATIO}).",
     )
     parser.add_argument(
         "--val-ratio",
         type=float,
         default=DEFAULT_VAL_RATIO,
-        help=f"Fraction of SOURCE FILES to use for validation (default: {DEFAULT_VAL_RATIO}). "
-             "The remaining files are used for test.",
+        help=f"Fraction of BASE WORKS to use for validation (default: {DEFAULT_VAL_RATIO}). "
+             "The remaining works are used for test.",
     )
     parser.add_argument(
         "--seed",
@@ -226,7 +236,7 @@ def main() -> int:
     print(f"[build_splits] loaded {len(samples)} total samples")
 
     print(
-        f"[build_splits] splitting BY SOURCE FILE "
+        f"[build_splits] splitting BY BASE WORK (grouping _partN files) "
         f"(train={args.train_ratio}, val={args.val_ratio}, "
         f"test={1.0 - args.train_ratio - args.val_ratio})"
     )
