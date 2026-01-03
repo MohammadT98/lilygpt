@@ -24,7 +24,7 @@ if _src_dir.exists():
 from lilynorm.utils.options import NormOptions
 from lilynorm.normalize import normalize_file
 from lilynorm.stages import tokenization as tokenize_gpt
-from lilynorm.stages.dataset.voice_extraction import find_voice_blocks
+from lilynorm.stages.normalization.utils.voice_extraction import find_voice_blocks
 from lilynorm.utils.formatting import format_full_text, format_example
 
 
