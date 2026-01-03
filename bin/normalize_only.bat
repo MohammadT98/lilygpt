@@ -17,7 +17,7 @@ echo Input:  data/raw
 echo Output: data/normalized_dataset
 echo.
 
-uv run python scripts/process_dataset.py --input "data/raw" --normalized-out "data/normalized_dataset" --skip-tokenize
+uv run python -m lilynorm.cli --input "data/raw" --normalized-out "data/normalized_dataset" --skip-tokenize
 
 if errorlevel 1 (
     echo.

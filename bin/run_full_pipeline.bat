@@ -9,7 +9,7 @@ echo ========================================
 echo STEP 1: Normalize Raw Files
 echo ========================================
 echo.
-uv run python scripts/process_dataset.py --input "data/raw" --normalized-out "data/normalized_dataset" --skip-tokenize
+uv run python -m lilynorm.cli --input "data/raw" --normalized-out "data/normalized_dataset" --skip-tokenize
 
 if errorlevel 1 (
     echo ERROR: Normalization failed!
