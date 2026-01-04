@@ -301,29 +301,6 @@ def clean_text(
     return text, stats
 
 
-def read_text(path: str | None) -> str:
-    """
-    Read text from a file path or stdin if path is None or "-".
-    """
-    if not path or path == "-":
-        return sys.stdin.read()
-
-    with io.open(path, "r", encoding="utf-8", newline="") as fh:
-        return fh.read()
-
-
-def write_text(path: str | None, text: str) -> None:
-    """
-    Write text to a file path or stdout if path is None or "-".
-    """
-    if not path or path == "-":
-        sys.stdout.write(text)
-        return
-
-    with io.open(path, "w", encoding="utf-8", newline="") as fh:
-        fh.write(text)
-
-
 try:
     from lilynorm.utils.options import NormOptions
 except Exception:
