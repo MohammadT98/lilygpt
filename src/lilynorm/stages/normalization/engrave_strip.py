@@ -2,63 +2,38 @@ from __future__ import annotations
 
 import re
 import sys
-from typing import Tuple, List
 
-
-def _grab_balanced(
-    text: str,
-    start: int,
-    open_char: str = "{",
-    close_char: str = "}",
-) -> int:
+def _grab_balanced(text: str, start: int, open_char: str = "{", close_char: str = "}") -> int:
     depth = 1
-    index = start + 1
-    length = len(text)
-
-    while index < length:
-        char = text[index]
-        if char == open_char:
+    for i in range(start + 1, len(text)):
+        if text[i] == open_char:
             depth += 1
-        elif char == close_char:
+        elif text[i] == close_char:
             depth -= 1
             if depth == 0:
-                return index
-        index += 1
-
+                return i
     return -1
 
 
 def _grab_angles(text: str, start: int) -> int:
     depth = 1
-    index = start + 2
-    length = len(text)
-
-    while index < length and depth > 0:
-        if text.startswith("<<", index):
+    i = start + 2
+    while i < len(text) and depth > 0:
+        if text.startswith("<<", i):
             depth += 1
-            index += 2
-        elif text.startswith(">>", index):
+            i += 2
+        elif text.startswith(">>", i):
             depth -= 1
-            index += 2
+            i += 2
         else:
-            index += 1
+            i += 1
+    return i if depth == 0 else -1
 
-    return index if depth == 0 else -1
 
-
-def _remove_metadata_headers(text: str) -> Tuple[str, int]:
-    # Drop header-style metadata lines, keep \language.
-    removed_count = 0
-
-    pattern_version = re.compile(r"(?m)^\s*\\version\b.*$")
-    cleaned, count = pattern_version.subn("", text)
-    removed_count += count
-
-    pattern_metadata = re.compile(r'(?m)^\s*\{\s*"[^"]*"[^}]*\}\s*$')
-    cleaned, count = pattern_metadata.subn("", cleaned)
-    removed_count += count
-
-    return cleaned, removed_count
+def _remove_metadata_headers(text: str) -> tuple[str, int]:
+    text, count1 = re.subn(r"(?m)^\s*\\version\b.*$", "", text)
+    text, count2 = re.subn(r'(?m)^\s*\{\s*"[^"]*"[^}]*\}\s*$', "", text)
+    return text, count1 + count2
 
 
 RE_OVERRIDES = [
@@ -144,35 +119,21 @@ RE_SPACER_ONLY_SUBVOICE = re.compile(
     r"\s*(\})"                          # closing brace
 )
 
-def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
-    WHITELIST = {
-        'relative',
-        'absolute',
-        'time',
-        'key',
-        'partial',
-        'repeat',
-        'alternative',
-        'tuplet',
-    }
+def _remove_non_whitelisted_commands(text: str) -> tuple[str, int]:
+    whitelist = {'relative', 'absolute', 'time', 'key', 'partial', 'repeat', 'alternative', 'tuplet'}
+    count = 0
 
-    pattern = r'\\([a-zA-Z]+)\b'
-    removal_count = 0
+    def replace(m):
+        nonlocal count
+        if m.group(1) in whitelist:
+            return m.group(0)
+        count += 1
+        return ''
 
-    def replace_if_not_whitelisted(match):
-        nonlocal removal_count
-        command_name = match.group(1)
-        if command_name in WHITELIST:
-            return match.group(0)
-        else:
-            removal_count += 1
-            return ''
-
-    result = re.sub(pattern, replace_if_not_whitelisted, text)
-    return result, removal_count
+    return re.sub(r'\\([a-zA-Z]+)\b', replace, text), count
 
 
-def _final_cleanup(text: str) -> Tuple[str, int]:
+def _final_cleanup(text: str) -> tuple[str, int]:
     text = re.sub(r'(?m)^\s*#\(set-default-paper-size\s+"a4"\)\s*\r?\n?', "", text)
     text = re.sub(r"#\(\s*[A-Za-z0-9_-]+\s*\)", "", text)
     text = re.sub(r'#"[^"]*"', "", text)
@@ -327,7 +288,7 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
 
     assign_re = re.compile(r"^[A-Za-z_][\w-]*\s*=")
     lines = text.splitlines()
-    out: List[str] = []
+    out = []
     depth = 0
     for line in lines:
         if assign_re.match(line) and depth > 0:
@@ -336,8 +297,7 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
         out.append(line)
         line_no_comment = line.split("%", 1)[0]
         depth += line_no_comment.count("{") - line_no_comment.count("}")
-        if depth < 0:
-            depth = 0
+        depth = max(0, depth)
     text = "\n".join(out) + ("\n" if text.endswith("\n") else "")
 
     text = re.sub(r"<\s*\n\s*([+\-\d\s]+>)", r"<\1", text)
@@ -398,95 +358,84 @@ def _variable_contains_music(rhs_content: str) -> bool:
 
     return False
 
-def _find_all_variable_assignments(text: str) -> List[Tuple[int, int, str, str]]:
-    results: List[Tuple[int, int, str, str]] = []
-    search_start = 0
-    length = len(text)
+def _find_all_variable_assignments(text: str) -> list[tuple[int, int, str, str]]:
+    results = []
+    i = 0
+    n = len(text)
 
-    while search_start < length:
-        match = RE_ASSIGNMENT.search(text, search_start)
+    while i < n:
+        match = RE_ASSIGNMENT.search(text, i)
         if not match:
             break
 
         name = match.group(2)
         assign_start = match.start() if match.group(1) else match.start(2)
 
-        rhs_start = match.end()
-        while rhs_start < length and text[rhs_start].isspace():
-            rhs_start += 1
+        rhs = match.end()
+        while rhs < n and text[rhs].isspace():
+            rhs += 1
 
-        if rhs_start >= length:
-            search_start = rhs_start
+        if rhs >= n:
+            i = rhs
             continue
 
         # Handle different assignment types
-        assign_end = None
+        end = None
 
         # Simple markup: name = ^\markup ...
-        if text[rhs_start] in ("_", "^"):
-            # Find end of markup
-            markup_start = rhs_start
-            markup_start += 1  # skip _ or ^
-            while markup_start < length and text[markup_start].isspace():
-                markup_start += 1
+        if text[rhs] in ("_", "^"):
+            m = rhs + 1
+            while m < n and text[m].isspace():
+                m += 1
 
-            if text.startswith("\\markup", markup_start):
-                # Skip \markup and find the braces or quoted string
-                markup_start += 7  # len("\\markup")
-                while markup_start < length and text[markup_start].isspace():
-                    markup_start += 1
+            if text.startswith("\\markup", m):
+                m += 7
+                while m < n and text[m].isspace():
+                    m += 1
 
-                if markup_start < length and text[markup_start] == '{':
-                    brace_end = _grab_balanced(text, markup_start, "{", "}")
-                    assign_end = brace_end + 1 if brace_end != -1 else markup_start + 1
+                if m < n and text[m] == '{':
+                    brace_end = _grab_balanced(text, m, "{", "}")
+                    end = brace_end + 1 if brace_end != -1 else m + 1
                 else:
-                    # Find end of line
-                    assign_end = text.find('\n', markup_start)
-                    if assign_end == -1:
-                        assign_end = length
+                    end = text.find('\n', m)
+                    if end == -1:
+                        end = n
             else:
-                # Just direction marker, find end of line
-                assign_end = text.find('\n', rhs_start)
-                if assign_end == -1:
-                    assign_end = length
+                end = text.find('\n', rhs)
+                if end == -1:
+                    end = n
 
         # Block assignment: name = { ... }
-        elif text[rhs_start] == '{':
-            brace_end = _grab_balanced(text, rhs_start, "{", "}")
-            assign_end = brace_end + 1 if brace_end != -1 else rhs_start + 1
+        elif text[rhs] == '{':
+            brace_end = _grab_balanced(text, rhs, "{", "}")
+            end = brace_end + 1 if brace_end != -1 else rhs + 1
 
         # \relative, \transpose, etc.
-        elif text.startswith("\\relative", rhs_start) or text.startswith("\\transpose", rhs_start):
-            # Find the opening brace
-            brace_pos = text.find('{', rhs_start)
+        elif text.startswith("\\relative", rhs) or text.startswith("\\transpose", rhs):
+            brace_pos = text.find('{', rhs)
             if brace_pos != -1:
                 brace_end = _grab_balanced(text, brace_pos, "{", "}")
-                assign_end = brace_end + 1 if brace_end != -1 else brace_pos + 1
+                end = brace_end + 1 if brace_end != -1 else brace_pos + 1
             else:
-                assign_end = text.find('\n', rhs_start)
-                if assign_end == -1:
-                    assign_end = length
+                end = text.find('\n', rhs)
+                if end == -1:
+                    end = n
 
         # Angle brackets: name = << ... >>
-        elif text.startswith("<<", rhs_start):
-            angle_end = _grab_angles(text, rhs_start)
-            assign_end = angle_end if angle_end != -1 else rhs_start + 2
+        elif text.startswith("<<", rhs):
+            angle_end = _grab_angles(text, rhs)
+            end = angle_end if angle_end != -1 else rhs + 2
 
-        if assign_end is not None:
-            results.append((
-                assign_start,
-                assign_end,
-                name,
-                text[assign_start:assign_end]
-            ))
-            search_start = assign_end
+        if end is not None:
+            results.append((assign_start, end, name, text[assign_start:end]))
+            i = end
         else:
-            search_start = rhs_start + 1
+            i = rhs + 1
 
     return results
 
 
-def _remove_engraving_only_variables(text: str) -> Tuple[str, int]:
+def _remove_engraving_only_variables(text: str) -> tuple[str, int]:
     assignments = _find_all_variable_assignments(text)
     if not assignments:
         return text, 0
@@ -509,7 +458,7 @@ def _remove_engraving_only_variables(text: str) -> Tuple[str, int]:
     return text, removed_count
 
 
-def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
+def _remove_engraving_only_paragraphs(text: str) -> tuple[str, int]:
     assignments = _find_all_variable_assignments(text)
     assignment_ranges = [(start, end) for start, end, _, _ in assignments]
 
@@ -560,7 +509,7 @@ def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
     return '\n\n'.join(result_parts), removed_count
 
 
-def _remove_engraving_only_top_level(text: str) -> Tuple[str, int]:
+def _remove_engraving_only_top_level(text: str) -> tuple[str, int]:
     assignments = _find_all_variable_assignments(text)
     assignment_ranges = [(start, end) for start, end, _, _ in assignments]
 
