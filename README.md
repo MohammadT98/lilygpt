@@ -12,7 +12,7 @@ Takes LilyPond source files and converts them to a normalized form suitable for 
 4. Strips engraving directives (`\override`, `\markup`, dynamics, etc.)
 5. Fixes common malformed patterns from real-world scores
 6. Tokenizes for GPT training (standard or continuation-style)
-7. Splits into train/val sets
+7. Splits into train/val/test sets
 
 ## Installation
 
@@ -48,14 +48,14 @@ Generate continuation-style dataset:
 ```bash
 python scripts/prepare_continuation_dataset.py \
   --input data/normalized \
-  --output data/continuation \
+  --output data/continuation_dataset \
   --splits-per-piece 3
 ```
 
 Build train/val/test splits:
 ```bash
-python -m lilynorm.stages.splitting.build_splits \
-  --tokenized-root data/tokenized \
+python src/lilynorm/stages/splitting/build_splits.py \
+  --input-jsonl data/continuation_dataset/all_examples.jsonl \
   --output-dir data/splits
 ```
 
