@@ -38,6 +38,3 @@ def find_voice_blocks(text: str) -> list[tuple[str, int, int]]:
     return blocks
 
 
-def extract_music_assignments(text: str) -> list[str]:
-    """Extract variable names of all music assignments."""
-    return [name for name, _, _ in find_voice_blocks(text)]
