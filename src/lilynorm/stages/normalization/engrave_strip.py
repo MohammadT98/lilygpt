@@ -5,11 +5,6 @@ import sys
 from typing import Tuple, List, Dict
 
 
-# Active stripping steps
-
-
-# Core helpers
-
 def _grab_balanced(
     text: str,
     start: int,
@@ -308,8 +303,6 @@ def _remove_metadata_headers(text: str) -> Tuple[str, int]:
     return cleaned, removed_count
 
 
-# Regex definitions
-
 RE_OVERRIDES = [
     re.compile(r"(?:\\once\s+)?\\override\b[^\n\r{}]*", re.I),
     re.compile(r"(?:\\once\s+)?\\revert\b[^\s{}]+", re.I),
@@ -571,8 +564,6 @@ def _compact_spaces_simple(text: str) -> str:
     ]
     return "\n".join(normalized_lines).strip() + "\n"
 
-
-# Markup skipping and keyword removal
 
 def _skip_markup_expression(source: str, index: int) -> int:
     """
@@ -922,7 +913,7 @@ def _remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
 def _light_cleanup(text: str) -> str:
     # Remove unsupported custom commands (but NOT variable references!)
     # These are standalone commands that break compilation
-    # NOTE: 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
+    # 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
     unsupported = (
         "mbreak",
         "trasp",
@@ -1062,7 +1053,6 @@ def _light_cleanup(text: str) -> str:
         text,
     )
     
-    # Note: \tasto, \fort, \staccatissimo now in unsupported list above
     
     # Fix figured bass figure alteration errors: < !> -> remove the !>
     # Pattern: "< !>2." becomes "<>2."
@@ -1411,7 +1401,7 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
 
     text = ''.join(result)
 
-    # Step 2: Remove inline \override commands
+    # Remove inline \override commands
     # Updated pattern handles all value types:
     # - Simple numbers: 1, -3
     # - Hash values: #3, #-0, ##t, ##f
@@ -1422,7 +1412,7 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
         text
     )
 
-    # Step 3: Restore \with blocks
+    # Restore \with blocks
     for idx, with_block in enumerate(with_blocks):
         text = text.replace(placeholder_template.format(idx), with_block)
 
@@ -1675,8 +1665,6 @@ def _eat_after_keyword(
     return "".join(output_parts), removed_count
 
 
-# LilyPond parser-based engraving strip (experimental)
-
 RE_ASSIGNMENT = re.compile(r"(^|[^\w-])([A-Za-z][\w-]*)\s*=\s*", re.M)
 
 
@@ -1796,7 +1784,7 @@ def _variable_contains_music(rhs_content: str) -> bool:
             break
 
     # Check for actual note/rest tokens (but NOT spacer notes 's')
-    # IMPORTANT: Require a digit after the note to avoid matching variable names like "forma", "melodia"
+    # Require a digit after the note to avoid matching variable names like "forma", "melodia"
     # Matches: do4, re8, mi16, c'4, g,,2, r4, fad8, etc.
     note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[is|es|isbf|esbf]*[,\']*\d'
     if re.search(note_pattern, content, re.I):
@@ -1805,7 +1793,7 @@ def _variable_contains_music(rhs_content: str) -> bool:
     # Check for chord notation with actual pitches: <note ... note>
     # Duration can be inside the chord (e.g., <do4 mi4 sol4>) OR after closing > (e.g., <do mi sol>4)
     # Pattern: < ... at least one note name ... > with optional duration after
-    # IMPORTANT: Use negative lookbehind/lookahead to avoid matching << >> (simultaneous music delimiters)
+    # Use negative lookbehind/lookahead to avoid matching << >> (simultaneous music delimiters)
     chord_pattern = r'(?<![<>])<[^<>]*\b(?:do|re|mi|fa|sol|la|si|[a-g])[is|es|isbf|esbf]*[,\']*\d?[^<>]*>(?![<>])(?:\d+)?'
     if re.search(chord_pattern, content, re.I):
         return True
@@ -2057,8 +2045,6 @@ def _remove_engraving_only_top_level(text: str) -> Tuple[str, int]:
 
     return '\n'.join(result_lines), removed_count
 
-
-# Integration with lilynorm NormOptions
 
 try:
     from lilynorm.utils.options import NormOptions

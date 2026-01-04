@@ -11,15 +11,10 @@ from dataclasses import dataclass, asdict, field, fields
 import argparse
 
 
-# Configuration
-
 DEFAULT_LILYPOND_PATH = (
     r"C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe"
 )
 
-
-
-# Core option types
 
 @dataclass
 class ParseOptions:
@@ -56,8 +51,6 @@ class ParseReport:
     notes: List[str] = field(default_factory=list)
 
 
-# Small structural helpers (braces / angles)
-
 def _grab_braces(s: str, start_index: int) -> int:
     depth = 1
     index = start_index + 1
@@ -91,8 +84,6 @@ def _grab_angles(s: str, start_index: int) -> int:
 
     return index if depth == 0 else length
 
-
-# LilyPond executable resolution
 
 def _ok(cmd: str) -> bool:
     try:
@@ -137,8 +128,6 @@ def resolve_lily_cmd() -> str:
 
     return "lilypond"
 
-
-# Relative blocks & note language detection
 
 RE_RELATIVE_BLK = re.compile(
     r"\\relative\b(?:\s+[^\s{}%]+)?(?:\s*(?:%[^\n]*\n|\s))*\{",
@@ -190,8 +179,6 @@ def _find_relative_blocks(source: str) -> List[Tuple[int, int, str]]:
 
     return blocks
 
-
-# Variable assignment discovery and inline expansion
 
 RE_ASSIGN = re.compile(r"(^|[^\w-])([A-Za-z][\w-]*)\s*=\s*", re.M)
 
@@ -320,8 +307,6 @@ def _inline_named_music_recursive(
     return current, total_inlined
 
 
-# Variable expansion via LilyPond (parser-based)
-
 def _inline_named_music_with_lilypond(
     source: str,
     env: Dict[str, str],
@@ -405,8 +390,6 @@ def _is_safe_music_expansion(text: str) -> bool:
 
     return True
 
-
-# Music functions (define-music-function, calls, and snippets)
 
 RE_DMF_HEADER = re.compile(
     r"(^|[\n;])\s*([A-Za-z][\w-]*)\s*=\s*#\(\s*define-music-function\b",
@@ -505,8 +488,6 @@ def _find_function_calls(
     return calls
 
 
-# Formatting helpers (whitespace, chords, absolute wrappers)
-
 def _normalize_line_keep_newlines(segment: str) -> str:
     segment = segment.replace("\r\n", "\n").replace("\r", "\n")
     lines = segment.split("\n")
@@ -551,8 +532,6 @@ def _unwrap_absolute_layers(segment: str) -> str:
 
     return segment
 
-
-# LilyPond batch runner for multiple blocks
 
 def _run_lily_batch(
     blocks: List[str],
@@ -669,8 +648,6 @@ def _run_lily_batch(
     return results
 
 
-# Relative expansion via LilyPond
-
 def expand_relative_with_lily_batched(
     source: str,
     lily_cmd: str,
@@ -712,8 +689,6 @@ def expand_relative_with_lily_batched(
     output_parts.append(source[cursor:])
     return "".join(output_parts), failures
 
-
-# Transpose block resolution via LilyPond
 
 RE_TRANSPOSE = re.compile(
     r"\\transpose\s+([^\s{}]+)\s+([^\s{}]+)\s*\{",
@@ -842,8 +817,6 @@ def expand_repeat_unfold(
     return current, total_expanded
 
 
-# Tuplet normalization (\\times -> \\tuplet, spacing, dedupe)
-
 RE_TIMES = re.compile(r"\\times\s+(\d+)\s*/\s*(\d+)\s*\{", re.I)
 RE_TUPLET = re.compile(r"\\tuplet\s+(\d+)\s*/\s*(\d+)(?:\s+\d+)?\s*\{", re.I)
 
@@ -944,8 +917,6 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
     return text, total_changes
 
 
-# Drummode normalization
-
 RE_DRUMMODE = re.compile(r"\\drummode\s*\{", re.I)
 
 DRUM_MAP: Dict[str, str] = {
@@ -1045,8 +1016,6 @@ def normalize_drummode(source: str) -> Tuple[str, int]:
     return "".join(output_parts), changed_blocks
 
 
-# Music function expansion via LilyPond
-
 def expand_music_functions_with_lily(
     source: str,
     lily_cmd: str,
@@ -1094,8 +1063,6 @@ def expand_music_functions_with_lily(
     return "".join(output_parts), ok_count, fail_count
 
 
-# Whitespace normalization
-
 def normalize_whitespace(source: str) -> str:
     """
     Normalize whitespace:
@@ -1110,8 +1077,6 @@ def normalize_whitespace(source: str) -> str:
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in lines]
     return "\n".join(lines).strip()
 
-
-# Main processing pipeline
 
 def process_string(
     src: str,
@@ -1207,8 +1172,6 @@ def process_string(
     return text, report
 
 
-# Integration with lilynorm NormOptions
-
 try:
     from lilynorm.utils.options import NormOptions
 except Exception:
@@ -1282,8 +1245,6 @@ def run(text: str, opts: "NormOptions") -> str:
     )
     return output
 
-
-# CLI
 
 def build_arg_parser() -> argparse.ArgumentParser:
     """

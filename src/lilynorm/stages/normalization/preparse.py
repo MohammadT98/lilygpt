@@ -11,8 +11,6 @@ BOM = "\ufeff"
 _RE_MARKUP_TOKEN = re.compile(r"\\markup(?![A-Za-z])")
 
 
-# Options and stats
-
 @dataclass
 class CleanOptions:
     """
@@ -33,8 +31,6 @@ class CleanStats:
     line_comments_removed: int = 0
     block_comments_removed: int = 0
 
-
-# Parsing context
 
 class Context:
     """
@@ -72,8 +68,6 @@ class Context:
             or self.markup_brace_depth > 0
         )
 
-
-# Normalization and comment stripping
 
 def _normalize_newlines(text: str) -> str:
     if text.startswith(BOM):
@@ -252,12 +246,10 @@ def _consume_block_comment(text: str, i: int) -> Tuple[int, int]:
         idx += 1
 
     if depth > 0:
-        print("WARNING: Unterminated block comment", file=sys.stderr)
+        print("unterminated block comment", file=sys.stderr)
         removed += 1
     return idx, removed
 
-
-# Whitespace post-processing
 
 def _post_whitespace_cleanup(text: str, opts: CleanOptions) -> str:
     lines = text.split("\n")
@@ -289,8 +281,6 @@ def _post_whitespace_cleanup(text: str, opts: CleanOptions) -> str:
     return output
 
 
-# Public cleaning API
-
 def clean_text(
     src: str,
     opts: CleanOptions | None = None,
@@ -310,8 +300,6 @@ def clean_text(
 
     return text, stats
 
-
-# IO helpers
 
 def read_text(path: str | None) -> str:
     """
@@ -335,8 +323,6 @@ def write_text(path: str | None, text: str) -> None:
     with io.open(path, "w", encoding="utf-8", newline="") as fh:
         fh.write(text)
 
-
-# Integration with lilynorm NormOptions
 
 try:
     from lilynorm.utils.options import NormOptions

@@ -67,7 +67,7 @@ class FileResolver:
     def _resolve_recursive(self, file_path: Path, depth: int = 0) -> str:
         if depth > self.max_depth:
             print(
-                f"WARNING: Max recursion depth ({self.max_depth}) reached for {file_path}",
+                f"warning: Max recursion depth ({self.max_depth}) reached for {file_path}",
                 file=sys.stderr,
             )
             return file_path.read_text(encoding="utf-8", errors="ignore")
@@ -81,7 +81,7 @@ class FileResolver:
         # Detect circular includes
         if file_key in self.in_progress:
             print(
-                f"WARNING: Circular include detected: {file_path}",
+                f"warning: Circular include detected: {file_path}",
                 file=sys.stderr,
             )
             return ""
@@ -122,7 +122,7 @@ class FileResolver:
                         if lang:
                             return f'\\language "{lang}"'
                     print(
-                        f"WARNING: Include file not found: {include_path} (from {file_path})",
+                        f"warning: Include file not found: {include_path} (from {file_path})",
                         file=sys.stderr,
                     )
                     return match.group(0)  # Keep the include as-is
