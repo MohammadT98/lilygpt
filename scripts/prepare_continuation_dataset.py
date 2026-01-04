@@ -1,22 +1,4 @@
 #!/usr/bin/env python3
-"""
-Prepare continuation-style dataset for fine-tuning.
-
-Generates multiple training examples per piece by splitting at different points.
-Each example is a continuation task: given a prefix, predict the rest.
-
-Strategy:
-- 3 examples per variable assignment (start, middle, near-end)
-- Smart splitting at phrase boundaries (after complete measures)
-- Validation to ensure syntactic correctness
-- No metadata instructions (simplest/safest approach)
-
-Usage:
-    python scripts/prepare_continuation_dataset.py \
-        --input data/normalized_dataset \
-        --output data/continuation_dataset \
-        --splits-per-piece 3
-"""
 
 from __future__ import annotations
 
@@ -32,40 +14,30 @@ from collections import defaultdict
 
 @dataclass
 class MusicAssignment:
-    """A variable assignment containing music."""
     var_name: str
-    full_content: str  # The complete RHS: { ... }
+    full_content: str
     start_pos: int
     end_pos: int
 
 
 @dataclass
 class ContinuationExample:
-    """A single training example (prefix + continuation)."""
     id: str
     source_file: str
     var_name: str
     input_text: str
     output_text: str
-    split_point: str  # "start", "middle", or "near_end"
+    split_point: str
     token_count_estimate: int
 
 
 def extract_music_assignments(text: str) -> List[MusicAssignment]:
-    """
-    Extract all music variable assignments from LilyPond file.
-
-    Pattern: varName = \relative do'' { ... } or varName = { ... }
-    """
     assignments = []
 
-    # Pattern: variable_name = optional_modifiers { ... }
-    # Handles: violinoI = \relative do'' { ... }
-    #          main = { ... }
     pattern = re.compile(
-        r'^([A-Za-z_][\w]*)\s*=\s*'  # Variable name and =
-        r'((?:\\relative\s+[^\s{]+\s*)?)'  # Optional \relative do''
-        r'\{',  # Opening brace
+        r'^([A-Za-z_][\w]*)\s*=\s*'
+        r'((?:\\relative\s+[^\s{]+\s*)?)'
+        r'\{',
         re.MULTILINE
     )
 
@@ -73,7 +45,6 @@ def extract_music_assignments(text: str) -> List[MusicAssignment]:
         var_name = match.group(1)
         start_pos = match.start()
 
-        # Find matching closing brace
         brace_pos = text.find('{', match.end() - 1)
         if brace_pos == -1:
             continue
@@ -82,10 +53,8 @@ def extract_music_assignments(text: str) -> List[MusicAssignment]:
         if end_pos == -1:
             continue
 
-        # Extract full assignment: varName = ... { ... }
         full_content = text[start_pos:end_pos + 1]
 
-        # Check if it contains musical content
         if contains_music(full_content):
             assignments.append(MusicAssignment(
                 var_name=var_name,
@@ -98,7 +67,6 @@ def extract_music_assignments(text: str) -> List[MusicAssignment]:
 
 
 def find_matching_brace(text: str, open_pos: int) -> int:
-    """Find the position of the closing brace that matches open_pos."""
     depth = 1
     i = open_pos + 1
 
@@ -115,62 +83,34 @@ def find_matching_brace(text: str, open_pos: int) -> int:
 
 
 def contains_music(content: str) -> bool:
-    """Check if content contains actual musical notes."""
-    # Look for note names with durations: do4, re8, mi16, etc.
     note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-gr])[is|es|isbf|esbf]*[,\']*\d'
     return bool(re.search(note_pattern, content, re.I))
 
 
 def find_phrase_boundaries(content: str) -> List[int]:
-    """
-    Find good split points in the music (phrase boundaries).
-
-    Good split points are typically:
-    - After complete measures (newlines often indicate measure boundaries)
-    - After cadences or resting points
-    - NOT in the middle of chords, groups, or commands
-
-    Returns list of character positions that are safe split points.
-    """
     boundaries = []
 
-    # Split on newlines (usually measure boundaries in formatted LilyPond)
     lines = content.split('\n')
     current_pos = 0
 
     for i, line in enumerate(lines):
         current_pos += len(line)
 
-        # Skip first and last lines (assignment and closing brace)
         if i > 0 and i < len(lines) - 1:
-            # Check if this line ends a musical phrase
-            # Good indicators: line has notes and doesn't end mid-chord
             if contains_music(line) and not line.rstrip().endswith(','):
                 boundaries.append(current_pos)
 
-        current_pos += 1  # Account for newline
+        current_pos += 1
 
     return boundaries
 
 
 def find_split_point(content: str, target_percent: float) -> int:
-    """
-    Find a good split point near target_percent of the content.
-
-    Args:
-        content: Full assignment text
-        target_percent: Desired split point (0.0 to 1.0)
-
-    Returns:
-        Character position to split at (or -1 if not found)
-    """
     boundaries = find_phrase_boundaries(content)
 
     if not boundaries:
-        # No good boundaries found, split at target percent (less safe)
         return int(len(content) * target_percent)
 
-    # Find boundary closest to target
     target_pos = int(len(content) * target_percent)
     closest = min(boundaries, key=lambda x: abs(x - target_pos))
 
@@ -182,36 +122,21 @@ def create_continuation_examples(
     source_file: str,
     splits_per_piece: int = 3
 ) -> List[ContinuationExample]:
-    """
-    Create multiple continuation examples from a single assignment.
-
-    Args:
-        assignment: Music variable assignment
-        source_file: Source file path for tracking
-        splits_per_piece: Number of examples to create (default: 3)
-
-    Returns:
-        List of continuation examples
-    """
     examples = []
     content = assignment.full_content
 
-    # Find the opening brace position
     brace_pos = content.find('{')
     if brace_pos == -1:
         return examples
 
-    # Extract the variable declaration part: "varName = \relative do'' {"
     var_declaration = content[:brace_pos + 1]
 
-    # Extract the music content (between braces)
     closing_brace = content.rfind('}')
     if closing_brace == -1:
         return examples
 
     music_content = content[brace_pos + 1:closing_brace]
 
-    # Example 1: START - Give variable name, predict everything
     example_1 = ContinuationExample(
         id=f"{source_file}_{assignment.var_name}_start",
         source_file=source_file,
@@ -224,7 +149,6 @@ def create_continuation_examples(
     examples.append(example_1)
 
     if splits_per_piece >= 2:
-        # Example 2: MIDDLE - Split at ~50%
         split_pos_2 = find_split_point(music_content, 0.5)
         if split_pos_2 > 0:
             example_2 = ContinuationExample(
@@ -239,7 +163,6 @@ def create_continuation_examples(
             examples.append(example_2)
 
     if splits_per_piece >= 3:
-        # Example 3: NEAR END - Split at ~75%
         split_pos_3 = find_split_point(music_content, 0.75)
         if split_pos_3 > 0 and split_pos_3 != split_pos_2:
             example_3 = ContinuationExample(
@@ -257,36 +180,24 @@ def create_continuation_examples(
 
 
 def validate_example(example: ContinuationExample) -> Tuple[bool, str]:
-    """
-    Validate that an example is syntactically correct.
-
-    Returns:
-        (is_valid, error_message)
-    """
     full_text = example.input_text + example.output_text
 
-    # Check 1: Balanced braces
     if full_text.count('{') != full_text.count('}'):
         return False, f"Unbalanced braces: {full_text.count('{')} open, {full_text.count('}')} close"
 
-    # Check 2: Has musical content
     if not contains_music(full_text):
         return False, "No musical content found"
 
-    # Check 3: Variable assignment is complete
     if '=' in full_text and not re.search(r'=\s*(?:\\relative[^{]*?)?\{.*\}', full_text, re.DOTALL):
         return False, "Incomplete variable assignment"
 
-    # Check 4: Output must end with closing brace
     if not example.output_text.rstrip().endswith('}'):
         return False, "Output doesn't end with closing brace"
 
-    # Check 5: Input must not be empty
     if len(example.input_text.strip()) == 0:
         return False, "Empty input"
 
-    # Check 6: Output must not be empty
-    if len(example.output_text.strip()) <= 2:  # Just "}" is too short
+    if len(example.output_text.strip()) <= 2:
         return False, "Output too short"
 
     return True, ""
@@ -296,12 +207,6 @@ def process_file(
     file_path: Path,
     splits_per_piece: int = 3
 ) -> Tuple[List[ContinuationExample], Dict[str, int]]:
-    """
-    Process a single LilyPond file and generate continuation examples.
-
-    Returns:
-        (examples, stats)
-    """
     stats = {
         'files_processed': 1,
         'assignments_found': 0,
@@ -317,14 +222,12 @@ def process_file(
         print(f"Error reading {file_path}: {e}", file=sys.stderr)
         return [], stats
 
-    # Extract music assignments
     assignments = extract_music_assignments(content)
     stats['assignments_found'] = len(assignments)
 
     valid_examples = []
 
     for assignment in assignments:
-        # Create continuation examples
         examples = create_continuation_examples(
             assignment,
             source_file=file_path.stem,
@@ -332,7 +235,6 @@ def process_file(
         )
         stats['examples_created'] += len(examples)
 
-        # Validate each example
         for example in examples:
             is_valid, error_msg = validate_example(example)
 
@@ -347,7 +249,6 @@ def process_file(
 
 
 def save_examples_jsonl(examples: List[ContinuationExample], output_path: Path):
-    """Save examples in JSONL format (not yet tokenized)."""
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     with open(output_path, 'w', encoding='utf-8') as f:
@@ -405,7 +306,6 @@ def main():
         print(f"Limit: {args.limit} files (testing mode)")
     print()
 
-    # Find all .ly files
     input_files = list(args.input.rglob('*.ly'))
 
     if args.limit:
@@ -414,7 +314,6 @@ def main():
     print(f"Found {len(input_files)} .ly files")
     print()
 
-    # Process all files
     all_examples = []
     total_stats = defaultdict(int)
 
@@ -440,7 +339,6 @@ def main():
     print(f"Success rate: {100 * total_stats['examples_valid'] / max(1, total_stats['examples_created']):.1f}%")
     print()
 
-    # Save all examples
     output_file = args.output / 'all_examples.jsonl'
     print(f"Saving {len(all_examples)} examples to {output_file}...")
     save_examples_jsonl(all_examples, output_file)

@@ -18,11 +18,8 @@ DEFAULT_LILYPOND_PATH = (
 
 @dataclass
 class ParseOptions:
-    """
-    Options controlling which normalization steps are applied.
-    """
     expand_relative: bool = True
-    inline_variables: bool = False  # Disabled - causes syntax corruption in nested variables
+    inline_variables: bool = False
     expand_music_functions: bool = True
     resolve_transpose: bool = True
     expand_repeat_unfold: bool = True
@@ -38,9 +35,6 @@ _DEFAULT_PARSE_OPTIONS = ParseOptions()
 
 @dataclass
 class ParseReport:
-    """
-    Counters and notes describing what the normalizer did.
-    """
     relative_blocks: int = 0
     variables_inlined: int = 0
     transpose_blocks: int = 0
@@ -69,7 +63,7 @@ def _grab_braces(s: str, start_index: int) -> int:
 
 def _grab_angles(s: str, start_index: int) -> int:
     depth = 1
-    index = start_index + 2  # skip initial '<<'
+    index = start_index + 2
     length = len(s)
 
     while index < length and depth > 0:
@@ -99,22 +93,10 @@ def _ok(cmd: str) -> bool:
 
 
 def lily_available(lily_cmd: str) -> bool:
-    """
-    Check whether the given lilypond command is available.
-    """
     return _ok(lily_cmd)
 
 
 def resolve_lily_cmd() -> str:
-    """
-    Resolve a usable lilypond command.
-
-    Search order:
-      1. PATH ("lilypond").
-      2. LILYPOND_BIN environment variable.
-      3. DEFAULT_LILYPOND_PATH.
-      4. Fallback to string "lilypond".
-    """
     from_path = shutil.which("lilypond")
     if from_path and _ok(from_path):
         return from_path
@@ -140,15 +122,6 @@ ITALIAN_SOLFEGE = ("do", "re", "mi", "fa", "sol", "la", "si")
 
 
 def _detect_note_language(source: str) -> Optional[str]:
-    r"""
-    Try to infer the active note language from the source.
-
-    Preference order:
-      1. Explicit \language "..." declaration.
-      2. Heuristic: \relative followed by Italian solfege.
-
-    Returns None if no guess can be made (defaults to Lily's English).
-    """
     language_match = RE_LANGUAGE_DECL.search(source)
     if language_match:
         return language_match.group(1)
@@ -199,21 +172,16 @@ def _collect_named_music(source: str) -> Dict[str, str]:
 
         name = match.group(2)
 
-        # Skip markup variables (start with _ or ^)
         if rhs_start < length and source[rhs_start] in ("_", "^"):
-            # Skip to end of line or next assignment
             search_start = rhs_start + 1
             continue
 
-        # Skip setting/override commands that shouldn't be inlined
-        # (these are context-dependent and break when inlined into music blocks)
         skip_prefixes = ("\\override", "\\set", "\\tupletSpan", "\\revert", "\\unset")
         is_setting = any(source.startswith(prefix, rhs_start) for prefix in skip_prefixes)
         if is_setting:
             search_start = rhs_start + 1
             continue
 
-        # name = \relative ...
         if source.startswith("\\relative", rhs_start):
             relative_match = RE_RELATIVE_BLK.search(source, rhs_start)
             if not relative_match:
@@ -224,7 +192,6 @@ def _collect_named_music(source: str) -> Dict[str, str]:
             environment[name] = source[rhs_start:brace_close_index]
             search_start = brace_close_index
 
-        # name = \transpose ...
         elif source.startswith("\\transpose", rhs_start):
             transpose_match = RE_TRANSPOSE.search(source, rhs_start)
             if not transpose_match:
@@ -235,19 +202,16 @@ def _collect_named_music(source: str) -> Dict[str, str]:
             environment[name] = source[rhs_start:brace_close_index]
             search_start = brace_close_index
 
-        # name = { ... }
         elif rhs_start < length and source[rhs_start] == "{":
             brace_close_index = _grab_braces(source, rhs_start)
             environment[name] = source[rhs_start:brace_close_index]
             search_start = brace_close_index
 
-        # name = << ... >>
         elif source.startswith("<<", rhs_start):
             angle_close_index = _grab_angles(source, rhs_start)
             environment[name] = source[rhs_start:angle_close_index]
             search_start = angle_close_index
 
-        # name = simple_token (but not markup)
         else:
             token_end = rhs_start
             while token_end < length and not source[token_end].isspace():
@@ -317,13 +281,11 @@ def _inline_named_music_with_lilypond(
     if not env:
         return source, 0
 
-    # Build a preamble that defines all collected music variables.
     preamble_lines = []
     for name, rhs in env.items():
         preamble_lines.append(f"{name} = {rhs}")
     preamble = "\n".join(preamble_lines)
 
-    # Ask LilyPond to expand each variable reference.
     names = list(env.keys())
     blocks = [f"\\{name}" for name in names]
     expanded = _run_lily_batch(
@@ -333,7 +295,6 @@ def _inline_named_music_with_lilypond(
         preamble=preamble,
     )
 
-    # Build replacement map for successful expansions.
     repl: Dict[str, str] = {}
     for name, value in zip(names, expanded):
         if value and _is_safe_music_expansion(value):
@@ -342,7 +303,6 @@ def _inline_named_music_with_lilypond(
     if not repl:
         return source, 0
 
-    # Replace occurrences of \name with expanded music.
     names_sorted = sorted(repl.keys(), key=len, reverse=True)
     pattern = r"\\(" + "|".join(re.escape(name) for name in names_sorted) + r")\b"
     count = 0
@@ -379,12 +339,10 @@ def _is_safe_music_expansion(text: str) -> bool:
     if any(tok in text for tok in forbidden):
         return False
 
-    # Require at least one note/rest token.
     note_re = re.compile(r"\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[',#isbf]*\d", re.I)
     if not note_re.search(text):
         return False
 
-    # Reject empty brace placeholders that can appear in broken output.
     if "{}" in text or "{ }" in text:
         return False
 
@@ -466,13 +424,11 @@ def _find_function_calls(
         elif source.startswith("<<", token_end):
             end_index = _grab_angles(source, token_end)
         elif source.startswith("<", token_end):
-            # Simple < ... > chord
             chord_index = token_end + 1
             while chord_index < length and source[chord_index] != ">":
                 chord_index += 1
             end_index = chord_index + 1 if chord_index < length else length
         else:
-            # Single token call
             token_scan = token_end
             while (
                 token_scan < length
@@ -545,9 +501,6 @@ def _run_lily_batch(
         parts.append(preamble)
 
     def var_name(idx: int) -> str:
-        """
-        Produce a deterministic variable name: music[a..z, aa..zz, ...].
-        """
 
         def _letters(n: int) -> str:
             if n < 0:
@@ -564,11 +517,9 @@ def _run_lily_batch(
 
     var_names = [var_name(i) for i in range(len(blocks))]
 
-    # Assign blocks
     for idx, block in enumerate(blocks):
         parts.append(f"{var_names[idx]} = \\absolute {{ {block} }}")
 
-    # Dump normalized Lily music
     for idx in range(len(blocks)):
         parts.append(f"#(display \"===BEGIN_{idx}===\\n\")")
         parts.append(f"\\displayLilyMusic \\{var_names[idx]}")
@@ -639,7 +590,6 @@ def _run_lily_batch(
             block_text = re.sub(r"[ \t]*\r?\n[ \t]*", " ", block_text)
             block_text = re.sub(r"[ \t]+", " ", block_text).strip()
 
-        # Check for invalid/empty output
         if block_text in ("", "## { # }"):
             results[idx] = None
         else:
@@ -654,11 +604,6 @@ def expand_relative_with_lily_batched(
     *,
     preserve_linebreaks: bool,
 ) -> Tuple[str, int]:
-    """
-    Expand all \\relative blocks in source using LilyPond (batch mode).
-
-    Returns (new_source, lily_failures_count).
-    """
     blocks = _find_relative_blocks(source)
     if not blocks:
         return source, 0
@@ -719,11 +664,6 @@ def resolve_transpose_with_lily_batched(
     *,
     preserve_linebreaks: bool,
 ) -> Tuple[str, int, int]:
-    """
-    Resolve \\transpose blocks by letting LilyPond expand them.
-
-    Returns (new_source, ok_count, fail_count).
-    """
     blocks = _find_transpose_blocks(source)
     if not blocks:
         return source, 0, 0
@@ -757,7 +697,6 @@ def resolve_transpose_with_lily_batched(
     return "".join(output_parts), ok_count, fail_count
 
 
-# \\repeat unfold expansion (pure string manipulation)
 
 RE_REPEAT_UNFOLD = re.compile(r"\\repeat\s+unfold\s+(\d+)\s*\{", re.I)
 
@@ -799,11 +738,6 @@ def expand_repeat_unfold(
     *,
     max_passes: int = 8,
 ) -> Tuple[str, int]:
-    """
-    Recursively expand \\repeat unfold blocks up to max_passes.
-
-    Returns (new_source, total_blocks_expanded).
-    """
     total_expanded = 0
     current = source
 
@@ -853,20 +787,9 @@ def _dedupe_nested_tuplets_once(text: str) -> Tuple[str, int]:
 
 
 def normalize_tuplets(source: str) -> Tuple[str, int]:
-    """
-    Normalize tuplets:
-
-      - Convert \\times ratios to \\tuplet.
-      - Remove optional tuplet duration, when possible.
-      - Remove directly nested redundant tuplets.
-      - Normalize tuplet spacing.
-
-    Returns (new_source, estimated_change_count).
-    """
     total_changes = 0
     text = source
 
-    # Convert \\times -> \\tuplet
     search_start = 0
     output_parts: List[str] = []
     last_index = 0
@@ -892,7 +815,6 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
     output_parts.append(text[last_index:])
     text = "".join(output_parts)
 
-    # Remove optional tuplet duration: \\tuplet 3/2 8 { ... } -> \\tuplet 3/2 {
     def _kill_opt_dur(match: re.Match) -> str:
         a, b = match.group(1), match.group(2)
         return f"\\tuplet {a}/{b} {{"
@@ -903,7 +825,6 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
         total_changes += diff_count
         text = text2
 
-    # Collapse nested repeated tuplets
     for _ in range(4):
         text, dedup_count = _dedupe_nested_tuplets_once(text)
         total_changes += dedup_count
@@ -979,11 +900,6 @@ def _normalize_drums_in_block(block: str) -> Tuple[str, int]:
 
 
 def normalize_drummode(source: str) -> Tuple[str, int]:
-    """
-    Normalize \\drummode {...} notation to the canonical drum token set.
-
-    Returns (new_source, changed_block_count).
-    """
     search_start = 0
     output_parts: List[str] = []
     last_index = 0
@@ -1019,11 +935,6 @@ def expand_music_functions_with_lily(
     *,
     preserve_linebreaks: bool,
 ) -> Tuple[str, int, int]:
-    """
-    Expand calls to define-music-function-defined functions via LilyPond.
-
-    Returns (new_source, ok_count, fail_count).
-    """
     func_names = _collect_music_function_names(source)
     if not func_names:
         return source, 0, 0
@@ -1061,14 +972,6 @@ def expand_music_functions_with_lily(
 
 
 def normalize_whitespace(source: str) -> str:
-    """
-    Normalize whitespace:
-
-      - Convert CRLF / CR to LF.
-      - Collapse runs of spaces/tabs to single spaces.
-      - Trim leading/trailing whitespace on each line.
-      - Strip leading/trailing whitespace overall.
-    """
     text = source.replace("\r\n", "\n").replace("\r", "\n")
     lines = text.split("\n")
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in lines]
@@ -1080,15 +983,9 @@ def process_string(
     lily_cmd: str,
     opts: ParseOptions,
 ) -> Tuple[str, ParseReport]:
-    """
-    Process one LilyPond string according to ParseOptions.
-
-    Returns (normalized_string, ParseReport).
-    """
     report = ParseReport(notes=[])
     text = src
 
-    # Inline variables
     if opts.inline_variables:
         env = _collect_named_music(text)
         if lily_available(lily_cmd):
@@ -1103,7 +1000,6 @@ def process_string(
         report.variables_inlined = count
         text = text_after_inline
 
-    # Expand music functions
     if opts.expand_music_functions:
         text_after_functions, ok_count, fail_count = expand_music_functions_with_lily(
             text,
@@ -1114,7 +1010,6 @@ def process_string(
             text = text_after_functions
             report.lily_failures += fail_count
 
-    # Expand relative
     if opts.expand_relative:
         relative_count = len(_find_relative_blocks(text))
         if relative_count:
@@ -1126,7 +1021,6 @@ def process_string(
             report.relative_blocks = relative_count
             report.lily_failures += rel_failures
 
-    # Resolve transpose
     if opts.resolve_transpose:
         text_after_transpose, ok_count, fail_count = resolve_transpose_with_lily_batched(
             text,
@@ -1138,28 +1032,24 @@ def process_string(
             report.transpose_blocks = ok_count
             report.lily_failures += fail_count
 
-    # Expand repeat unfold
     if opts.expand_repeat_unfold:
         text_after_repeat, count = expand_repeat_unfold(text)
         if count:
             text = text_after_repeat
             report.repeats_unfolded = count
 
-    # Normalize tuplets
     if opts.normalize_tuplets:
         text_after_tuplets, count = normalize_tuplets(text)
         if count:
             text = text_after_tuplets
             report.tuplets_normalized = count
 
-    # Normalize drummode
     if opts.normalize_drums:
         text_after_drums, changed_blocks = normalize_drummode(text)
         if changed_blocks:
             text = text_after_drums
             report.drum_blocks_normalized = changed_blocks
 
-    # Whitespace & chord bracket canonicalization
     if opts.normalize_whitespace:
         text = normalize_whitespace(text)
 
@@ -1173,11 +1063,6 @@ try:
     from lilynorm.utils.options import NormOptions
 except Exception:
     class NormOptions:  # type: ignore[override]
-        """
-        Fallback NormOptions when lilynorm.utils.options is unavailable.
-
-        Only mirrors the attributes used in this module.
-        """
         keep_engraving: bool = False
         strip_scheme_blocks: bool = True
         strip_comments: bool = True
@@ -1199,19 +1084,12 @@ def _map_options(norm_opts: "NormOptions") -> ParseOptions:
         field_def.name: getattr(norm_opts, field_def.name, getattr(defaults, field_def.name))
         for field_def in fields(ParseOptions)
     }
-
-    # DISABLED: inline_variables causes issues with markup and setting variables
-    # The selective filtering in _collect_named_music helps but doesn't solve all cases
-    # Better to let expansion fail gracefully than corrupt the output
     parse_opts = ParseOptions(**values)
 
     return parse_opts
 
 
 def run(text: str, opts: "NormOptions") -> str:
-    """
-    Entry point used by the lilynorm pipeline.
-    """
     lily_cmd = resolve_lily_cmd()
     parse_opts = _map_options(opts)
 
@@ -1244,9 +1122,6 @@ def run(text: str, opts: "NormOptions") -> str:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    """
-    Build the CLI argument parser for the standalone normalizer.
-    """
     parser = argparse.ArgumentParser(
         description="Standalone LilyPond lossless normalizer.",
     )
@@ -1271,9 +1146,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
     )
 
     def add_onoff(flag: str, dest: str, default: bool) -> None:
-        """
-        Add --flag / --no-flag style options based on default value.
-        """
         if default:
             parser.add_argument(
                 f"--no-{flag}",
@@ -1304,14 +1176,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-    """
-    Command-line entry point.
-
-    Returns an exit code:
-      0 on success
-      1 on missing input file
-      2 if LilyPond is not available
-    """
 
     parser = build_arg_parser()
     args = parser.parse_args()

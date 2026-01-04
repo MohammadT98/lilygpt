@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Wrapper to run continuation dataset preparation with comprehensive logging.
-Saves both console output and final statistics to a log file.
-"""
 
 import subprocess
 import sys
@@ -11,8 +7,6 @@ from datetime import datetime
 
 
 def run_continuation_preparation(log_file):
-    """Run the continuation dataset preparation script."""
-
     log_file.write("\n" + "=" * 80 + "\n")
     log_file.write("STEP 1: Generate Continuation Examples\n")
     log_file.write("=" * 80 + "\n\n")
@@ -40,7 +34,6 @@ def run_continuation_preparation(log_file):
         bufsize=1
     )
 
-    # Stream output to both console and log
     for line in process.stdout:
         print(line, end='', flush=True)
         log_file.write(line)
@@ -56,8 +49,6 @@ def run_continuation_preparation(log_file):
 
 
 def split_dataset(log_file):
-    """Split the dataset into train/val/test BY SOURCE FILE (no leakage)."""
-
     log_file.write("\n" + "=" * 80 + "\n")
     log_file.write("STEP 2: Split into Train/Val/Test (BY SOURCE FILE)\n")
     log_file.write("=" * 80 + "\n\n")
@@ -69,7 +60,6 @@ def split_dataset(log_file):
     print()
 
     try:
-        # Use the fixed build_splits.py script
         cmd = [
             sys.executable,
             "src/lilynorm/stages/splitting/build_splits.py",
@@ -91,7 +81,6 @@ def split_dataset(log_file):
             bufsize=1
         )
 
-        # Stream output to both console and log
         for line in process.stdout:
             print(line, end='', flush=True)
             log_file.write(line)
@@ -116,11 +105,9 @@ def split_dataset(log_file):
 
 
 def main():
-    # Create logs directory under data/logs
     logs_dir = Path("data") / "logs" / "continuation_pipeline"
     logs_dir.mkdir(parents=True, exist_ok=True)
 
-    # Generate log filename with timestamp
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     log_path = logs_dir / f"continuation_pipeline_{timestamp}.log"
 
@@ -132,14 +119,12 @@ def main():
     print()
 
     with open(log_path, 'w', encoding='utf-8') as log_file:
-        # Write header
         log_file.write("=" * 80 + "\n")
         log_file.write("CONTINUATION DATASET PIPELINE LOG\n")
         log_file.write("=" * 80 + "\n")
         log_file.write(f"Started: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
         log_file.write("=" * 80 + "\n")
 
-        # Step 1: Generate continuation examples
         success = run_continuation_preparation(log_file)
         if not success:
             log_file.write("\nERROR: Continuation dataset preparation failed!\n")
@@ -147,7 +132,6 @@ def main():
             print(f"Check log: {log_path}")
             return 1
 
-        # Step 2: Split dataset
         success = split_dataset(log_file)
         if not success:
             log_file.write("\nERROR: Dataset splitting failed!\n")
@@ -155,7 +139,6 @@ def main():
             print(f"Check log: {log_path}")
             return 1
 
-        # Success
         print("=" * 80)
         print("SUCCESS!")
         print("=" * 80)

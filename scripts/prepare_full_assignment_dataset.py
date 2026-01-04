@@ -1,8 +1,4 @@
 #!/usr/bin/env python3
-"""
-Create a dataset with FULL assignments (no splitting).
-Each example is one complete variable assignment from a LilyPond file.
-"""
 
 import json
 import re
@@ -11,7 +7,6 @@ from typing import List, Dict, Any
 
 
 def extract_assignments(ly_path: Path) -> List[Dict[str, Any]]:
-    """Extract complete variable assignments from a LilyPond file."""
     try:
         with open(ly_path, 'r', encoding='utf-8') as f:
             content = f.read()
@@ -19,8 +14,6 @@ def extract_assignments(ly_path: Path) -> List[Dict[str, Any]]:
         print(f"[!] Could not read {ly_path}: {e}")
         return []
 
-    # Pattern: varName = \relative ... { ... }
-    # This is simplified - may need adjustment for complex cases
     pattern = r'(\w+)\s*=\s*(\\relative\s+\w+[\'",]*\s*)?(\{)'
 
     assignments = []
@@ -29,7 +22,6 @@ def extract_assignments(ly_path: Path) -> List[Dict[str, Any]]:
         var_name = match.group(1)
         start_pos = match.start()
 
-        # Find matching closing brace
         brace_count = 1
         pos = match.end()
 
@@ -41,15 +33,12 @@ def extract_assignments(ly_path: Path) -> List[Dict[str, Any]]:
             pos += 1
 
         if brace_count == 0:
-            # Found complete assignment
             full_text = content[start_pos:pos]
 
-            # Split into input (header) and output (body)
             header_end = match.end()  # Position after opening {
             input_text = content[start_pos:header_end]
             output_text = content[header_end:pos]
 
-            # Estimate token count (rough: 1 token ≈ 4 chars)
             token_estimate = len(full_text) // 4
 
             assignments.append({
@@ -107,7 +96,6 @@ def main():
     print(f"Total assignments extracted: {len(all_examples)}")
     print()
 
-    # Token statistics
     tokens = [ex['token_count_estimate'] for ex in all_examples]
     if tokens:
         print(f"Token statistics:")
@@ -117,7 +105,6 @@ def main():
         print(f"  Over 2048: {sum(1 for t in tokens if t > 2048)} ({100*sum(1 for t in tokens if t > 2048)/len(tokens):.1f}%)")
     print()
 
-    # Write JSONL
     with open(output_file, 'w', encoding='utf-8') as f:
         for ex in all_examples:
             f.write(json.dumps(ex, ensure_ascii=False) + '\n')

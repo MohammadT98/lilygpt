@@ -1,13 +1,3 @@
-"""
-Train GPT-OSS-20B on LilyPond dataset using LoRA with STANDARD approach.
-
-This uses full-sequence training (no loss masking), which is the standard
-approach for domain adaptation and code/music generation models.
-
-Usage:
-    python -m lilynorm.stages.training.train_standard --train data/splits/train.jsonl --val data/splits/val.jsonl
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -167,7 +157,6 @@ def main() -> int:
     print("="*80)
     print()
 
-    # Load tokenizer FIRST (needed for dataset)
     print(f"[train_standard] loading tokenizer: {args.model_name}")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
 
@@ -181,7 +170,6 @@ def main() -> int:
     print(f"  train: {train_path}")
     print(f"  val:   {val_path}")
 
-    # Load datasets (STANDARD approach - no masking)
     train_dataset = LilyStandardDataset(
         train_path,
         tokenizer=tokenizer,
@@ -196,7 +184,6 @@ def main() -> int:
     print(f"[train_standard] train samples: {len(train_dataset)}")
     print(f"[train_standard] val samples:   {len(val_dataset)}")
 
-    # Load model
     print(f"[train_standard] loading model: {args.model_name}")
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
@@ -205,7 +192,6 @@ def main() -> int:
         trust_remote_code=True,
     )
 
-    # Apply LoRA
     print(f"[train_standard] applying LoRA (r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout})")
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
@@ -218,11 +204,9 @@ def main() -> int:
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
 
-    # Custom collate function for standard examples
     def collate_fn(batch):
         return collate_standard_batch(batch, pad_token_id=pad_token_id)
 
-    # Training arguments
     training_args = TrainingArguments(
         output_dir=str(output_dir),
         overwrite_output_dir=False,
@@ -250,7 +234,6 @@ def main() -> int:
         ddp_find_unused_parameters=False,
     )
 
-    # Trainer
     print("[train_standard] initializing Trainer...")
     trainer = Trainer(
         model=model,
@@ -260,7 +243,6 @@ def main() -> int:
         data_collator=collate_fn,
     )
 
-    # Train
     print("[train_standard] starting training...")
     if args.resume_from_checkpoint:
         print(f"[train_standard] resuming from checkpoint: {args.resume_from_checkpoint}")
@@ -268,7 +250,6 @@ def main() -> int:
     else:
         trainer.train()
 
-    # Save final model
     final_dir = output_dir / "final"
     print(f"[train_standard] saving final model to {final_dir}")
     trainer.save_model(str(final_dir))

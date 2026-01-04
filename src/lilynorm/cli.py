@@ -1,9 +1,3 @@
-"""
-CLI for processing LilyPond datasets.
-
-Usage:
-    python -m lilynorm.cli --input data/raw --normalized-out data/normalized_dataset --skip-tokenize
-"""
 from __future__ import annotations
 
 import argparse
@@ -14,8 +8,6 @@ import sys
 from pathlib import Path
 from typing import TextIO
 
-# Prefer local source tree when running from the repo (avoid stale installed package).
-# This file is at src/lilynorm/cli.py, so go up 3 levels to get repo root
 _repo_root = Path(__file__).resolve().parents[2]
 _src_dir = _repo_root / "src"
 if _src_dir.exists():
@@ -28,12 +20,11 @@ from lilynorm.stages.normalization.utils.voice_extraction import find_voice_bloc
 from lilynorm.utils.formatting import format_full_text, format_example
 
 
-# Filenames to skip during processing
 NAME_BLACKLIST = (
-    "format",       # empty macro placeholders
-    "header",       # includes + paper setup
+    "format",
+    "header",
     "header_part",
-    "variabili",    # variable definitions and engraving macros (kept as includes in resolved files)
+    "variabili",
     "violino1",
     "violino2",
     "violino3",
@@ -54,7 +45,6 @@ VARIABILI_INCLUDE_RE = re.compile(r"\\include\s+\"([^\"]*variabili[^\"]*)\"", re
 RELATIVE_LANG_RE = re.compile(r"\\relative\s+([^\s{]+)", re.I)
 
 class _Tee:
-    """Mirror writes to both stdout and a log file."""
     def __init__(self, stream: TextIO, log_file: TextIO) -> None:
         self._stream = stream
         self._log_file = log_file
@@ -74,14 +64,12 @@ class _Tee:
 
 
 def should_process(path: Path, text: str) -> bool:
-    """Check if this .ly file should be processed."""
     stem = path.stem.lower()
 
     for tag in NAME_BLACKLIST:
         if stem == tag or stem.endswith(f"_{tag}"):
             return False
 
-    # Score files get processed (file_resolver inlines all includes)
     if stem.endswith("_score") or stem == "score":
         return True
 
@@ -254,7 +242,6 @@ def main() -> int:
         trimmed_multi_voice = 0
         single_voice_missing = 0
 
-        # Statistics counters
         stats: dict[str, int] = {
             "line_removed": 0,
             "block_removed": 0,
@@ -278,7 +265,6 @@ def main() -> int:
             return 0
 
         for src in ly_files:
-            # Skip macOS metadata artifacts.
             if "__MACOSX" in src.parts or src.name.startswith("._"):
                 skipped += 1
                 continue
@@ -292,9 +278,8 @@ def main() -> int:
             print(f"[dataset] processing {rel}")
 
             try:
-                # Call the pipeline module to normalize the file
                 forma_pieces = normalize_file(src, opts, stats)
-            except Exception as exc:  # pragma: no cover - defensive
+            except Exception as exc:
                 print(
                     f"[dataset] ! failed to normalize {rel}: {exc}",
                     file=sys.stderr,
@@ -306,10 +291,8 @@ def main() -> int:
                 src.parent
             )
 
-            # Process each piece (single-voice filtering if needed)
             processed_pieces = []
             for piece in forma_pieces:
-                # Optionally keep only a single voice
                 if args.single_voice_only:
                     voice_blocks = find_voice_blocks(piece)
                     if not voice_blocks:
@@ -335,14 +318,12 @@ def main() -> int:
 
                 processed_pieces.append(piece)
 
-            # Use the processed pieces (already split by forma in pipeline Stage 0)
             forma_pieces = processed_pieces
 
             if args.dry_run:
                 processed += 1
                 continue
 
-            # Write normalized pieces and tokenize (already fully processed by the pipeline)
             for idx, piece in enumerate(forma_pieces, start=1):
                 norm_path = norm_root / rel
                 if len(forma_pieces) > 1:
@@ -353,20 +334,16 @@ def main() -> int:
                 output_text = piece.lstrip() + "\n"
                 norm_path.write_text(output_text, encoding="utf-8")
 
-                # Tokenization output
                 if not args.skip_tokenize:
-                    # Apply instruction formatting if requested
                     text_to_tokenize = piece
                     prompt_preview = ""
                     prefix_token_count = 0
                     if args.instruction_format != "none":
-                        # Build full text
                         text_to_tokenize = format_full_text(
                             piece,
                             instruction_format=args.instruction_format,
                             instruction=args.instruction,
                         )
-                        # Also compute a prompt preview and token length of the prompt
                         formatted = format_example(
                             piece,
                             instruction_format=args.instruction_format,
@@ -374,14 +351,12 @@ def main() -> int:
                         )
                         if isinstance(formatted, tuple):
                             prompt_preview = formatted[0]
-                            # Tokenize prompt to measure its token length
                             prompt_tok = tokenize_gpt.tokenize_gpt.run(
                                 prompt_preview,
                                 model_name=args.tokenizer_model,
                             )
                             prefix_token_count = len(prompt_tok.get("input_ids", []))
                         else:
-                            # plain: prompt is just the instruction + newline
                             prompt_preview = args.instruction + "\n"
                             prompt_tok = tokenize_gpt.tokenize_gpt.run(
                                 prompt_preview,
@@ -392,9 +367,7 @@ def main() -> int:
                     tok_info = tokenize_gpt.tokenize_gpt.run(
                         text_to_tokenize,
                         model_name=args.tokenizer_model,
-                        # max_length=1024  # override here if you want
                     )
-                    # Attach instruction metadata for verification
                     tok_info["instruction_format"] = args.instruction_format
                     tok_info["instruction"] = (
                         args.instruction if args.instruction_format != "none" else None
@@ -412,8 +385,6 @@ def main() -> int:
 
             processed += 1
 
-        # Default: do NOT mirror variabili.ly into normalized output.
-        # Only mirror when explicitly requested via --mirror-variabili.
         if not args.dry_run and args.mirror_variabili:
             _copy_variabili_files(input_root, norm_root)
 
@@ -429,7 +400,6 @@ def main() -> int:
             )
         )
 
-        # Summary of preprocessing/normalize stats
         print("--- Stage summaries ---")
         print(
             f"[preparse] line_removed={stats['line_removed']} "

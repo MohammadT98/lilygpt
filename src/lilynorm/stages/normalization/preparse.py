@@ -13,9 +13,6 @@ _RE_MARKUP_TOKEN = re.compile(r"\\markup(?![A-Za-z])")
 
 @dataclass
 class CleanOptions:
-    """
-    Options controlling comment and whitespace handling during cleaning.
-    """
     keep_line_comments: bool = False
     keep_block_comments: bool = False
     max_blank_lines: int = 1
@@ -25,23 +22,11 @@ class CleanOptions:
 
 @dataclass
 class CleanStats:
-    """
-    Statistics about removed comments during cleaning.
-    """
     line_comments_removed: int = 0
     block_comments_removed: int = 0
 
 
 class Context:
-    """
-    Stateful context for scanning LilyPond-like text.
-
-    Tracks whether we are:
-      - inside a string
-      - inside a Scheme expression (#( ... ))
-      - inside a markup { ... } block
-      - right after a \\markup token (waiting to see if a brace follows)
-    """
     __slots__ = (
         "in_string",
         "escaped",
@@ -58,10 +43,6 @@ class Context:
         self.saw_markup_token: bool = False  # True just after seeing \markup
 
     def in_opaque(self) -> bool:
-        """
-        Return True if we are inside a context where comments should not be parsed
-        (string, Scheme expression, or markup block).
-        """
         return (
             self.in_string
             or self.scheme_paren_depth > 0
@@ -76,18 +57,6 @@ def _normalize_newlines(text: str) -> str:
 
 
 def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
-    r"""
-    Remove line and block comments from text according to CleanOptions.
-
-    The scanner is aware of:
-      - double-quoted strings
-      - Scheme blocks: #( ... )
-      - markup blocks: \markup { ... }
-
-    Comments are:
-      - Line comments: % ... (until newline)
-      - Block comments: %{ ... %}
-    """
     ctx = Context()
     out_chars: list[str] = []
     i = 0
@@ -103,9 +72,6 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
     while i < n:
         ch = text[i]
 
-        # --------------------------------------------------
-        # Inside string literal
-        # --------------------------------------------------
         if ctx.in_string:
             out_chars.append(ch)
 
@@ -120,9 +86,6 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
             i += 1
             continue
 
-        # --------------------------------------------------
-        # Starting a string (only when not in Scheme/markup)
-        # --------------------------------------------------
         if (
             ch == '"'
             and ctx.scheme_paren_depth == 0
@@ -133,9 +96,6 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
             i += 1
             continue
 
-        # --------------------------------------------------
-        # Inside Scheme expression: #( ... )
-        # --------------------------------------------------
         if ctx.scheme_paren_depth > 0:
             out_chars.append(ch)
             if ch == "(":
@@ -145,16 +105,12 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
             i += 1
             continue
 
-        # Scheme start: "#("
         if startswith_at("#("):
             out_chars.append("#(")
             i += 2
             ctx.scheme_paren_depth = 1
             continue
 
-        # --------------------------------------------------
-        # Inside markup block: \markup { ... }
-        # --------------------------------------------------
         if ctx.markup_brace_depth > 0:
             out_chars.append(ch)
             if ch == "{":
@@ -164,7 +120,6 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
             i += 1
             continue
 
-        # Just saw \markup token and now we're looking for its brace
         if ctx.saw_markup_token:
             if ch.isspace():
                 out_chars.append(ch)
@@ -180,9 +135,6 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
             # Any other non-space means no markup block follows
             ctx.saw_markup_token = False
 
-        # --------------------------------------------------
-        # Backslash: may be \markup or other command
-        # --------------------------------------------------
         if ch == "\\":
             markup_match = _RE_MARKUP_TOKEN.match(text, i)
             if markup_match:
@@ -195,17 +147,12 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
             i += 1
             continue
 
-        # --------------------------------------------------
-        # Comments: %, %{ ... %}, and line comments
-        # --------------------------------------------------
         if ch == "%":
-            # Block comment %{ ... %}
             if text.startswith("%{", i) and not opts.keep_block_comments:
                 i, removed_blocks = _consume_block_comment(text, i)
                 stats.block_comments_removed += removed_blocks
                 continue
 
-            # Single-line comment % ... \n
             if not opts.keep_line_comments:
                 i += 1
                 while i < n and text[i] != "\n":
@@ -213,9 +160,6 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
                 stats.line_comments_removed += 1
                 continue
 
-        # --------------------------------------------------
-        # Normal character
-        # --------------------------------------------------
         out_chars.append(ch)
         i += 1
 
@@ -254,11 +198,9 @@ def _consume_block_comment(text: str, i: int) -> Tuple[int, int]:
 def _post_whitespace_cleanup(text: str, opts: CleanOptions) -> str:
     lines = text.split("\n")
 
-    # Trim trailing whitespace
     if opts.trim_trailing_ws:
         lines = [line.rstrip(" \t\x0b\x0c") for line in lines]
 
-    # Collapse blank lines
     if opts.max_blank_lines >= 0:
         collapsed: list[str] = []
         blank_streak = 0
@@ -286,11 +228,6 @@ def clean_text(
     opts: CleanOptions | None = None,
     stats: CleanStats | None = None,
 ) -> Tuple[str, CleanStats]:
-    """
-    Clean comments and whitespace from src according to CleanOptions.
-
-    Returns (cleaned_text, CleanStats).
-    """
     opts = opts or CleanOptions()
     stats = stats or CleanStats()
 
@@ -318,12 +255,6 @@ except Exception:
 
 
 def run(text: str, opts: "NormOptions") -> str:
-    """
-    Entry point used by the lilynorm pipeline.
-
-    Builds CleanOptions from NormOptions, runs clean_text, prints a brief
-    report to stdout, and returns the cleaned text.
-    """
     clean_opts = CleanOptions(
         keep_line_comments=not getattr(opts, "strip_comments", True),
         keep_block_comments=not getattr(opts, "strip_comments", True),

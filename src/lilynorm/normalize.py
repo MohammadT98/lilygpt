@@ -1,6 +1,3 @@
-"""
-Pipeline orchestration for LilyPond file normalization.
-"""
 from __future__ import annotations
 
 import re
@@ -11,11 +8,6 @@ from lilynorm.stages import normalization
 
 
 def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None = None) -> list[str]:
-    """
-    Run the complete normalization pipeline on a LilyPond file.
-
-    Returns a list of normalized pieces (one per forma block, or single item if no splitting).
-    """
     from lilynorm.stages.normalization.postprocessing import apply_postprocessing_fixes, remove_empty_variable_assignments
 
     # Stage 0: Resolve includes and split on forma blocks

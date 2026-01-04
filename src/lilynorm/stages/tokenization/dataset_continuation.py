@@ -1,5 +1,3 @@
-"""Dataset loader for continuation-style training examples."""
-
 from __future__ import annotations
 
 import json
@@ -14,7 +12,6 @@ from transformers import PreTrainedTokenizer
 
 @dataclass
 class ContinuationSample:
-    """A single continuation training example."""
     id: str
     source_file: str
     var_name: str
@@ -27,20 +24,6 @@ class ContinuationSample:
 
 
 class LilyContinuationDataset(Dataset):
-    """
-    Dataset for continuation-style LilyPond training.
-
-    Each example has:
-    - input_text: The prefix (e.g., "violinoI = {\\ndo4 re mi")
-    - output_text: The continuation (e.g., " fa sol la si do'\\n}")
-
-    For causal LM training:
-    - input_ids = tokenize(input_text + output_text)
-    - labels = [-100] * len(tokenize(input_text)) + tokenize(output_text)
-
-    This way, loss is only computed on the continuation part.
-    """
-
     def __init__(
         self,
         jsonl_path: str | Path,
@@ -70,7 +53,6 @@ class LilyContinuationDataset(Dataset):
                     print(f"Warning: Skipping invalid JSON at line {line_num}: {e}")
                     continue
 
-                # Extract fields
                 example_id = obj.get('id', f'example_{line_num}')
                 source_file = obj.get('source_file', '')
                 var_name = obj.get('var_name', '')
@@ -78,46 +60,35 @@ class LilyContinuationDataset(Dataset):
                 output_text = obj.get('output', '')
                 split_point = obj.get('split_point', 'unknown')
 
-                # CRITICAL: Tokenize FULL text together to preserve token boundaries
-                # Tokenizing input+output separately breaks continuity at the split point
                 full_text = input_text + output_text
                 input_ids = self.tokenizer.encode(
                     full_text,
                     add_special_tokens=False,
                 )
 
-                # Find where to split labels by tokenizing input alone
                 input_ids_only = self.tokenizer.encode(
                     input_text,
                     add_special_tokens=False,
                 )
                 input_len = len(input_ids_only)
 
-                # CRITICAL: Skip examples where input alone exceeds max_length
-                # Otherwise all labels become -100 after truncation, causing NaN loss
                 if input_len >= self.max_length:
                     print(f"Warning: Skipping example {example_id} - input ({input_len} tokens) >= max_length ({self.max_length})")
                     continue
 
-                # Truncate if too long, but keep some output tokens for training
                 if len(input_ids) > self.max_length:
-                    # Calculate how many output tokens we can keep
                     max_output_tokens = self.max_length - input_len
-                    if max_output_tokens < 10:  # Need at least 10 output tokens to train
+                    if max_output_tokens < 10:
                         print(f"Warning: Skipping example {example_id} - insufficient output tokens after truncation")
                         continue
 
                     input_ids = input_ids[:self.max_length]
 
-                # Labels: mask first input_len tokens with -100, keep rest for loss
-                # -100 is the ignore_index in cross-entropy loss
                 labels = [-100] * input_len + input_ids[input_len:]
 
-                # Ensure labels match input_ids length
                 if len(labels) > len(input_ids):
                     labels = labels[:len(input_ids)]
 
-                # Attention mask: 1 for all tokens (we'll handle padding in collate)
                 attention_mask = [1] * len(input_ids)
 
                 sample = ContinuationSample(
@@ -145,18 +116,10 @@ def collate_continuation_batch(
     batch: List[ContinuationSample],
     pad_token_id: int,
 ) -> Dict[str, torch.Tensor]:
-    """
-    Collate function for continuation examples.
-
-    Pads sequences to the longest in the batch.
-    Returns tensors ready for causal LM training.
-    """
-    # Find max length in batch
     max_len = max(len(sample.input_ids) for sample in batch)
 
     batch_size = len(batch)
 
-    # Initialize tensors
     input_ids = torch.full(
         (batch_size, max_len),
         fill_value=pad_token_id,
@@ -174,7 +137,6 @@ def collate_continuation_batch(
         dtype=torch.long,
     )
 
-    # Fill in the tensors
     for i, sample in enumerate(batch):
         seq_len = len(sample.input_ids)
 

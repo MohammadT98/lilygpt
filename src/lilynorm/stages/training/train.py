@@ -1,10 +1,3 @@
-"""
-Train GPT-OSS-20B on LilyPond dataset using LoRA.
-
-Usage:
-    python -m lilynorm.stages.train --train data/splits/train.jsonl --val data/splits/val.jsonl
-"""
-
 from __future__ import annotations
 
 import argparse
@@ -138,7 +131,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
         default=None,
         help="Resume training from a checkpoint directory.",
     )
-    
+
     return parser
 
 
@@ -156,7 +149,6 @@ def main() -> int:
         print(f"[train] val split not found: {val_path}", file=sys.stderr)
         return 2
 
-    # Load tokenizer FIRST (needed for dataset)
     print(f"[train] loading tokenizer: {args.model_name}")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
 
@@ -170,7 +162,6 @@ def main() -> int:
     print(f"  train: {train_path}")
     print(f"  val:   {val_path}")
 
-    # Load datasets (continuation-style)
     train_dataset = LilyContinuationDataset(
         train_path,
         tokenizer=tokenizer,
@@ -185,7 +176,6 @@ def main() -> int:
     print(f"[train] train samples: {len(train_dataset)}")
     print(f"[train] val samples:   {len(val_dataset)}")
 
-    # Load model
     print(f"[train] loading model: {args.model_name}")
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
@@ -194,7 +184,6 @@ def main() -> int:
         trust_remote_code=True,
     )
 
-    # Apply LoRA
     print(f"[train] applying LoRA (r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout})")
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
@@ -207,11 +196,9 @@ def main() -> int:
     model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
 
-    # Custom collate function for continuation examples
     def collate_fn(batch):
         return collate_continuation_batch(batch, pad_token_id=pad_token_id)
 
-    # Training arguments
     training_args = TrainingArguments(
         output_dir=str(output_dir),
         overwrite_output_dir=False,
@@ -232,14 +219,13 @@ def main() -> int:
         greater_is_better=False,
         fp16=args.fp16,
         bf16=args.bf16,
-        dataloader_num_workers=0,  # Set >0 if you have CPU cores to spare
-        remove_unused_columns=False,  # Important: our dataset returns custom dicts
+        dataloader_num_workers=0,
+        remove_unused_columns=False,
         report_to=["tensorboard"],
         logging_dir=str(output_dir / "logs"),
         ddp_find_unused_parameters=False,
     )
 
-    # Trainer
     print("[train] initializing Trainer...")
     trainer = Trainer(
         model=model,
@@ -249,7 +235,6 @@ def main() -> int:
         data_collator=collate_fn,
     )
 
-    # Train
     print("[train] starting training...")
     if args.resume_from_checkpoint:
         print(f"[train] resuming from checkpoint: {args.resume_from_checkpoint}")
@@ -257,7 +242,6 @@ def main() -> int:
     else:
         trainer.train()
 
-    # Save final model
     final_dir = output_dir / "final"
     print(f"[train] saving final model to {final_dir}")
     trainer.save_model(str(final_dir))

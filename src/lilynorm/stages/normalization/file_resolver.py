@@ -1,10 +1,3 @@
-"""
-LilyPond file resolution: resolves \\include statements and inlines dependencies.
-
-Converts modular LilyPond files with \\include directives into self-contained
-standalone files by recursively inlining all included files.
-"""
-
 from __future__ import annotations
 
 import re
@@ -14,22 +7,11 @@ from pathlib import Path
 from typing import Optional, Set
 
 
-# Regex to match \include "filename" statements
 INCLUDE_RE = re.compile(r'\\include\s+"([^"]+)"', re.I)
 
 
 class FileResolver:
-    """Resolves \\include statements in LilyPond files."""
-
     def __init__(self, base_dir: Path, max_depth: int = 10, exclude_pattern: Optional[str] = None):
-        """
-        Initialize the resolver.
-
-        Args:
-            base_dir: Root directory to search for included files.
-            max_depth: Maximum recursion depth to prevent infinite loops.
-            exclude_pattern: Regex pattern for files to skip inlining (e.g., "variabili").
-        """
         self.base_dir = Path(base_dir)
         self.max_depth = max_depth
         self.exclude_pattern = re.compile(exclude_pattern, re.I) if exclude_pattern else None
@@ -37,17 +19,14 @@ class FileResolver:
         self.in_progress: Set[str] = set()
 
     def _find_include_file(self, include_path: str) -> Optional[Path]:
-        # Try relative to base_dir
         candidate = self.base_dir / include_path
         if candidate.exists():
             return candidate
 
-        # Try in the same directory as base_dir
         alt = self.base_dir.parent / include_path
         if alt.exists():
             return alt
 
-        # Normalize unicode in filenames (e.g., composed vs decomposed accents).
         include_norm = unicodedata.normalize("NFC", include_path)
         if include_norm != include_path:
             candidate_norm = self.base_dir / include_norm
@@ -74,11 +53,9 @@ class FileResolver:
 
         file_key = str(file_path.resolve())
 
-        # Check cache
         if file_key in self.resolved_cache:
             return self.resolved_cache[file_key]
 
-        # Detect circular includes
         if file_key in self.in_progress:
             print(
                 f"warning: Circular include detected: {file_path}",
@@ -91,19 +68,15 @@ class FileResolver:
         try:
             content = file_path.read_text(encoding="utf-8", errors="ignore")
 
-            # Find all include statements and replace them
             def replace_include(match: re.Match) -> str:
                 include_path = match.group(1)
 
-                # Skip excluded patterns (e.g., variabili)
                 if self._should_skip_include(include_path):
-                    return match.group(0)  # Keep the include as-is
+                    return match.group(0)
 
-                # Find the actual file
                 resolved_file = self._find_include_file(include_path)
                 include_name = Path(include_path).name
                 if not resolved_file:
-                    # Handle LilyPond language includes (e.g., italiano.ly) without warnings.
                     language_stem = include_name.rsplit(".", 1)[0]
                     if include_name.lower().endswith(".ly"):
                         lang_map = {
@@ -125,7 +98,7 @@ class FileResolver:
                         f"warning: Include file not found: {include_path} (from {file_path})",
                         file=sys.stderr,
                     )
-                    return match.group(0)  # Keep the include as-is
+                    return match.group(0)
 
                 return self._resolve_recursive(resolved_file, depth + 1)
 
@@ -137,15 +110,6 @@ class FileResolver:
             self.in_progress.discard(file_key)
 
     def resolve(self, file_path: Path) -> str:
-        """
-        Resolve all includes in a file and return the self-contained content.
-
-        Args:
-            file_path: Path to the LilyPond file.
-
-        Returns:
-            File content with all (non-excluded) includes inlined.
-        """
         self.resolved_cache.clear()
         self.in_progress.clear()
         return self._resolve_recursive(file_path)
@@ -157,18 +121,6 @@ def run(
     exclude_variabili: bool = False,
     split_forma: bool = True,
 ) -> list[str]:
-    """
-    Resolve \\include statements in LilyPond text and optionally split by forma blocks.
-
-    Args:
-        file_path: The path to the LilyPond file (used to infer base_dir).
-        base_dir: Base directory for resolving includes. Defaults to file_path.parent.
-        exclude_variabili: If True, keep \\include "...variabili..." as-is instead of inlining.
-        split_forma: If True, split files with multiple forma blocks into separate pieces.
-
-    Returns:
-        List of resolved text pieces (one per forma block, or single item if no splitting).
-    """
     if base_dir is None:
         base_dir = file_path.parent
 
@@ -177,7 +129,6 @@ def run(
 
     resolved_text = resolver.resolve(file_path)
 
-    # Split on forma blocks if requested
     if split_forma:
         return split_on_multiple_forma(resolved_text)
     else:
@@ -185,11 +136,6 @@ def run(
 
 
 def split_on_multiple_forma(text: str) -> list[str]:
-    r"""Split a resolved LilyPond file into pieces if it defines multiple top-level `forma = { ... }` blocks.
-
-    The shared header (comments, \version, \language, includes already inlined) is kept in each piece to keep
-    outputs standalone. If only one `forma` exists, the original text is returned in a single-element list.
-    """
     matches = list(re.finditer(r"(?m)^forma\s*=\s*\{", text))
     if len(matches) <= 1:
         return [text]
@@ -218,7 +164,6 @@ def split_on_multiple_forma(text: str) -> list[str]:
         start = match.start()
         end = matches[idx + 1].start() if idx + 1 < len(matches) else len(text)
         body = text[start:end]
-        # Keep shared tail content (e.g., score blocks) for every piece.
         pieces.append(prefix + body + suffix_after_last)
 
     normalized: list[str] = []
