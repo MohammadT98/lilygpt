@@ -88,14 +88,6 @@ def should_process(path: Path, text: str) -> bool:
     return False
 
 
-def _infer_language_from_music(text: str) -> str | None:
-    for match in RELATIVE_LANG_RE.finditer(text):
-        token = match.group(1).strip().lower().strip(",;'\"")
-        if any(token.startswith(solfege) for solfege in ITALIAN_SOLFEGE):
-            return "italiano"
-    return None
-
-
 def _read_header_metadata(work_dir: Path) -> tuple[str | None, str | None, str | None]:
     version: str | None = None
     language: str | None = None
