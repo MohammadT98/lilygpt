@@ -11,13 +11,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Any
 
-try:
-    pass
-except ModuleNotFoundError:
-    repo_root = Path(__file__).resolve().parents[1]
-    src_dir = repo_root / "src"
-    if src_dir.exists():
-        sys.path.insert(0, str(src_dir))
+repo_root = Path(__file__).resolve().parents[1]
+src_dir = repo_root / "src"
+if src_dir.exists():
+    sys.path.insert(0, str(src_dir))
 
 
 DEFAULT_INPUT_JSONL = "data/continuation_dataset/all_examples.jsonl"
