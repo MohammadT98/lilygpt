@@ -11,9 +11,7 @@ BOM = "\ufeff"
 _RE_MARKUP_TOKEN = re.compile(r"\\markup(?![A-Za-z])")
 
 
-# ---------------------------------------------------------------------------
 # Options and stats
-# ---------------------------------------------------------------------------
 
 @dataclass
 class CleanOptions:
@@ -36,9 +34,7 @@ class CleanStats:
     block_comments_removed: int = 0
 
 
-# ---------------------------------------------------------------------------
 # Parsing context
-# ---------------------------------------------------------------------------
 
 class Context:
     """
@@ -77,16 +73,9 @@ class Context:
         )
 
 
-# ---------------------------------------------------------------------------
 # Normalization and comment stripping
-# ---------------------------------------------------------------------------
 
 def _normalize_newlines(text: str) -> str:
-    """
-    Normalize BOM and line endings:
-      - Strip UTF-8 BOM if present.
-      - Convert CRLF/CR to LF.
-    """
     if text.startswith(BOM):
         text = text[len(BOM):]
     return text.replace("\r\n", "\n").replace("\r", "\n")
@@ -240,11 +229,6 @@ def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
 
 
 def _consume_block_comment(text: str, i: int) -> Tuple[int, int]:
-    """
-    Consume a nested %{ ... %} block comment starting at index i.
-
-    Returns (new_index, blocks_removed_count).
-    """
     assert text.startswith("%{", i)
     n = len(text)
     depth = 0
@@ -273,17 +257,9 @@ def _consume_block_comment(text: str, i: int) -> Tuple[int, int]:
     return idx, removed
 
 
-# ---------------------------------------------------------------------------
 # Whitespace post-processing
-# ---------------------------------------------------------------------------
 
 def _post_whitespace_cleanup(text: str, opts: CleanOptions) -> str:
-    """
-    Apply whitespace-related cleanup:
-      - trim trailing whitespace
-      - collapse sequences of blank lines
-      - add final newline if required
-    """
     lines = text.split("\n")
 
     # Trim trailing whitespace
@@ -313,9 +289,7 @@ def _post_whitespace_cleanup(text: str, opts: CleanOptions) -> str:
     return output
 
 
-# ---------------------------------------------------------------------------
 # Public cleaning API
-# ---------------------------------------------------------------------------
 
 def clean_text(
     src: str,
@@ -337,9 +311,7 @@ def clean_text(
     return text, stats
 
 
-# ---------------------------------------------------------------------------
 # IO helpers
-# ---------------------------------------------------------------------------
 
 def read_text(path: str | None) -> str:
     """
@@ -364,9 +336,7 @@ def write_text(path: str | None, text: str) -> None:
         fh.write(text)
 
 
-# ---------------------------------------------------------------------------
 # Integration with lilynorm NormOptions
-# ---------------------------------------------------------------------------
 
 try:
     from lilynorm.utils.options import NormOptions

@@ -31,7 +31,6 @@ def _load_tokenizer(model_name: str):
 
 
 def _normalize_whitespace(text: str) -> str:
-    """Collapse whitespace like Matteo's preprocessor."""
     return re.sub(r"\s+", " ", text).strip()
 
 

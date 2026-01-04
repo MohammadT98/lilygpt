@@ -12,10 +12,8 @@ from pathlib import Path
 from typing import List, Dict, Any
 
 try:
-    # Import is not needed but helps with type checking
     pass
 except ModuleNotFoundError:
-    # Allow running the script directly from the repo without installing the package.
     repo_root = Path(__file__).resolve().parents[1]
     src_dir = repo_root / "src"
     if src_dir.exists():
@@ -31,22 +29,16 @@ DEFAULT_SEED = 42
 
 @dataclass
 class Sample:
-    """Representation of a single LilyPond training example (raw or tokenized)."""
     id: str
-    source_file: str | None  # Used to track source file for proper splitting
-    raw_data: Dict[str, Any]  # Store the entire JSON object to write back
+    source_file: str | None
+    raw_data: Dict[str, Any]
 
 
 def _get_base_work(source_file: str) -> str:
-    """Extract base work name by removing _partN suffix.
-
-    Example: 'vivaldi_concerto_score_part3' -> 'vivaldi_concerto_score'
-    """
     return re.sub(r'_part\d+$', '', source_file)
 
 
 def _load_from_jsonl(jsonl_path: Path) -> List[Sample]:
-    """Load all samples from a JSONL file (works with both raw and tokenized data)."""
     samples: List[Sample] = []
 
     with jsonl_path.open("r", encoding="utf-8") as f:
@@ -58,17 +50,15 @@ def _load_from_jsonl(jsonl_path: Path) -> List[Sample]:
             try:
                 obj: Dict[str, Any] = json.loads(line)
             except json.JSONDecodeError as exc:
-                print(f"[build_splits] ! skipping line {line_num} due to JSON error: {exc}")
+                print(f"[build_splits] skipping line {line_num}: {exc}")
                 continue
 
-            # Extract ID and source_file for splitting
             sample_id = obj.get("id", f"sample_{line_num}")
             source_file = obj.get("source_file")
 
             if not isinstance(source_file, str):
                 source_file = None
 
-            # Store entire object to write back unchanged
             samples.append(Sample(
                 id=sample_id,
                 source_file=source_file,
@@ -87,15 +77,8 @@ def _train_val_test_split(
     val_ratio: float,
     seed: int,
 ) -> tuple[List[Sample], List[Sample], List[Sample]]:
-    """Randomly split samples into train/val/test BY BASE WORK to prevent data leakage.
-
-    This ensures that all parts/examples from the same musical work end up in the same split.
-    For example, 'vivaldi_concerto_part1', 'vivaldi_concerto_part2', 'vivaldi_concerto_part3'
-    all get grouped together and assigned to the same split.
-    """
     rng = random.Random(seed)
 
-    # Group samples by base work (removing _partN suffix)
     work_to_samples: Dict[str, List[Sample]] = {}
     no_source_samples: List[Sample] = []
 
@@ -108,11 +91,9 @@ def _train_val_test_split(
         else:
             no_source_samples.append(sample)
 
-    # Get list of unique base works and shuffle them
     base_works = list(work_to_samples.keys())
     rng.shuffle(base_works)
 
-    # Split base works into train/val/test
     n_works = len(base_works)
     n_train_works = int(n_works * train_ratio)
     n_val_works = int(n_works * val_ratio)
@@ -121,7 +102,6 @@ def _train_val_test_split(
     val_works = base_works[n_train_works:n_train_works + n_val_works]
     test_works = base_works[n_train_works + n_val_works:]
 
-    # Collect all samples from each work group
     train_samples = []
     val_samples = []
     test_samples = []
@@ -133,7 +113,6 @@ def _train_val_test_split(
     for work in test_works:
         test_samples.extend(work_to_samples[work])
 
-    # Handle samples without source_file (split them randomly as fallback)
     if no_source_samples:
         rng.shuffle(no_source_samples)
         n = len(no_source_samples)
@@ -144,73 +123,38 @@ def _train_val_test_split(
         val_samples.extend(no_source_samples[n_train:n_train + n_val])
         test_samples.extend(no_source_samples[n_train + n_val:])
 
-        print(f"[build_splits] WARNING: {len(no_source_samples)} samples without source_file, "
-              f"split randomly (may cause leakage)")
+        print(f"[build_splits] WARNING: {len(no_source_samples)} samples without source_file")
 
-    print(f"[build_splits] Split by base work (grouped _partN files):")
-    print(f"  train: {len(train_works)} works -> {len(train_samples)} samples")
-    print(f"  val:   {len(val_works)} works -> {len(val_samples)} samples")
-    print(f"  test:  {len(test_works)} works -> {len(test_samples)} samples")
+    print(f"[build_splits] train: {len(train_works)} works -> {len(train_samples)} samples")
+    print(f"[build_splits] val: {len(val_works)} works -> {len(val_samples)} samples")
+    print(f"[build_splits] test: {len(test_works)} works -> {len(test_samples)} samples")
 
     return train_samples, val_samples, test_samples
 
 
 def _write_jsonl(samples: List[Sample], path: Path) -> None:
-    """Write samples to a JSONL file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         for s in samples:
-            # Write the original data unchanged
             f.write(json.dumps(s.raw_data, ensure_ascii=False) + "\n")
 
 
 def _print_stats(name: str, samples: List[Sample]) -> None:
     if not samples:
-        print(f"[build_splits] {name}: empty set")
+        print(f"[build_splits] {name}: empty")
         return
 
-    # Count unique base works
     base_works = set(_get_base_work(s.source_file) for s in samples if s.source_file)
-
-    print(
-        f"[build_splits] {name}: "
-        f"n={len(samples)} samples from {len(base_works)} unique base works"
-    )
+    print(f"[build_splits] {name}: {len(samples)} samples from {len(base_works)} works")
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
-        description="Build train/val/test splits from tokenized LilyPond dataset (BY BASE WORK)."
-    )
-    parser.add_argument(
-        "--input-jsonl",
-        default=DEFAULT_INPUT_JSONL,
-        help=f"Input JSONL file with tokenized examples (default: {DEFAULT_INPUT_JSONL}).",
-    )
-    parser.add_argument(
-        "--output-dir",
-        default=DEFAULT_OUTPUT_DIR,
-        help=f"Output directory for train/val/test JSONL files (default: {DEFAULT_OUTPUT_DIR}).",
-    )
-    parser.add_argument(
-        "--train-ratio",
-        type=float,
-        default=DEFAULT_TRAIN_RATIO,
-        help=f"Fraction of BASE WORKS to use for training (default: {DEFAULT_TRAIN_RATIO}).",
-    )
-    parser.add_argument(
-        "--val-ratio",
-        type=float,
-        default=DEFAULT_VAL_RATIO,
-        help=f"Fraction of BASE WORKS to use for validation (default: {DEFAULT_VAL_RATIO}). "
-             "The remaining works are used for test.",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=DEFAULT_SEED,
-        help=f"Random seed for shuffling (default: {DEFAULT_SEED}).",
-    )
+    parser = argparse.ArgumentParser(description="Split dataset by base work to avoid leakage")
+    parser.add_argument("--input-jsonl", default=DEFAULT_INPUT_JSONL)
+    parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
+    parser.add_argument("--train-ratio", type=float, default=DEFAULT_TRAIN_RATIO)
+    parser.add_argument("--val-ratio", type=float, default=DEFAULT_VAL_RATIO)
+    parser.add_argument("--seed", type=int, default=DEFAULT_SEED)
     return parser
 
 
@@ -221,44 +165,22 @@ def main() -> int:
     output_dir = Path(args.output_dir).expanduser().resolve()
 
     if not input_jsonl.exists():
-        print(f"[build_splits] input JSONL not found: {input_jsonl}")
+        print(f"[build_splits] not found: {input_jsonl}")
         return 2
 
     if args.train_ratio <= 0 or args.val_ratio < 0 or args.train_ratio + args.val_ratio >= 1.0:
-        print(
-            "[build_splits] invalid split ratios: "
-            f"train={args.train_ratio}, val={args.val_ratio}"
-        )
+        print(f"[build_splits] invalid ratios: train={args.train_ratio}, val={args.val_ratio}")
         return 2
 
-    print(f"[build_splits] loading samples from {input_jsonl}")
+    print(f"[build_splits] loading {input_jsonl}")
     samples = _load_from_jsonl(input_jsonl)
-    print(f"[build_splits] loaded {len(samples)} total samples")
+    print(f"[build_splits] loaded {len(samples)} samples")
 
-    print(
-        f"[build_splits] splitting BY BASE WORK (grouping _partN files) "
-        f"(train={args.train_ratio}, val={args.val_ratio}, "
-        f"test={1.0 - args.train_ratio - args.val_ratio})"
-    )
-    train, val, test = _train_val_test_split(
-        samples,
-        train_ratio=args.train_ratio,
-        val_ratio=args.val_ratio,
-        seed=args.seed,
-    )
+    train, val, test = _train_val_test_split(samples, args.train_ratio, args.val_ratio, args.seed)
 
-    train_path = output_dir / "train.jsonl"
-    val_path = output_dir / "val.jsonl"
-    test_path = output_dir / "test.jsonl"
-
-    _write_jsonl(train, train_path)
-    _write_jsonl(val, val_path)
-    _write_jsonl(test, test_path)
-
-    print(f"[build_splits] wrote:")
-    print(f"  train -> {train_path}")
-    print(f"  val   -> {val_path}")
-    print(f"  test  -> {test_path}")
+    _write_jsonl(train, output_dir / "train.jsonl")
+    _write_jsonl(val, output_dir / "val.jsonl")
+    _write_jsonl(test, output_dir / "test.jsonl")
 
     _print_stats("train", train)
     _print_stats("val", val)

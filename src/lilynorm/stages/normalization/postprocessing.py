@@ -110,12 +110,6 @@ def _grab_balanced(
     open_char: str = "{",
     close_char: str = "}",
 ) -> int:
-    """
-    Given an index `start` pointing at an opening brace (or other delimiter),
-    return the index of the matching closing delimiter, handling nested pairs.
-
-    Returns -1 if the text ends before a matching closing char is found.
-    """
     depth = 1
     index = start + 1
     length = len(text)
@@ -146,7 +140,6 @@ def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
     removed = 0
 
     def _is_empty_content(content: str) -> bool:
-        """Check if content is effectively empty (only whitespace, nested empty braces, or clef directives)."""
         # Remove clef directives first (before whitespace removal, since they contain spaces)
         stripped = re.sub(r'\\clef\s+\w+', '', content)
         # Remove all whitespace and newlines

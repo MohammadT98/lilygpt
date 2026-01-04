@@ -89,7 +89,6 @@ def should_process(path: Path, text: str) -> bool:
 
 
 def _infer_language_from_music(text: str) -> str | None:
-    """Infer LilyPond language from musical content (italiano vs english)."""
     for match in RELATIVE_LANG_RE.finditer(text):
         token = match.group(1).strip().lower().strip(",;'\"")
         if any(token.startswith(solfege) for solfege in ITALIAN_SOLFEGE):
@@ -98,7 +97,6 @@ def _infer_language_from_music(text: str) -> str | None:
 
 
 def _read_header_metadata(work_dir: Path) -> tuple[str | None, str | None, str | None]:
-    """Extract version, language, and variabili include from header files."""
     version: str | None = None
     language: str | None = None
     variabili_include: str | None = None
@@ -131,7 +129,6 @@ def _read_header_metadata(work_dir: Path) -> tuple[str | None, str | None, str |
 
 
 def _copy_variabili_files(input_root: Path, output_root: Path) -> None:
-    """Mirror variabili.ly files to output to keep \\include statements working."""
     for src in input_root.rglob("variabili.ly"):
         rel = src.relative_to(input_root)
         dest = output_root / rel

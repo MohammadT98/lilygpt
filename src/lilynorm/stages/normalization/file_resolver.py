@@ -37,7 +37,6 @@ class FileResolver:
         self.in_progress: Set[str] = set()
 
     def _find_include_file(self, include_path: str) -> Optional[Path]:
-        """Find the actual file for an include statement."""
         # Try relative to base_dir
         candidate = self.base_dir / include_path
         if candidate.exists():
@@ -61,22 +60,11 @@ class FileResolver:
         return None
 
     def _should_skip_include(self, include_path: str) -> bool:
-        """Return True if this include should not be inlined (e.g., variabili)."""
         if self.exclude_pattern and self.exclude_pattern.search(include_path):
             return True
         return False
 
     def _resolve_recursive(self, file_path: Path, depth: int = 0) -> str:
-        """
-        Recursively resolve includes in a file.
-
-        Args:
-            file_path: Path to the LilyPond file.
-            depth: Current recursion depth.
-
-        Returns:
-            The file content with includes resolved.
-        """
         if depth > self.max_depth:
             print(
                 f"WARNING: Max recursion depth ({self.max_depth}) reached for {file_path}",

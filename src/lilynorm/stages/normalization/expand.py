@@ -11,9 +11,7 @@ from dataclasses import dataclass, asdict, field, fields
 import argparse
 
 
-# ---------------------------------------------------------------------------
 # Configuration
-# ---------------------------------------------------------------------------
 
 DEFAULT_LILYPOND_PATH = (
     r"C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe"
@@ -21,9 +19,7 @@ DEFAULT_LILYPOND_PATH = (
 
 
 
-# ---------------------------------------------------------------------------
 # Core option types
-# ---------------------------------------------------------------------------
 
 @dataclass
 class ParseOptions:
@@ -60,18 +56,9 @@ class ParseReport:
     notes: List[str] = field(default_factory=list)
 
 
-# ---------------------------------------------------------------------------
 # Small structural helpers (braces / angles)
-# ---------------------------------------------------------------------------
 
 def _grab_braces(s: str, start_index: int) -> int:
-    """
-    Find the index immediately after a balanced { ... } block starting at start_index.
-
-    `start_index` must point at the opening '{'.
-    Returns the index of the character after the matching '}'.
-    If no matching brace is found, returns len(s).
-    """
     depth = 1
     index = start_index + 1
     length = len(s)
@@ -88,13 +75,6 @@ def _grab_braces(s: str, start_index: int) -> int:
 
 
 def _grab_angles(s: str, start_index: int) -> int:
-    """
-    Find the index immediately after a balanced << ... >> block starting at start_index.
-
-    `start_index` must point at the first '<' in a '<<' sequence.
-    Returns the index of the character after the matching '>>'.
-    If no matching closing '>>' is found, returns len(s).
-    """
     depth = 1
     index = start_index + 2  # skip initial '<<'
     length = len(s)
@@ -112,14 +92,9 @@ def _grab_angles(s: str, start_index: int) -> int:
     return index if depth == 0 else length
 
 
-# ---------------------------------------------------------------------------
 # LilyPond executable resolution
-# ---------------------------------------------------------------------------
 
 def _ok(cmd: str) -> bool:
-    """
-    Return True if `cmd --version` runs successfully, False otherwise.
-    """
     try:
         result = subprocess.run(
             [cmd, "--version"],
@@ -163,9 +138,7 @@ def resolve_lily_cmd() -> str:
     return "lilypond"
 
 
-# ---------------------------------------------------------------------------
 # Relative blocks & note language detection
-# ---------------------------------------------------------------------------
 
 RE_RELATIVE_BLK = re.compile(
     r"\\relative\b(?:\s+[^\s{}%]+)?(?:\s*(?:%[^\n]*\n|\s))*\{",
@@ -202,11 +175,6 @@ def _detect_note_language(source: str) -> Optional[str]:
 
 
 def _find_relative_blocks(source: str) -> List[Tuple[int, int, str]]:
-    """
-    Find all \relative {...} blocks.
-
-    Returns a list of (start_index, end_index, block_text).
-    """
     blocks: List[Tuple[int, int, str]] = []
     search_start = 0
 
@@ -223,29 +191,12 @@ def _find_relative_blocks(source: str) -> List[Tuple[int, int, str]]:
     return blocks
 
 
-# ---------------------------------------------------------------------------
 # Variable assignment discovery and inline expansion
-# ---------------------------------------------------------------------------
 
 RE_ASSIGN = re.compile(r"(^|[^\w-])([A-Za-z][\w-]*)\s*=\s*", re.M)
 
 
 def _collect_named_music(source: str) -> Dict[str, str]:
-    """
-    Collect named music fragments of the form:
-
-      name = { ... }
-      name = \\relative ... { ... }
-      name = << ... >>
-      name = \\transpose ... { ... }
-      name = simple_token
-
-    EXCLUDES markup assignments like:
-      name = _\\markup ...
-      name = ^\\markup ...
-
-    Returns a dict mapping variable names to their text.
-    """
     environment: Dict[str, str] = {}
     search_start = 0
     length = len(source)
@@ -323,11 +274,6 @@ def _collect_named_music(source: str) -> Dict[str, str]:
 
 
 def _inline_once(source: str, env: Dict[str, str]) -> Tuple[str, int]:
-    """
-    Inline one pass of named music variables from env.
-
-    Returns (new_source, inlined_count).
-    """
     if not env:
         return source, 0
 
@@ -353,12 +299,6 @@ def _inline_named_music_recursive(
     *,
     max_passes: int = 8,
 ) -> Tuple[str, int]:
-    """
-    Recursively inline variables defined in env up to max_passes times,
-    or until the text stops changing.
-
-    Returns (new_source, total_inlined_count).
-    """
     total_inlined = 0
     seen_hashes: Set[int] = set()
     current = source
@@ -380,9 +320,7 @@ def _inline_named_music_recursive(
     return current, total_inlined
 
 
-# ---------------------------------------------------------------------------
 # Variable expansion via LilyPond (parser-based)
-# ---------------------------------------------------------------------------
 
 def _inline_named_music_with_lilypond(
     source: str,
@@ -391,12 +329,6 @@ def _inline_named_music_with_lilypond(
     lily_cmd: str,
     preserve_linebreaks: bool,
 ) -> Tuple[str, int]:
-    """
-    Inline named music variables using LilyPond's parser.
-
-    Each variable is resolved via \\displayLilyMusic, then occurrences of
-    \\name are replaced with the expanded music expression.
-    """
     if not env:
         return source, 0
 
@@ -443,10 +375,6 @@ def _inline_named_music_with_lilypond(
 
 
 def _is_safe_music_expansion(text: str) -> bool:
-    """
-    Heuristic gate: accept only expansions that look like real music and
-    exclude layout/markup/context constructs.
-    """
     if not text:
         return False
 
@@ -478,9 +406,7 @@ def _is_safe_music_expansion(text: str) -> bool:
     return True
 
 
-# ---------------------------------------------------------------------------
 # Music functions (define-music-function, calls, and snippets)
-# ---------------------------------------------------------------------------
 
 RE_DMF_HEADER = re.compile(
     r"(^|[\n;])\s*([A-Za-z][\w-]*)\s*=\s*#\(\s*define-music-function\b",
@@ -489,9 +415,6 @@ RE_DMF_HEADER = re.compile(
 
 
 def _collect_music_function_names(source: str) -> List[str]:
-    """
-    Collect the names of music functions declared with define-music-function.
-    """
     names: List[str] = []
     for match in RE_DMF_HEADER.finditer(source):
         names.append(match.group(2))
@@ -499,12 +422,6 @@ def _collect_music_function_names(source: str) -> List[str]:
 
 
 def _extract_music_function_snippets(source: str) -> str:
-    """
-    Extract the source snippets that define music functions.
-
-    These snippets are concatenated into a preamble passed to LilyPond so that
-    function calls can be expanded.
-    """
     preamble_parts: List[str] = []
 
     for match in RE_DMF_HEADER.finditer(source):
@@ -536,11 +453,6 @@ def _find_function_calls(
     source: str,
     func_names: List[str],
 ) -> List[Tuple[int, int, str]]:
-    """
-    Find calls to functions listed in func_names.
-
-    Returns a list of (start_index, end_index, call_text).
-    """
     if not func_names:
         return []
 
@@ -593,14 +505,9 @@ def _find_function_calls(
     return calls
 
 
-# ---------------------------------------------------------------------------
 # Formatting helpers (whitespace, chords, absolute wrappers)
-# ---------------------------------------------------------------------------
 
 def _normalize_line_keep_newlines(segment: str) -> str:
-    """
-    Normalize spacing while preserving line breaks.
-    """
     segment = segment.replace("\r\n", "\n").replace("\r", "\n")
     lines = segment.split("\n")
     normalized_lines: List[str] = []
@@ -621,10 +528,6 @@ _CHORD_RE = re.compile(r"<([^>]*)>")
 
 
 def _canonicalize_chord_brackets(text: str) -> str:
-    """
-    Canonicalize chord brackets so that inner spacing is normalized and
-    there are no extra spaces immediately inside < and >.
-    """
     def _fix(match: re.Match) -> str:
         inner = match.group(1)
         inner = " ".join(inner.split())
@@ -637,9 +540,6 @@ def _canonicalize_chord_brackets(text: str) -> str:
 
 
 def _unwrap_absolute_layers(segment: str) -> str:
-    """
-    Strip nested \\absolute { ... } wrappers, returning inner music only.
-    """
     segment = segment.strip()
 
     while segment.startswith("\\absolute"):
@@ -652,9 +552,7 @@ def _unwrap_absolute_layers(segment: str) -> str:
     return segment
 
 
-# ---------------------------------------------------------------------------
 # LilyPond batch runner for multiple blocks
-# ---------------------------------------------------------------------------
 
 def _run_lily_batch(
     blocks: List[str],
@@ -663,18 +561,6 @@ def _run_lily_batch(
     preserve_linebreaks: bool,
     preamble: str = "",
 ) -> List[Optional[str]]:
-    """
-    Run LilyPond in batch mode to process multiple music blocks.
-
-    For each block:
-      - Wrap in \\absolute and assign to a variable musicX.
-      - Use \\displayLilyMusic to print normalized music.
-      - Parse output back into plain Lily music strings.
-
-    Returns a list parallel to `blocks`, containing:
-      - normalized string, or
-      - None if LilyPond failed for that block.
-    """
     parts: List[str] = []
     if preamble:
         parts.append(preamble)
@@ -783,9 +669,7 @@ def _run_lily_batch(
     return results
 
 
-# ---------------------------------------------------------------------------
 # Relative expansion via LilyPond
-# ---------------------------------------------------------------------------
 
 def expand_relative_with_lily_batched(
     source: str,
@@ -829,9 +713,7 @@ def expand_relative_with_lily_batched(
     return "".join(output_parts), failures
 
 
-# ---------------------------------------------------------------------------
 # Transpose block resolution via LilyPond
-# ---------------------------------------------------------------------------
 
 RE_TRANSPOSE = re.compile(
     r"\\transpose\s+([^\s{}]+)\s+([^\s{}]+)\s*\{",
@@ -840,11 +722,6 @@ RE_TRANSPOSE = re.compile(
 
 
 def _find_transpose_blocks(source: str) -> List[Tuple[int, int, str]]:
-    """
-    Find \\transpose from to { ... } blocks.
-
-    Returns a list of (start_index, end_index, block_text).
-    """
     blocks: List[Tuple[int, int, str]] = []
     search_start = 0
 
@@ -905,19 +782,12 @@ def resolve_transpose_with_lily_batched(
     return "".join(output_parts), ok_count, fail_count
 
 
-# ---------------------------------------------------------------------------
 # \\repeat unfold expansion (pure string manipulation)
-# ---------------------------------------------------------------------------
 
 RE_REPEAT_UNFOLD = re.compile(r"\\repeat\s+unfold\s+(\d+)\s*\{", re.I)
 
 
 def _expand_repeat_unfold_once(source: str) -> Tuple[str, int]:
-    """
-    Expand one level of \\repeat unfold N { body }.
-
-    Returns (new_source, blocks_expanded_count).
-    """
     search_start = 0
     expanded_blocks = 0
     output_parts: List[str] = []
@@ -972,29 +842,19 @@ def expand_repeat_unfold(
     return current, total_expanded
 
 
-# ---------------------------------------------------------------------------
 # Tuplet normalization (\\times -> \\tuplet, spacing, dedupe)
-# ---------------------------------------------------------------------------
 
 RE_TIMES = re.compile(r"\\times\s+(\d+)\s*/\s*(\d+)\s*\{", re.I)
 RE_TUPLET = re.compile(r"\\tuplet\s+(\d+)\s*/\s*(\d+)(?:\s+\d+)?\s*\{", re.I)
 
 
 def _normalize_tuplet_spacing_block(text: str) -> str:
-    """
-    Normalize spacing inside tuplet expressions.
-    """
     text = re.sub(r"\\tuplet\s+(\d+)\s*/\s*(\d+)\s*", r"\\tuplet \1/\2 ", text)
     text = re.sub(r"\\tuplet\s+(\d+/\d+)\s*\{", r"\\tuplet \1 {", text)
     return text
 
 
 def _dedupe_nested_tuplets_once(text: str) -> Tuple[str, int]:
-    """
-    Remove nested \\tuplet blocks that repeat the same ratio directly inside each other.
-
-    Operates conservatively so only transformed tuplets have their braces adjusted.
-    """
     nested_pattern = re.compile(
         r"(\\tuplet\s+(\d+)\s*/\s*(\d+)\s*\{)\s*(\\tuplet\s+\2\s*/\s*\3\s*\{)",
         re.I,
@@ -1084,9 +944,7 @@ def normalize_tuplets(source: str) -> Tuple[str, int]:
     return text, total_changes
 
 
-# ---------------------------------------------------------------------------
 # Drummode normalization
-# ---------------------------------------------------------------------------
 
 RE_DRUMMODE = re.compile(r"\\drummode\s*\{", re.I)
 
@@ -1136,10 +994,6 @@ DRUM_TOKEN = re.compile(r"\b([A-Za-z][A-Za-z0-9_-]*)\b")
 
 
 def _normalize_drums_in_block(block: str) -> Tuple[str, int]:
-    """
-    Normalize drum tokens inside a drummode block, mapping aliases to a
-    canonical set of names.
-    """
     def repl(match: re.Match) -> str:
         token = match.group(1)
         lower = token.lower()
@@ -1191,9 +1045,7 @@ def normalize_drummode(source: str) -> Tuple[str, int]:
     return "".join(output_parts), changed_blocks
 
 
-# ---------------------------------------------------------------------------
 # Music function expansion via LilyPond
-# ---------------------------------------------------------------------------
 
 def expand_music_functions_with_lily(
     source: str,
@@ -1242,9 +1094,7 @@ def expand_music_functions_with_lily(
     return "".join(output_parts), ok_count, fail_count
 
 
-# ---------------------------------------------------------------------------
 # Whitespace normalization
-# ---------------------------------------------------------------------------
 
 def normalize_whitespace(source: str) -> str:
     """
@@ -1261,9 +1111,7 @@ def normalize_whitespace(source: str) -> str:
     return "\n".join(lines).strip()
 
 
-# ---------------------------------------------------------------------------
 # Main processing pipeline
-# ---------------------------------------------------------------------------
 
 def process_string(
     src: str,
@@ -1359,9 +1207,7 @@ def process_string(
     return text, report
 
 
-# ---------------------------------------------------------------------------
 # Integration with lilynorm NormOptions
-# ---------------------------------------------------------------------------
 
 try:
     from lilynorm.utils.options import NormOptions
@@ -1388,12 +1234,6 @@ except Exception:
 
 
 def _map_options(norm_opts: "NormOptions") -> ParseOptions:
-    """
-    Map a NormOptions instance into a ParseOptions instance.
-
-    For each field in ParseOptions, we read the attribute of the same name
-    from NormOptions if present, otherwise we fall back to the default.
-    """
     defaults = _DEFAULT_PARSE_OPTIONS
     values = {
         field_def.name: getattr(norm_opts, field_def.name, getattr(defaults, field_def.name))
@@ -1443,9 +1283,7 @@ def run(text: str, opts: "NormOptions") -> str:
     return output
 
 
-# ---------------------------------------------------------------------------
 # CLI
-# ---------------------------------------------------------------------------
 
 def build_arg_parser() -> argparse.ArgumentParser:
     """

@@ -5,14 +5,10 @@ import sys
 from typing import Tuple, List, Dict
 
 
-# ---------------------------------------------------------------------------
 # Active stripping steps
-# ---------------------------------------------------------------------------
 
 
-# ---------------------------------------------------------------------------
 # Core helpers
-# ---------------------------------------------------------------------------
 
 def _grab_balanced(
     text: str,
@@ -20,12 +16,6 @@ def _grab_balanced(
     open_char: str = "{",
     close_char: str = "}",
 ) -> int:
-    """
-    Given an index `start` pointing at an opening brace (or other delimiter),
-    return the index of the matching closing delimiter, handling nested pairs.
-
-    Returns -1 if the text ends before a matching closing char is found.
-    """
     depth = 1
     index = start + 1
     length = len(text)
@@ -44,12 +34,6 @@ def _grab_balanced(
 
 
 def _grab_angles(text: str, start: int) -> int:
-    """
-    Given an index `start` pointing at a '<<' opener, return the index
-    immediately after the matching '>>', handling nested blocks.
-
-    Returns -1 if the text ends before a matching '>>' is found.
-    """
     depth = 1
     index = start + 2
     length = len(text)
@@ -68,10 +52,6 @@ def _grab_angles(text: str, start: int) -> int:
 
 
 def _protect_scheme_expressions(text: str) -> Tuple[str, Dict[str, str]]:
-    """
-    Replace #(...) Scheme expressions with placeholders to protect them from regex processing.
-    Handles nested parentheses. Returns (protected_text, mapping_dict).
-    """
     import hashlib
     protected = {}
     result_parts = []
@@ -105,18 +85,12 @@ def _protect_scheme_expressions(text: str) -> Tuple[str, Dict[str, str]]:
 
 
 def _restore_scheme_expressions(text: str, mapping: Dict[str, str]) -> str:
-    """Restore protected Scheme expressions."""
     for key, original in mapping.items():
         text = text.replace(key, original)
     return text
 
 
 def _remove_block_directive(src: str, directive: str) -> Tuple[str, int]:
-    """
-    Remove top-level \\<directive> { ... } blocks from the given LilyPond source.
-
-    Returns a tuple of (new_source, removed_count).
-    """
     pattern = re.compile(rf"\\{directive}\s*\{{", re.M)
     removed_count = 0
     output_parts: List[str] = []
@@ -146,11 +120,6 @@ def _remove_block_directive(src: str, directive: str) -> Tuple[str, int]:
 
 
 def _remove_top_level_scheme_blocks(src: str) -> Tuple[str, int]:
-    """Remove top-level Scheme blocks that start with '#(' on a line.
-
-    Uses balanced parentheses via _grab_balanced to safely remove nested forms.
-    Returns (new_source, removed_count).
-    """
     removed_count = 0
     output_parts: List[str] = []
     i = 0
@@ -187,11 +156,6 @@ def _remove_top_level_scheme_blocks(src: str) -> Tuple[str, int]:
 
 
 def _remove_with_blocks(src: str) -> Tuple[str, int]:
-    """
-    Remove \\with { ... } blocks from the given LilyPond source.
-
-    Returns a tuple of (new_source, removed_count).
-    """
     pattern = re.compile(r"\\with\s*\{", re.M)
     removed_count = 0
     output_parts: List[str] = []
@@ -221,12 +185,6 @@ def _remove_with_blocks(src: str) -> Tuple[str, int]:
 
 
 def _strip_lyricmode_assignments(text: str) -> Tuple[str, int]:
-    """
-    Remove `name = \\lyricmode { ... }` assignments entirely.
-    Empty assignments will be cleaned up by _remove_empty_variable_assignments.
-
-    Returns (new_text, removed_count).
-    """
     removed_count = 0
 
     while True:
@@ -261,12 +219,6 @@ def _strip_lyricmode_assignments(text: str) -> Tuple[str, int]:
 
 
 def _strip_inline_lyricmode(text: str) -> Tuple[str, int]:
-    """
-    Replace inline `\\lyricmode { ... }` with `{}` while preserving
-    surrounding whitespace as much as possible.
-
-    Returns (new_text, removed_count).
-    """
     removed_count = 0
     search_start = 0
     output_parts: List[str] = []
@@ -297,10 +249,6 @@ def _strip_inline_lyricmode(text: str) -> Tuple[str, int]:
 
 
 def _remove_custom_assignments(text: str) -> Tuple[str, int]:
-    """Remove dataset-specific helper assignments like `notrasp = ...` or `forma = {...}`.
-
-    Handles both single-line definitions and balanced-brace blocks. Returns (new_text, removed_count).
-    """
     removed = 0
     for name in CUSTOM_ASSIGNMENT_NAMES:
         # Match the assignment start; RHS can be token, string, or brace block.
@@ -360,9 +308,7 @@ def _remove_metadata_headers(text: str) -> Tuple[str, int]:
     return cleaned, removed_count
 
 
-# ---------------------------------------------------------------------------
 # Regex definitions
-# ---------------------------------------------------------------------------
 
 RE_OVERRIDES = [
     re.compile(r"(?:\\once\s+)?\\override\b[^\n\r{}]*", re.I),
@@ -450,20 +396,6 @@ RE_EMPTY_LAYOUT_BLOCK = re.compile(r"(?ms)^\\layout\s*\{\s*\}$")
 
 
 def _collapse_empty_assignment_blocks(text: str) -> str:
-    """
-    Normalize empty assignment blocks like:
-
-        foo = {
-        }
-
-    into a compact single line:
-
-        foo = {}
-    
-    Also handles single-line empty blocks and nested empty blocks like:
-        foo = {}
-        foo = { {} }
-    """
     index = 0
     output_parts: List[str] = []
     length = len(text)
@@ -520,10 +452,6 @@ RE_SPACER_ONLY_SUBVOICE = re.compile(
 
 
 def _prune_spacer_only_subvoices(text: str) -> str:
-    """
-    Remove subvoices that contain only spacer rests (s1, s2., etc.).
-    Repeats until no more matches are found.
-    """
     previous = None
     current = text
 
@@ -535,18 +463,6 @@ def _prune_spacer_only_subvoices(text: str) -> str:
 
 
 def _remove_spacer_notes(text: str) -> Tuple[str, int]:
-    """
-    Remove standalone spacer notes (s1*, s2*, s4*, s8*, etc.) that are layout placeholders.
-    These are not real music content and add noise to training data.
-    
-    Note: Spacer notes in `forma` blocks (like `s1*59` for timing) are preserved
-    as they serve a musical purpose for tempo/metrical structure.
-    
-    Pattern matches: s1*59, s2*12, s4*8, s8*4, etc. (but not in forma blocks)
-    Also matches: s1, s2, s4, s8 (without multiplier) when standalone.
-    
-    Returns (cleaned_text, removed_count).
-    """
     removed = 0
     
     # Protect spacer notes inside forma blocks (they're used for timing)
@@ -602,15 +518,6 @@ def _remove_spacer_notes(text: str) -> Tuple[str, int]:
 
 
 def _compact_whitespace_aggressive(text: str) -> str:
-    """
-    Aggressively compact whitespace to reduce empty lines from ~25% to <10%.
-    
-    Rules:
-    - Remove more than 1 consecutive empty line (keep max 1)
-    - Preserve structure: keep 1 empty line between variable definitions and after closing braces
-    - Remove empty lines before closing braces
-    - Remove trailing empty lines
-    """
     lines = text.split('\n')
     output = []
     prev_empty = False
@@ -645,10 +552,6 @@ def _compact_whitespace_aggressive(text: str) -> str:
 
 
 def _compact_spaces_safe(text: str) -> str:
-    """
-    Compact whitespace conservatively, preserving line structure and avoiding
-    overly aggressive changes that might make diffs hard to read.
-    """
     lines = text.splitlines()
     compacted = "\n".join(HSPACE.sub(" ", line).strip() for line in lines)
 
@@ -662,12 +565,6 @@ def _compact_spaces_safe(text: str) -> str:
 
 
 def _compact_spaces_simple(text: str) -> str:
-    """
-    Compact whitespace in a simpler way:
-    - Replace 2+ spaces/tabs with a single space
-    - Strip trailing spaces
-    - Preserve line structure
-    """
     lines = text.splitlines()
     normalized_lines = [
         re.sub(r"[ \t]{2,}", " ", line).rstrip() for line in lines
@@ -675,9 +572,7 @@ def _compact_spaces_simple(text: str) -> str:
     return "\n".join(normalized_lines).strip() + "\n"
 
 
-# ---------------------------------------------------------------------------
 # Markup skipping and keyword removal
-# ---------------------------------------------------------------------------
 
 def _skip_markup_expression(source: str, index: int) -> int:
     """
@@ -849,15 +744,6 @@ def _remove_macro_escape_usages(text: str) -> Tuple[str, int]:
 
 
 def _remove_markup_assignments(text: str) -> Tuple[str, int]:
-    """Remove variable assignments that are pure markup directives.
-
-    Example patterns:
-        - `name = \\markup ...`
-        - `name = _\\markup ...`
-        - `name = ^\\markup { ... }`
-
-    Returns (cleaned_text, removed_count).
-    """
     removed = 0
     output_parts: List[str] = []
     search_start = 0
@@ -970,19 +856,9 @@ def _remove_instrument_setters(text: str) -> Tuple[str, int]:
 
 
 def _remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
-    """Remove variable assignments that are empty (leftover from content removal).
-    
-    Handles both simple empty blocks (varname = { }) and nested empty blocks
-    (varname = { {} }).
-    
-    Also removes all references to those empty variables to avoid undefined references.
-    
-    Returns (cleaned_text, removed_count).
-    """
     removed = 0
     
     def _is_empty_content(content: str) -> bool:
-        """Check if content is effectively empty (only whitespace, nested empty braces, or clef directives)."""
         # Remove clef directives first (before whitespace removal, since they contain spaces)
         stripped = re.sub(r'\\clef\s+\w+', '', content)
         # Remove all whitespace and newlines
@@ -1044,11 +920,6 @@ def _remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
 
 
 def _light_cleanup(text: str) -> str:
-    """Minimal safety fixes used when engravings are kept.
-
-    Avoids structural removals (lyrics, custom macros, empty blocks, spacer pruning),
-    and only fixes syntax breakers we've seen in this dataset.
-    """
     # Remove unsupported custom commands (but NOT variable references!)
     # These are standalone commands that break compilation
     # NOTE: 'forma' is NOT in this list because it contains \key and \time which are ESSENTIAL
@@ -1237,15 +1108,6 @@ def _light_cleanup(text: str) -> str:
 
 
 def _remove_standalone_markup_lines(text: str) -> Tuple[str, int]:
-    """Remove non-musical, standalone markup/directive lines.
-
-    Targets lines that begin with layout-only commands, not embedded in music:
-    - \\markup ..., \\halign, \\center-column, \\musicglyph, \\vspace
-    - \\pageBreak, \\pointAndClickOff
-    Note: Do NOT remove \\language; pitch names (do, re, mi) depend on it.
-
-    Returns (cleaned_text, removed_count).
-    """
     patterns = [
         r"(?m)^\s*\\markup.*$",
         r"(?m)^\s*\\halign\b.*$",
@@ -1268,7 +1130,6 @@ def _remove_standalone_markup_lines(text: str) -> Tuple[str, int]:
 
 
 def _remove_standalone_quoted_lines(text: str) -> Tuple[str, int]:
-    """Remove lines that are just quoted strings (often leftover from markup stripping)."""
     pattern = re.compile(r'(?m)^\s*"[^\n"]*"\s*$')
     cleaned, removed = pattern.subn("", text)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
@@ -1276,7 +1137,6 @@ def _remove_standalone_quoted_lines(text: str) -> Tuple[str, int]:
 
 
 def _remove_standalone_braced_text_lines(text: str) -> Tuple[str, int]:
-    """Remove lines that are just { ... } with no Lily commands (leftover labels)."""
     pattern = re.compile(r"(?m)^\s*\{\s*[^\\{}]*\s*\}\s*$")
     cleaned, removed = pattern.subn("", text)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned)
@@ -1284,7 +1144,6 @@ def _remove_standalone_braced_text_lines(text: str) -> Tuple[str, int]:
 
 
 def _remove_empty_block_directives(text: str, directives: Tuple[str, ...]) -> Tuple[str, int]:
-    """Remove empty \\directive { } blocks (whitespace only inside)."""
     removed = 0
     for directive in directives:
         pattern = re.compile(rf"(?s)\\{directive}\s*\{{\s*\}}")
@@ -1295,7 +1154,6 @@ def _remove_empty_block_directives(text: str, directives: Tuple[str, ...]) -> Tu
 
 
 def _remove_music_inline_strings(text: str) -> Tuple[str, int]:
-    """Remove quoted strings that follow musical tokens, even across line breaks."""
     note_re = re.compile(r"\b(?:do|re|mi|fa|sol|la|si|[a-gr]|r)[',]*\d", re.I)
     removed = 0
     lines = text.splitlines(keepends=True)
@@ -1333,7 +1191,6 @@ def _remove_music_inline_strings(text: str) -> Tuple[str, int]:
 
 
 def _remove_empty_figuremode_blocks(text: str) -> Tuple[str, int]:
-    """Remove \\figuremode blocks that only contain layout directives (no figures)."""
     removed = 0
 
     assign_re = re.compile(r"(?m)^[ \t]*[A-Za-z_][\w-]*\s*=\s*\\figuremode\s*\{")
@@ -1422,11 +1279,6 @@ def _remove_non_whitelisted_commands(text: str) -> Tuple[str, int]:
 
 
 def _final_cleanup(text: str) -> Tuple[str, int]:
-    """Dataset-tail cleanup that used to live in the driver.
-
-    Runs after engraving stripping (or directly if engravings are kept).
-    Returns: (cleaned_text, whitelist_removed_count)
-    """
     text = re.sub(r'(?m)^\s*#\(set-default-paper-size\s+"a4"\)\s*\r?\n?', "", text)
     # Remove empty Scheme calls (e.g., #(set-default-paper-size ))
     text = re.sub(r"#\(\s*[A-Za-z0-9_-]+\s*\)", "", text)
@@ -1683,20 +1535,6 @@ def _final_cleanup(text: str) -> Tuple[str, int]:
 
 
 def _remove_footnotes(source: str) -> Tuple[str, int]:
-    """
-    Remove \\footnote commands and their arguments.
-
-    Footnote syntax: \\footnote #'(offset) \\markup{...} annotated_object
-
-    We need to remove:
-    1. The \\footnote keyword
-    2. The Scheme offset expression: #'(...)
-    3. The markup expression
-
-    This leaves the annotated object (note/rest/etc) intact.
-
-    Returns (cleaned_source, removed_count).
-    """
     removed_count = 0
     search_start = 0
     output_parts: List[str] = []
@@ -1837,19 +1675,12 @@ def _eat_after_keyword(
     return "".join(output_parts), removed_count
 
 
-# ---------------------------------------------------------------------------
 # LilyPond parser-based engraving strip (experimental)
-# ---------------------------------------------------------------------------
 
 RE_ASSIGNMENT = re.compile(r"(^|[^\w-])([A-Za-z][\w-]*)\s*=\s*", re.M)
 
 
 def _find_music_assignments(text: str) -> List[Tuple[int, int, str, str]]:
-    """
-    Locate named music assignments and return spans for RHS replacement.
-
-    Returns a list of (rhs_start, rhs_end, var_name, rhs_text).
-    """
     results: List[Tuple[int, int, str, str]] = []
     search_start = 0
     length = len(text)
@@ -1984,12 +1815,6 @@ def _variable_contains_music(rhs_content: str) -> bool:
 
 
 def _find_all_variable_assignments(text: str) -> List[Tuple[int, int, str, str]]:
-    """
-    Find ALL variable assignments including markup, not just music variables.
-
-    Similar to _find_music_assignments but doesn't skip markup assignments.
-    Returns: list of (assign_start, assign_end, var_name, full_assignment_text)
-    """
     results: List[Tuple[int, int, str, str]] = []
     search_start = 0
     length = len(text)
@@ -2116,28 +1941,6 @@ def _remove_engraving_only_variables(text: str) -> Tuple[str, int]:
 
 
 def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
-    """
-    Remove paragraphs (text blocks separated by blank lines) that contain
-    ONLY engraving/layout commands, no actual musical content.
-
-    IMPORTANT: Variable assignments are handled by _remove_engraving_only_variables()
-    and should be skipped here to avoid splitting them incorrectly.
-
-    A paragraph is defined as text between two consecutive newlines.
-
-    Examples of paragraphs that will be removed:
-        - \\pointAndClickOff
-        - \\paper { ... }
-        - #(set-global-staff-size 17)
-        - \\override Score.MetronomeMark.transparent = ##t
-
-    Examples of paragraphs that will be kept:
-        - melody = { c4 d e f }
-        - { c4 d e f }  (even without variable name)
-        - \\time 4/4 s1*10  (has spacer notes)
-
-    Returns (cleaned_text, removed_count).
-    """
     # First, find all variable assignments to avoid splitting them
     assignments = _find_all_variable_assignments(text)
     assignment_ranges = [(start, end) for start, end, _, _ in assignments]
@@ -2201,25 +2004,7 @@ def _remove_engraving_only_paragraphs(text: str) -> Tuple[str, int]:
     return '\n\n'.join(result_parts), removed_count
 
 
-# ---------------------------------------------------------------------------
 def _remove_engraving_only_top_level(text: str) -> Tuple[str, int]:
-    """
-    Remove top-level lines/statements that contain ONLY engraving/layout commands,
-    no actual musical content.
-
-    This applies the same logic as _remove_engraving_only_paragraphs but at the
-    statement/line level to catch structural blocks like:
-        - \\new Staff <<...>>
-        - \\new ChoirStaff <<...>>
-        - \\set Staff.instrumentName = ...
-        - Pure \\markup lines
-        - ^\\markup or _\\markup text annotations
-
-    Variable assignments are already handled by _remove_engraving_only_variables()
-    and should be skipped here.
-
-    Returns (cleaned_text, removed_count).
-    """
     # Find all variable assignments to avoid processing them here
     assignments = _find_all_variable_assignments(text)
     assignment_ranges = [(start, end) for start, end, _, _ in assignments]
@@ -2274,7 +2059,6 @@ def _remove_engraving_only_top_level(text: str) -> Tuple[str, int]:
 
 
 # Integration with lilynorm NormOptions
-# ---------------------------------------------------------------------------
 
 try:
     from lilynorm.utils.options import NormOptions

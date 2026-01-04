@@ -47,12 +47,6 @@ class LilyContinuationDataset(Dataset):
         tokenizer: PreTrainedTokenizer,
         max_length: int = 1024,
     ):
-        """
-        Args:
-            jsonl_path: Path to JSONL file with continuation examples
-            tokenizer: HuggingFace tokenizer
-            max_length: Maximum sequence length
-        """
         self.path = Path(jsonl_path)
         self.tokenizer = tokenizer
         self.max_length = max_length
@@ -64,7 +58,6 @@ class LilyContinuationDataset(Dataset):
         self._load_and_tokenize()
 
     def _load_and_tokenize(self):
-        """Load examples from JSONL and tokenize them."""
         with self.path.open('r', encoding='utf-8') as f:
             for line_num, line in enumerate(f, 1):
                 line = line.strip()
