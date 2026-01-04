@@ -818,9 +818,6 @@ def expand_repeat_unfold(
 
 
 RE_TIMES = re.compile(r"\\times\s+(\d+)\s*/\s*(\d+)\s*\{", re.I)
-RE_TUPLET = re.compile(r"\\tuplet\s+(\d+)\s*/\s*(\d+)(?:\s+\d+)?\s*\{", re.I)
-
-
 def _normalize_tuplet_spacing_block(text: str) -> str:
     text = re.sub(r"\\tuplet\s+(\d+)\s*/\s*(\d+)\s*", r"\\tuplet \1/\2 ", text)
     text = re.sub(r"\\tuplet\s+(\d+/\d+)\s*\{", r"\\tuplet \1 {", text)
