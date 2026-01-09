@@ -1,18 +1,17 @@
-# lilynorm
+# lilygpt
 
-Pipeline for normalizing LilyPond music scores and preparing datasets for GPT fine-tuning.
+Pipeline for normalizing LilyPond music notation and preparing training datasets for large language model fine-tuning.
 
-## What it does
+## Overview
 
-Takes LilyPond source files and converts them to a normalized form suitable for machine learning:
+This tool processes raw LilyPond source files through a multi-stage normalization pipeline, producing clean, structurally consistent training data:
 
-1. Resolves `\include` directives and splits on `\forma` blocks
-2. Removes comments and cleans whitespace
-3. Expands `\relative`, `\transpose`, `\repeat` to absolute notation
-4. Strips engraving directives (`\override`, `\markup`, dynamics, etc.)
-5. Fixes common malformed patterns from real-world scores
-6. Tokenizes for GPT training (standard or continuation-style)
-7. Splits into train/val/test sets
+1. **File resolution** - Merges `\include` directives, splits multi-movement scores
+2. **Preprocessing** - Removes comments, normalizes whitespace
+3. **Expansion** - Converts relative notation to absolute, unfolds repeats and tuplets
+4. **Stripping** - Removes engraving directives (layout, dynamics, articulations)
+5. **Postprocessing** - Fixes malformed syntax patterns
+6. **Dataset generation** - Creates train/validation/test splits with balanced work distribution
 
 ## Installation
 
@@ -58,11 +57,11 @@ python src/lilynorm/stages/splitting/build_splits.py \
 
 ## Batch scripts
 
-Windows batch scripts in `bin/`:
+Convenience scripts for Windows (in `bin/`):
 
-- `normalize_only.bat` - Just normalization
-- `run_dataset_single_voice.bat` - Filter single-voice pieces
-- `run_full_pipeline.bat` - Complete pipeline
+- `normalize_only.bat` - Normalization only
+- `run_dataset_single_voice.bat` - Single-voice filtering
+- `run_full_pipeline.bat` - End-to-end pipeline
 
 ## Training
 
@@ -127,17 +126,16 @@ Default settings in `configs/defaults.yaml`.
 
 ## Deprecated Methods
 
-Some experimental approaches that didn't work are preserved in `deprecated/` for research documentation:
+Failed experimental approaches are preserved in `deprecated/` for research documentation:
 
-- **Continuation method** (`deprecated/continuation_method/`) - Split each piece into 3 continuation examples
-  - **Status**: ❌ Failed - Generated invalid syntax
-  - **Experiments**: Exp 1-4
-  - **Result**: Only 34% structurally complete, model learned garbage output
-  - **Replaced by**: Full assignment method (Exp 5+)
+**Continuation method** (`deprecated/continuation_method/`) - Experiments 1-4
+- Approach: Three-way fragmentation of musical assignments (start/middle/near-end splits)
+- Outcome: Structural incompleteness (66% unclosed examples) resulted in invalid syntax generation
+- Status: Superseded by full assignment method (Experiments 5+)
 
-See `deprecated/continuation_method/README.md` for detailed analysis of why it failed.
+Refer to `deprecated/continuation_method/README.md` for detailed failure analysis.
 
-**Important**: Do not use deprecated methods for new experiments. They are kept for thesis documentation only.
+These implementations are maintained solely for thesis documentation and should not be used in production.
 
 ## License
 
