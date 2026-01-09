@@ -44,19 +44,16 @@ python -m lilynorm.cli \
   --tokenized-out data/tokenized
 ```
 
-Generate continuation-style dataset:
+Generate full assignment dataset:
 ```bash
-python scripts/prepare_continuation_dataset.py \
-  --input data/normalized \
-  --output data/continuation_dataset \
-  --splits-per-piece 3
+python scripts/prepare_full_assignment_dataset.py
 ```
 
 Build train/val/test splits:
 ```bash
 python src/lilynorm/stages/splitting/build_splits.py \
-  --input-jsonl data/continuation_dataset/all_examples.jsonl \
-  --output-dir data/splits
+  --input-jsonl data/full_assignment_dataset/all_examples.jsonl \
+  --output-dir data/splits_full
 ```
 
 ## Batch scripts
@@ -66,27 +63,27 @@ Windows batch scripts in `bin/`:
 - `normalize_only.bat` - Just normalization
 - `run_dataset_single_voice.bat` - Filter single-voice pieces
 - `run_full_pipeline.bat` - Complete pipeline
-- `prepare_continuation_data.bat` - Generate continuation dataset
 
 ## Training
 
 Standard full-sequence training:
 ```bash
 python -m lilynorm.stages.training.train_standard \
-  --train data/splits/train.jsonl \
-  --val data/splits/val.jsonl \
+  --train data/splits_full/train.jsonl \
+  --val data/splits_full/val.jsonl \
   --output-dir runs/experiment \
   --epochs 3 \
   --batch-size 1 \
   --learning-rate 5e-5
 ```
 
-Continuation-style (masked loss):
+Weighted loss training (for structural tokens):
 ```bash
-python -m lilynorm.stages.training.train \
-  --train data/splits/train.jsonl \
-  --val data/splits/val.jsonl \
+python -m lilynorm.stages.training.train_weighted \
+  --train data/splits_full/train.jsonl \
+  --val data/splits_full/val.jsonl \
   --output-dir runs/experiment \
+  --structural-weight 5.0 \
   --epochs 3
 ```
 
@@ -110,12 +107,11 @@ src/lilynorm/
     tokenization/         - GPT tokenization
       tokenize_gpt.py     - Basic tokenization
       dataset_standard.py - Full-sequence dataset
-      dataset_continuation.py - Continuation dataset
     splitting/            - Train/val split
       build_splits.py
     training/             - LoRA fine-tuning
-      train.py            - Continuation-style training
       train_standard.py   - Standard training
+      train_weighted.py   - Weighted loss training
   utils/
     options.py            - Configuration
     formatting.py         - Output formatting
@@ -128,6 +124,20 @@ Normalization profiles in `configs/profiles/`:
 - `keep_engraving.yaml` - Preserve more directives
 
 Default settings in `configs/defaults.yaml`.
+
+## Deprecated Methods
+
+Some experimental approaches that didn't work are preserved in `deprecated/` for research documentation:
+
+- **Continuation method** (`deprecated/continuation_method/`) - Split each piece into 3 continuation examples
+  - **Status**: ❌ Failed - Generated invalid syntax
+  - **Experiments**: Exp 1-4
+  - **Result**: Only 34% structurally complete, model learned garbage output
+  - **Replaced by**: Full assignment method (Exp 5+)
+
+See `deprecated/continuation_method/README.md` for detailed analysis of why it failed.
+
+**Important**: Do not use deprecated methods for new experiments. They are kept for thesis documentation only.
 
 ## License
 
