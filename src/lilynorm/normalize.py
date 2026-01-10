@@ -9,6 +9,7 @@ from lilynorm.stages import normalization
 
 def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None = None) -> list[str]:
     from lilynorm.stages.normalization.postprocessing import apply_postprocessing_fixes, remove_empty_variable_assignments
+    from lilynorm.stages.normalization import forma_inline, structure_prepend
 
     # Stage 0: Resolve includes and split on forma blocks
     stage0_pieces = normalization.file_resolver.run(path, exclude_variabili=False, split_forma=True)
@@ -43,8 +44,14 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
             stats["repeat_removed"] += max(0, before["repeat"] - after["repeat"])
             stats["tuplets_removed"] += max(0, before["tuplets"] - after["tuplets"])
 
-        # Stage 3: Strip engraving directives
-        stage3 = normalization.engrave_strip.run(stage2, opts)
+        # Stage 3: Prepend global structure to music variables
+        stage3 = structure_prepend.run(stage2, opts)
+
+        # Stage 4: Inline forma into voices (remove parallel structure lane)
+        stage4 = forma_inline.run(stage3, opts)
+
+        # Stage 5: Strip engraving directives
+        stage5 = normalization.engrave_strip.run(stage4, opts)
 
         if stats is not None:
             def count_engraving(text: str) -> dict[str, int]:
@@ -66,12 +73,12 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
             stats["hairpins_removed"] += max(0, before["hairpins"] - after["hairpins"])
             stats["quotes_removed"] += max(0, before["quotes"] - after["quotes"])
 
-        # Stage 4: Postprocessing fixes for malformed patterns
-        stage4 = apply_postprocessing_fixes(stage3)
+        # Stage 6: Postprocessing fixes for malformed patterns
+        stage6 = apply_postprocessing_fixes(stage5)
 
-        # Stage 5: Remove empty variable assignments
-        stage5, _ = remove_empty_variable_assignments(stage4)
+        # Stage 7: Remove empty variable assignments
+        stage7, _ = remove_empty_variable_assignments(stage6)
 
-        normalized_pieces.append(stage5)
+        normalized_pieces.append(stage7)
 
     return normalized_pieces

@@ -12,8 +12,10 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(rf"(\b{note}[',]*\d?)\^(?=\s*{note})", r"\1", text, flags=re.MULTILINE)
     text = re.sub(rf"(\b{note}[',]*\d?)\^\s*$", r"\1", text, flags=re.MULTILINE)
     text = re.sub(rf"(\b{note}[',]*)(128|64|32|16)([1248])\b", r"\1\2 \3", text)
-    text = re.sub(r"(?m)^\s*\\tempo\s+.*$", "", text)
     text = re.sub(r'\\tempo\S*\s*=.*?(?=\s|$)', "", text)  # Remove malformed tempo with = syntax
+    text = re.sub(r'(?m)^\s*\\time\s*$', "", text)  # Remove bare \time lines
+    text = re.sub(r'\\time(?!\s*\d+/\d+)\b', "", text)  # Remove malformed \time tokens
+    text = re.sub(r'(?m)^\s*Staff\s*=\s*(?:up|down)\s*$', "", text)
     text = re.sub(r'(?m)^\s*\d+\s*$', "", text)  # Remove orphaned numbers (tempo fragments)
     text = re.sub(r'Rest\s+#\'.*?(?=\s|$)', "", text)  # Remove Rest with scheme properties
     text = re.sub(r'#\'[\s\w\-\(\.\-\)]+', "", text)  # Remove scheme code fragments and pairs
@@ -63,9 +65,17 @@ def _grab_balanced(text: str, start: int, open_char: str = "{", close_char: str 
 def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
     def _is_empty_content(content: str) -> bool:
         s = re.sub(r'\\clef\s+\w+', '', content)
+        s = re.sub(r'\\(?:key|time|tempo|partial)\b[^\n]*', '', s)
+        s = re.sub(r'(?m)^\s*Staff\s*=\s*(?:up|down)\s*$', '', s)
         s = re.sub(r'[\s\n]+', '', s)
         while '{}' in s:
             s = s.replace('{}', '')
+        return not s.strip()
+
+    def _is_structure_only(content: str) -> bool:
+        s = re.sub(r'\\(?:key|time|tempo|partial)\b[^\n]*', '', content)
+        s = re.sub(r'(?m)^\s*Staff\s*=\s*(?:up|down)\s*$', '', s)
+        s = re.sub(r'[{}\s\n]+', '', s)
         return not s.strip()
 
     empty_vars = []
@@ -82,7 +92,8 @@ def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
         brace_end = _grab_balanced(text, brace_start)
 
         if brace_end != -1:
-            if _is_empty_content(text[brace_start + 1:brace_end]):
+            body = text[brace_start + 1:brace_end]
+            if _is_empty_content(body) or _is_structure_only(body):
                 assignment_end = brace_end + 1
                 while assignment_end < len(text) and text[assignment_end] == '\n':
                     assignment_end += 1
