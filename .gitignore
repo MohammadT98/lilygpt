@@ -39,6 +39,7 @@ data/*
 !data/.gitkeep
 logs/
 *.log
+docs/
 temp_path.txt
 lilypond-*/
 *.bak
