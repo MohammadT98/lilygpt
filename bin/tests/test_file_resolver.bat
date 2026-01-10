@@ -16,7 +16,7 @@ echo Test started at %date% %time% > "!logfile!"
 echo. >> "!logfile!"
 
 REM Run and capture to log, then display log to console
-uv run python scripts/test_file_resolver.py >> "!logfile!" 2>&1
+uv run python scripts/tests/test_file_resolver.py >> "!logfile!" 2>&1
 type "!logfile!"
 
 echo.
