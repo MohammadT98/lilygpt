@@ -13,8 +13,14 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(rf"(\b{note}[',]*\d?)\^\s*$", r"\1", text, flags=re.MULTILINE)
     text = re.sub(rf"(\b{note}[',]*)(128|64|32|16)([1248])\b", r"\1\2 \3", text)
     text = re.sub(r"(?m)^\s*\\tempo\s+.*$", "", text)
+    text = re.sub(r'\\tempo\S*\s*=.*?(?=\s|$)', "", text)  # Remove malformed tempo with = syntax
+    text = re.sub(r'(?m)^\s*\d+\s*$', "", text)  # Remove orphaned numbers (tempo fragments)
+    text = re.sub(r'Rest\s+#\'.*?(?=\s|$)', "", text)  # Remove Rest with scheme properties
+    text = re.sub(r'#\'[\s\w\-\(\.\-\)]+', "", text)  # Remove scheme code fragments and pairs
     text = re.sub(r'(?m)^\s*\\mark\s*"?[^"\n]*"?\s*$', "", text)
     text = re.sub(r'\{\s*"\s*"\s*\}', "", text)
+    text = re.sub(r'Score\.measureLength\s*=\s*#\(.*?\)\s*', "", text)
+    text = re.sub(r'R\d+\^', "", text)  # Remove malformed rests with articulation marks
     text = re.sub(r"(?m)^\s*<<[^>]*$", "", text)
     text = re.sub(r"\[\s*tr\s*\]", "", text)
     text = re.sub(rf"\b({solfege})([',]*?)({solfege})([',]*\d*)\b", r"\1\2 \3\4", text)

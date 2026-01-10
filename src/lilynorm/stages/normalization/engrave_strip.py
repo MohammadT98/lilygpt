@@ -119,8 +119,46 @@ RE_SPACER_ONLY_SUBVOICE = re.compile(
     r"\s*(\})"                          # closing brace
 )
 
+def _remove_block_commands(text: str) -> str:
+    """Remove commands that take brace-delimited blocks (e.g., \\incipit{...})"""
+    # Commands that should be removed along with their {...} blocks
+    block_commands = [
+        'incipit',
+        'with',
+    ]
+
+    for cmd in block_commands:
+        pattern = r'\\' + cmd + r'\s*\{'
+        while True:
+            match = re.search(pattern, text)
+            if not match:
+                break
+
+            # Find matching closing brace
+            brace_start = match.end() - 1
+            brace_end = _grab_balanced(text, brace_start, "{", "}")
+
+            if brace_end != -1:
+                # Remove entire \\command{...} block
+                text = text[:match.start()] + text[brace_end + 1:]
+            else:
+                # Malformed - just remove the command
+                text = text[:match.start()] + text[match.end():]
+                break
+
+    # Commands that take a single word argument (e.g., \clef soprano)
+    # Remove both the command and its argument
+    text = re.sub(r'\\clef\s+\w+', '', text)
+
+    return text
+
+
 def _remove_non_whitelisted_commands(text: str) -> tuple[str, int]:
-    whitelist = {'relative', 'absolute', 'time', 'key', 'partial', 'repeat', 'alternative', 'tuplet'}
+    # Musical modes for key signatures
+    modes = {'major', 'minor', 'ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'}
+    # Core musical commands to preserve
+    # NOTE: key/time/tempo are kept in whitelist - corrupted structural lines are removed later in postprocessing
+    whitelist = {'relative', 'absolute', 'time', 'key', 'tempo', 'partial', 'repeat', 'alternative', 'tuplet'} | modes
     count = 0
 
     def replace(m):
@@ -130,6 +168,10 @@ def _remove_non_whitelisted_commands(text: str) -> tuple[str, int]:
         count += 1
         return ''
 
+    # First remove block commands (commands with braces)
+    text = _remove_block_commands(text)
+
+    # Then remove other non-whitelisted commands
     return re.sub(r'\\([a-zA-Z]+)\b', replace, text), count
 
 
@@ -149,7 +191,6 @@ def _final_cleanup(text: str) -> tuple[str, int]:
         "notrasp",
         "typeset",
         "notypeset",
-        "Voice",
         "terzine",
         "con",
         "senza",
@@ -197,12 +238,7 @@ def _final_cleanup(text: str) -> tuple[str, int]:
     text = re.sub(r'\\[<>!,]', '', text)
     text = re.sub(r'\bmbreak\b', '', text)
 
-    before_staff = text.count('Staff  {')
     text = re.sub(r'Staff\s+\{.*?\}\s*(\{)', r'\1', text)
-    after_staff = text.count('Staff  {')
-    if before_staff > 0:
-        import sys
-        print(f"[DEBUG] Staff blocks before:{before_staff} after:{after_staff}", file=sys.stderr)
 
     text = re.sub(r'\s*Staff\.midiInstrument\s*=\s*', ' ', text)
     text = re.sub(r'\s*Staff\.\w+\s*', ' ', text)
@@ -325,6 +361,10 @@ def _final_cleanup(text: str) -> tuple[str, int]:
 
     text = re.sub(r'\\\s+', ' ', text)
 
+    # Remove corrupted structural lines with key/time/tempo (they're already in forma variables)
+    # Pattern: lines starting with context names (PianoStaff, Staff, Voice, etc.) followed by <<
+    text = re.sub(r'(?m)^\s*(?:PianoStaff|Staff|Voice|StaffGroup|ChoirStaff)\s+<<.*$', '', text)
+
     return text, whitelist_removed
 
 
@@ -347,6 +387,11 @@ def _variable_contains_music(rhs_content: str) -> bool:
         else:
             content = content[:match.start()] + content[match.end():]
             break
+
+    # Check for musical metadata (key/time/tempo signatures)
+    metadata_pattern = r'\\(?:key|time|tempo)\b'
+    if re.search(metadata_pattern, content, re.I):
+        return True
 
     note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[is|es|isbf|esbf]*[,\']*\d'
     if re.search(note_pattern, content, re.I):
