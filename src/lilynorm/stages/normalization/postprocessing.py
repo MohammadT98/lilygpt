@@ -16,6 +16,7 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(r'(?m)^\s*\\time\s*$', "", text)  # Remove bare \time lines
     text = re.sub(r'\\time(?!\s*\d+/\d+)\b', "", text)  # Remove malformed \time tokens
     text = re.sub(r'(?m)^\s*Staff\s*=\s*(?:up|down)\s*$', "", text)
+    text = re.sub(r'(?m)^\s*Voice\s*=\s*$', "", text)
     text = re.sub(r'(?m)^\s*\d+\s*$', "", text)  # Remove orphaned numbers (tempo fragments)
     text = re.sub(r'Rest\s+#\'.*?(?=\s|$)', "", text)  # Remove Rest with scheme properties
     text = re.sub(r'#\'[\s\w\-\(\.\-\)]+', "", text)  # Remove scheme code fragments and pairs
@@ -67,6 +68,8 @@ def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
         s = re.sub(r'\\clef\s+\w+', '', content)
         s = re.sub(r'\\(?:key|time|tempo|partial)\b[^\n]*', '', s)
         s = re.sub(r'(?m)^\s*Staff\s*=\s*(?:up|down)\s*$', '', s)
+        s = re.sub(r'(?m)^\s*Voice\s*=\s*$', '', s)
+        s = re.sub(r'\b(?:s\d*\.?)(?:\*\d+)?(?:\s*[-_^]+\s*)?', '', s)
         s = re.sub(r'[\s\n]+', '', s)
         while '{}' in s:
             s = s.replace('{}', '')
@@ -75,11 +78,15 @@ def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
     def _is_structure_only(content: str) -> bool:
         s = re.sub(r'\\(?:key|time|tempo|partial)\b[^\n]*', '', content)
         s = re.sub(r'(?m)^\s*Staff\s*=\s*(?:up|down)\s*$', '', s)
+        s = re.sub(r'(?m)^\s*Voice\s*=\s*$', '', s)
+        s = re.sub(r'\b(?:s\d*\.?)(?:\*\d+)?(?:\s*[-_^]+\s*)?', '', s)
         s = re.sub(r'[{}\s\n]+', '', s)
         return not s.strip()
 
     empty_vars = []
-    pattern = re.compile(r"(?m)^([A-Za-z_][\w-]*)\s*=\s*\{")
+    pattern = re.compile(
+        r"(?m)^([A-Za-z_][\w-]*)\s*=\s*(?:\\relative\b[^\n{]*\{|\\transpose\b[^\n{]*\{|\\absolute\b[^\n{]*\{|\\drummode\b[^\n{]*\{|\{)"
+    )
     i = 0
 
     while i < len(text):
@@ -88,7 +95,7 @@ def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
             break
 
         var_name = match.group(1)
-        brace_start = match.end() - 1
+        brace_start = text.find("{", match.end() - 1)
         brace_end = _grab_balanced(text, brace_start)
 
         if brace_end != -1:
