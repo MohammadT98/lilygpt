@@ -85,7 +85,7 @@ sol' )red reb sold sold( )mi, dod( )do, red sol
 
 For formal language generation, **structural completeness is more critical than dataset size**.
 
-- 8,852 fragmented examples → Invalid syntax generation
+- 48,502 fragmented examples → Invalid syntax generation
 - 1,503 complete examples → Valid output (83% dataset reduction)
 
 This principle generalizes to other formal languages (code, mathematics, structured markup) where syntactic boundaries are semantically significant.
