@@ -22,8 +22,14 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(r'(?m)^\s*[\w-]+\.[\w-]+\s*=\s*', "", text)
     text = re.sub(r'\bsuggestAccidentals\s*=\s*##[tf]\b', "", text)
     text = re.sub(r'(?m)\bStem\.transparent\s*##[tf]\b\s*', "", text)
-    text = re.sub(r'(?m)\bTupletBracket\.bracket-visibility\s*=\s*##\b\s*', "", text)
+    text = re.sub(r'(?m)\bTupletBracket\.bracket-visibility\s*=\s*##\w*\s*', "", text)
     text = re.sub(r'\b##\b', "", text)
+    text = re.sub(r'(?m)^\s*Staff\s*$', "", text)
+    text = re.sub(r'(?m)^\s*alignAboveContext\s*=.*$', "", text)
+    text = re.sub(r'(?m)^\s*StaffSymbol\s*=.*$', "", text)
+    text = re.sub(r'(?m)^.*StaffSymbol\s*=.*$', "", text)
+    # Catch inline StaffSymbol fragments that may share lines with braces.
+    text = re.sub(r'StaffSymbol\s*=\s*#\([^)]*\)', "", text)
     # Drop structure-only brace lines (artifact from stripping voices).
     struct_cmd = re.compile(r'\\(?:time|key|tempo|partial|repeat|alternative|bar)\b')
     note_token = re.compile(rf'\\b{note}[,\']*\\d*\\b|\\bR\\d*\\b|\\br\\d*\\b', re.I)

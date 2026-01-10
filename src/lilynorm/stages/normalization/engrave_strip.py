@@ -242,6 +242,10 @@ def _final_cleanup(text: str) -> tuple[str, int]:
 
     text = re.sub(r'\s*Staff\.midiInstrument\s*=\s*', ' ', text)
     text = re.sub(r'\s*Staff\.\w+\s*', ' ', text)
+    text = re.sub(r'(?m)^\s*Staff\s*$', '', text)
+    text = re.sub(r'(?m)^\s*alignAboveContext\s*=.*$', '', text)
+    text = re.sub(r'(?m)^.*StaffSymbol\s*=.*$', '', text)
+    text = re.sub(r'StaffSymbol\s*=\s*#\([^)]*\)', '', text)
 
     text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
 
