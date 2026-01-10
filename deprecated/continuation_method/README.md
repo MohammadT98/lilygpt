@@ -22,7 +22,7 @@ The continuation method attempted to train the model by splitting each musical p
 
 ### Dataset Statistics
 
-- Total examples: 48,502 (actual generated set; far more than the initial 8,852 plan)
+- Total examples: 48,502
 - Structurally complete: 34%
 - Incomplete closures: 66%
 
