@@ -22,7 +22,7 @@ The continuation method attempted to train the model by splitting each musical p
 
 ### Dataset Statistics
 
-- Total examples: 8,852 (3 per piece)
+- Total examples: 48,502 (actual generated set; far more than the initial 8,852 plan)
 - Structurally complete: 34%
 - Incomplete closures: 66%
 
@@ -73,8 +73,8 @@ sol' )red reb sold sold( )mi, dod( )do, red sol
 
 | Metric | Continuation (Exp 4) | Full Assignment (Exp 5) |
 |--------|---------------------|------------------------|
-| Examples per piece | 3 (fragmented) | 1 (complete) |
-| Total dataset | 8,852 | 1,503 |
+| Examples per piece | 3 planned (fragmented) | 1 (complete) |
+| Total dataset | 48,502 actual (inflated) | 1,503 |
 | Structural completeness | 34% | 100% |
 | Loss masking | Yes (input ignored) | No (standard training) |
 | Output quality | Invalid | Valid |
