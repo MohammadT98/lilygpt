@@ -43,6 +43,7 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(rf"\b({solfege})([',]*?)({solfege})([',]*\d*)\b", r"\1\2 \3\4", text)
     text = close_unclosed_braces(text)
     text = re.sub(r'Staff\s+\{[^}]*\}[^{<]*(\{|<<)', r'\1', text, flags=re.DOTALL)
+    text = re.sub(r'(?m)(?:^\s*\}\s*$\n){2,}', '}\n', text)
 
     return text
 
