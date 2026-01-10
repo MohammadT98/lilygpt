@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=lilygpt-exp6-weight5-addkey
+#SBATCH --job-name=lilygpt-exp7-weight5-keys
 #SBATCH --partition=allgroups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
 #SBATCH --time=48:00:00
-#SBATCH --output=logs/exp6-weight5-addkey-%j.out
-#SBATCH --error=logs/exp6-weight5-addkey-%j.err
+#SBATCH --output=logs/exp7-weight5-keys-%j.out
+#SBATCH --error=logs/exp7-weight5-keys-%j.err
 #SBATCH --qos=allgroups_qos
 
 set -euo pipefail
@@ -19,7 +19,7 @@ mkdir -p logs runs
 source "$HOME/lilygpt/.venv/bin/activate"
 
 echo "================================================================================"
-echo "EXPERIMENT 6 (weight 5) + cleaned keys"
+echo "EXPERIMENT 7 (weight 5) + cleaned keys"
 echo "================================================================================"
 echo "Same setup as exp6b (5x brace weight) but using the cleaned dataset with key/tempo"
 echo "and scheme-fragment removals. Objective: keep brace emphasis while training on the"
@@ -42,7 +42,7 @@ echo ""
 python -m lilynorm.stages.training.train_weighted \
     --train "data/splits_full/train.jsonl" \
     --val "data/splits_full/val.jsonl" \
-    --output-dir "runs/lora_exp6_weight5_addKey" \
+    --output-dir "runs/lora_exp7_weight5_keys" \
     --batch-size 1 \
     --gradient-accumulation-steps 32 \
     --learning-rate 5e-5 \
