@@ -8,6 +8,7 @@ def apply_postprocessing_fixes(text: str) -> str:
     solfege = r"(?:dod|red|mid|fad|sold|lad|sid|do|re|mi|fa|sol|la|si)"
 
     text = re.sub(r'(^|\n)\\version\s+"[^"]+"\s*', "", text)
+    text = re.sub(r'(?m)^\s*#\(set-default-paper-size\s*\)\s*$', "", text)
     text = re.sub(rf"(\b{note}[',]*\d?)\^\s+(?={note})", r"\1 ", text, flags=re.MULTILINE)
     text = re.sub(rf"(\b{note}[',]*\d?)\^(?=\s*{note})", r"\1", text, flags=re.MULTILINE)
     text = re.sub(rf"(\b{note}[',]*\d?)\^\s*$", r"\1", text, flags=re.MULTILINE)
@@ -98,6 +99,15 @@ def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
             break
 
         var_name = match.group(1)
+        if re.search(r"cadenza", var_name, re.I):
+            assignment_end = _grab_balanced(text, text.find("{", match.end() - 1))
+            if assignment_end != -1:
+                assignment_end += 1
+                while assignment_end < len(text) and text[assignment_end] == '\n':
+                    assignment_end += 1
+                empty_vars.append((match.start(), assignment_end, var_name))
+            i = match.end()
+            continue
         brace_start = text.find("{", match.end() - 1)
         brace_end = _grab_balanced(text, brace_start)
 
