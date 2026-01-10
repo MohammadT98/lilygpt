@@ -17,6 +17,8 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(r'\\time(?!\s*\d+/\d+)\b', "", text)  # Remove malformed \time tokens
     text = re.sub(r'(?m)^\s*Staff\s*=\s*(?:up|down)\s*$', "", text)
     text = re.sub(r'(?m)^\s*Voice\s*=\s*$', "", text)
+    text = re.sub(r'(?m)^\s*\w+\s*=\s*-column\s*$', "", text)
+    text = re.sub(r'(?m)^\s*[\w-]+\.[\w-]+\s*=\s*', "", text)
     text = re.sub(r'(?m)^\s*\d+\s*$', "", text)  # Remove orphaned numbers (tempo fragments)
     text = re.sub(r'Rest\s+#\'.*?(?=\s|$)', "", text)  # Remove Rest with scheme properties
     text = re.sub(r'#\'[\s\w\-\(\.\-\)]+', "", text)  # Remove scheme code fragments and pairs
