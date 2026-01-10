@@ -14,7 +14,7 @@ if not exist "data\logs" mkdir "data\logs"
 echo === Testing file_resolver + preparse + normalize ===
 echo.
 
-uv run python scripts/test_normalize.py >> "!logfile!" 2>&1
+uv run python scripts/tests/test_normalize.py >> "!logfile!" 2>&1
 type "!logfile!"
 
 echo.
