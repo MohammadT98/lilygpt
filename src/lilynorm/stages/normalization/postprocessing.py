@@ -21,6 +21,16 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(r'(?m)^\s*\w+\s*=\s*-column\s*$', "", text)
     text = re.sub(r'(?m)^\s*[\w-]+\.[\w-]+\s*=\s*', "", text)
     text = re.sub(r'\bsuggestAccidentals\s*=\s*##[tf]\b', "", text)
+    # Drop structure-only brace lines (artifact from stripping voices).
+    struct_cmd = re.compile(r'\\(?:time|key|tempo|partial|repeat|alternative|bar)\b')
+    note_token = re.compile(rf'\\b{note}[,\']*\\d*\\b|\\bR\\d*\\b|\\br\\d*\\b', re.I)
+    filtered = []
+    for line in text.splitlines():
+        if struct_cmd.search(line) and line.strip().startswith("{") and "}" in line:
+            if not note_token.search(line):
+                continue
+        filtered.append(line)
+    text = "\n".join(filtered) + ("\n" if text.endswith("\n") else "")
     text = re.sub(r'(?m)^\s*\d+\s*$', "", text)  # Remove orphaned numbers (tempo fragments)
     text = re.sub(r'Rest\s+#\'.*?(?=\s|$)', "", text)  # Remove Rest with scheme properties
     text = re.sub(r'#\'[\s\w\-\(\.\-\)]+', "", text)  # Remove scheme code fragments and pairs
