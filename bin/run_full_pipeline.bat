@@ -54,14 +54,6 @@ echo   - data/splits_full/train.jsonl
 echo   - data/splits_full/val.jsonl
 echo   - data/splits_full/test.jsonl
 echo.
-echo Dataset statistics:
-echo   - 1 complete example per assignment
-echo   - 100%% structural completeness
-echo   - All braces balanced
-echo.
-echo Next step: Submit training job
-echo   sbatch slurm/train_exp5_full_assignment.slurm
-echo.
 
 popd
 endlocal
