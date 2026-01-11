@@ -19,7 +19,6 @@ class ParseOptions:
     resolve_transpose: bool = True
     expand_repeat_unfold: bool = True
     normalize_tuplets: bool = True
-    normalize_drums: bool = True
     normalize_whitespace: bool = False
     preserve_linebreaks: bool = True
     canonicalize_chord_brackets: bool = True
@@ -33,7 +32,6 @@ class ParseReport:
     transpose_blocks: int = 0
     repeats_unfolded: int = 0
     tuplets_normalized: int = 0
-    drum_blocks_normalized: int = 0
     lily_failures: int = 0
     notes: list[str] = field(default_factory=list)
 
@@ -545,100 +543,6 @@ def normalize_tuplets(source: str) -> tuple[str, int]:
     return text, total_changes
 
 
-RE_DRUMMODE = re.compile(r"\\drummode\s*\{", re.I)
-
-DRUM_MAP: dict[str, str] = {
-    "bd": "bd",
-    "bassdrum": "bd",
-    "kick": "bd",
-    "sn": "sn",
-    "snare": "sn",
-    "snaredrum": "sn",
-    "tom": "tom",
-    "tomh": "tom",
-    "toml": "tom",
-    "tomhi": "tom",
-    "tomlo": "tom",
-    "ft": "ft",
-    "floortom": "ft",
-    "hh": "hh",
-    "hihat": "hh",
-    "hhc": "hhc",
-    "hhclosed": "hhc",
-    "hho": "hho",
-    "hhopen": "hho",
-    "ride": "ride",
-    "rd": "ride",
-    "crash": "crash",
-    "cr": "crash",
-    "rim": "rim",
-    "rimshot": "rim",
-    "clave": "clave",
-    "cowb": "cowb",
-    "cowbell": "cowb",
-    "tamb": "tamb",
-    "tambourine": "tamb",
-    "tri": "tri",
-    "triangle": "tri",
-    "guiro": "guiro",
-    "wood": "wood",
-    "woodblock": "wood",
-    "cymc": "cymc",
-    "china": "cymc",
-    "cymr": "cymr",
-    "splash": "cymr",
-}
-
-DRUM_TOKEN = re.compile(r"\b([A-Za-z][A-Za-z0-9_-]*)\b")
-
-
-def _normalize_drums_in_block(block: str) -> tuple[str, int]:
-    def repl(match: re.Match) -> str:
-        token = match.group(1)
-        lower = token.lower()
-        if lower in DRUM_MAP:
-            return DRUM_MAP[lower]
-        return token
-
-    new_block = DRUM_TOKEN.sub(repl, block)
-
-    before_tokens = DRUM_TOKEN.findall(block)
-    after_tokens = DRUM_TOKEN.findall(new_block)
-    changes = sum(1 for before, after in zip(before_tokens, after_tokens) if before != after)
-
-    return new_block, changes
-
-
-def normalize_drummode(source: str) -> tuple[str, int]:
-    search_start = 0
-    output_parts: list[str] = []
-    last_index = 0
-    changed_blocks = 0
-
-    while True:
-        match = RE_DRUMMODE.search(source, search_start)
-        if not match:
-            break
-
-        start = match.start()
-        brace_open_index = match.end() - 1
-        brace_close_index = _grab_braces(source, brace_open_index)
-        body = source[brace_open_index:brace_close_index]
-
-        normalized_body, changes = _normalize_drums_in_block(body)
-        if normalized_body != body:
-            changed_blocks += 1
-
-        output_parts.append(source[last_index:start])
-        output_parts.append("\\drummode " + normalized_body)
-
-        search_start = brace_close_index
-        last_index = brace_close_index
-
-    output_parts.append(source[last_index:])
-    return "".join(output_parts), changed_blocks
-
-
 def expand_music_functions_with_lily(
     source: str,
     lily_cmd: str,
@@ -729,12 +633,6 @@ def process_string(
             text = text_after_tuplets
             report.tuplets_normalized = count
 
-    if opts.normalize_drums:
-        text_after_drums, changed_blocks = normalize_drummode(text)
-        if changed_blocks:
-            text = text_after_drums
-            report.drum_blocks_normalized = changed_blocks
-
     if opts.normalize_whitespace:
         text = normalize_whitespace(text)
 
@@ -756,7 +654,6 @@ except Exception:
         resolve_transpose: bool = True
         expand_repeat_unfold: bool = True
         normalize_tuplets: bool = True
-        normalize_drums: bool = True
         preserve_linebreaks: bool = True
         canonicalize_chord_brackets: bool = True
 
@@ -794,7 +691,6 @@ def run(text: str, opts: "NormOptions") -> str:
         f"[normalize] transpose_ok:{report.transpose_blocks} "
         f"repeat:{report.repeats_unfolded} "
         f"tuplets:{report.tuplets_normalized} "
-        f"drums:{report.drum_blocks_normalized} "
         f"lily_fail:{report.lily_failures}"
     )
     return output
@@ -844,7 +740,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
     add_onoff("resolve-transpose", "resolve_transpose", True)
     add_onoff("expand-repeat-unfold", "expand_repeat_unfold", True)
     add_onoff("normalize-tuplets", "normalize_tuplets", True)
-    add_onoff("normalize-drums", "normalize_drums", True)
     add_onoff("normalize-whitespace", "normalize_whitespace", False)
     add_onoff("preserve-linebreaks", "preserve_linebreaks", True)
     add_onoff("canonicalize-chord-brackets", "canonicalize_chord_brackets", True)
@@ -878,7 +773,6 @@ def main() -> int:
         resolve_transpose=args.resolve_transpose,
         expand_repeat_unfold=args.expand_repeat_unfold,
         normalize_tuplets=args.normalize_tuplets,
-        normalize_drums=args.normalize_drums,
         normalize_whitespace=args.normalize_whitespace,
         preserve_linebreaks=args.preserve_linebreaks,
         canonicalize_chord_brackets=args.canonicalize_chord_brackets,
