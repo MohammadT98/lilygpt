@@ -23,12 +23,11 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
             stats["line_removed"] += max(0, len(piece.splitlines()) - len(stage1.splitlines()))
             stats["block_removed"] += max(0, piece.count("{") - stage1.count("{"))
 
-        # Stage 2: Expand syntax (expand relative notation, transpositions, repeats)
+        # Stage 2: Expand syntax (transpositions, repeats, tuplets, drums)
         stage2 = normalization.expand.run(stage1, opts)
         if stats is not None:
             def count_occurrences(text: str) -> dict[str, int]:
                 return {
-                    "rel": text.count("\\relative"),
                     "vars": len(re.findall(r"(?m)^[A-Za-z_][\\w-]*\\s*=\\s*\\{", text)),
                     "transpose": text.count("\\transpose"),
                     "repeat": text.count("\\repeat"),
@@ -38,7 +37,6 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
 
             before = count_occurrences(stage1)
             after = count_occurrences(stage2)
-            stats["rel_removed"] += max(0, before["rel"] - after["rel"])
             stats["vars_removed"] += max(0, before["vars"] - after["vars"])
             stats["transpose_removed"] += max(0, before["transpose"] - after["transpose"])
             stats["repeat_removed"] += max(0, before["repeat"] - after["repeat"])

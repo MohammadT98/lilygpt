@@ -15,7 +15,6 @@ DEFAULT_LILYPOND_PATH = r"C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\li
 
 @dataclass
 class ParseOptions:
-    expand_relative: bool = True
     inline_variables: bool = False
     expand_music_functions: bool = True
     resolve_transpose: bool = True
@@ -32,7 +31,6 @@ _DEFAULT_PARSE_OPTIONS = ParseOptions()
 
 @dataclass
 class ParseReport:
-    relative_blocks: int = 0
     variables_inlined: int = 0
     transpose_blocks: int = 0
     repeats_unfolded: int = 0
@@ -84,38 +82,14 @@ def resolve_lily_cmd() -> str:
     return "lilypond"
 
 
-RE_RELATIVE_BLK = re.compile(r"\\relative\b(?:\s+[^\s{}%]+)?(?:\s*(?:%[^\n]*\n|\s))*\{", re.I)
-RE_RELATIVE_TOKEN = re.compile(r"\\relative\b\s+([^\s{}%]+)", re.I)
 RE_LANGUAGE_DECL = re.compile(r"\\language\s+\"([^\"]+)\"", re.I)
-ITALIAN_SOLFEGE = ("do", "re", "mi", "fa", "sol", "la", "si")
 
 
 def _detect_note_language(source: str) -> Optional[str]:
     language_match = RE_LANGUAGE_DECL.search(source)
     if language_match:
         return language_match.group(1)
-
-    for match in RE_RELATIVE_TOKEN.finditer(source):
-        token = match.group(1).strip().lower()
-        token = token.strip(",;'\"")
-        for solfege in ITALIAN_SOLFEGE:
-            if token.startswith(solfege):
-                return "italiano"
-
     return None
-
-
-def _find_relative_blocks(source: str) -> list[tuple[int, int, str]]:
-    blocks = []
-    i = 0
-    while True:
-        match = RE_RELATIVE_BLK.search(source, i)
-        if not match:
-            break
-        brace_close = _grab_braces(source, match.end() - 1)
-        blocks.append((match.start(), brace_close, source[match.start():brace_close]))
-        i = brace_close
-    return blocks
 
 
 RE_ASSIGN = re.compile(r"(^|[^\w-])([A-Za-z][\w-]*)\s*=\s*", re.M)
@@ -515,43 +489,6 @@ def _run_lily_batch(
     return results
 
 
-def expand_relative_with_lily_batched(
-    source: str,
-    lily_cmd: str,
-    *,
-    preserve_linebreaks: bool,
-) -> tuple[str, int]:
-    blocks = _find_relative_blocks(source)
-    if not blocks:
-        return source, 0
-
-    language = _detect_note_language(source)
-    preamble = f'\\language "{language}"' if language else ""
-
-    expansions = _run_lily_batch(
-        [block_text for (_, _, block_text) in blocks],
-        lily_cmd=lily_cmd,
-        preserve_linebreaks=preserve_linebreaks,
-        preamble=preamble,
-    )
-
-    output_parts: list[str] = []
-    cursor = 0
-    failures = 0
-
-    for (start, end, original), expanded in zip(blocks, expansions):
-        output_parts.append(source[cursor:start])
-        if expanded is None:
-            output_parts.append(original)
-            failures += 1
-        else:
-            output_parts.append(expanded)
-        cursor = end
-
-    output_parts.append(source[cursor:])
-    return "".join(output_parts), failures
-
-
 RE_TRANSPOSE = re.compile(
     r"\\transpose\s+([^\s{}]+)\s+([^\s{}]+)\s*\{",
     re.I,
@@ -927,17 +864,6 @@ def process_string(
             text = text_after_functions
             report.lily_failures += fail_count
 
-    if opts.expand_relative:
-        relative_count = len(_find_relative_blocks(text))
-        if relative_count:
-            text, rel_failures = expand_relative_with_lily_batched(
-                text,
-                lily_cmd=lily_cmd,
-                preserve_linebreaks=opts.preserve_linebreaks,
-            )
-            report.relative_blocks = relative_count
-            report.lily_failures += rel_failures
-
     if opts.resolve_transpose:
         text_after_transpose, ok_count, fail_count = resolve_transpose_with_lily_batched(
             text,
@@ -984,7 +910,6 @@ except Exception:
         strip_scheme_blocks: bool = True
         strip_comments: bool = True
         normalize_whitespace: bool = False
-        expand_relative: bool = True
         inline_variables: bool = True
         expand_music_functions: bool = True
         resolve_transpose: bool = True
@@ -1012,23 +937,20 @@ def run(text: str, opts: "NormOptions") -> str:
 
     if not lily_available(lily_cmd):
         if (
-            parse_opts.expand_relative
-            or parse_opts.expand_music_functions
+            parse_opts.expand_music_functions
             or parse_opts.resolve_transpose
         ):
             print(
-                "[normalize] LilyPond not found – skipping relative/music-functions/transpose.",
+                "[normalize] LilyPond not found – skipping music-functions/transpose.",
                 file=sys.stderr,
             )
-        parse_opts.expand_relative = False
         parse_opts.expand_music_functions = False
         parse_opts.resolve_transpose = False
 
     output, report = process_string(text, lily_cmd=lily_cmd, opts=parse_opts)
 
     print(
-        f"[normalize] rel:{report.relative_blocks} "
-        f"vars:{report.variables_inlined} "
+        f"[normalize] vars:{report.variables_inlined} "
         f"transpose_ok:{report.transpose_blocks} "
         f"repeat:{report.repeats_unfolded} "
         f"tuplets:{report.tuplets_normalized} "
@@ -1078,7 +1000,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
                 help=f"Enable {flag.replace('-', ' ')}",
             )
 
-    add_onoff("expand-relative", "expand_relative", True)
     add_onoff("inline-variables", "inline_variables", True)
     add_onoff("expand-music-functions", "expand_music_functions", True)
     add_onoff("resolve-transpose", "resolve_transpose", True)
@@ -1114,7 +1035,6 @@ def main() -> int:
     src = in_path.read_text(encoding="utf-8", errors="ignore")
 
     cli_opts = ParseOptions(
-        expand_relative=args.expand_relative,
         inline_variables=args.inline_variables,
         expand_music_functions=args.expand_music_functions,
         resolve_transpose=args.resolve_transpose,

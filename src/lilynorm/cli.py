@@ -226,7 +226,6 @@ def main() -> int:
         stats: dict[str, int] = {
             "line_removed": 0,
             "block_removed": 0,
-            "rel_removed": 0,
             "vars_removed": 0,
             "transpose_removed": 0,
             "repeat_removed": 0,
@@ -352,7 +351,7 @@ def main() -> int:
             f"block_removed={stats['block_removed']}"
         )
         print(
-            f"[normalize] rel_removed:{stats['rel_removed']} vars_removed:{stats['vars_removed']} "
+            f"[normalize] vars_removed:{stats['vars_removed']} "
             f"transpose_removed:{stats['transpose_removed']} repeat_removed:{stats['repeat_removed']} "
             f"tuplets_removed:{stats['tuplets_removed']} "
             f"lily_fail:{stats['lily_fail']}"
