@@ -15,7 +15,6 @@ DEFAULT_LILYPOND_PATH = r"C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\li
 
 @dataclass
 class ParseOptions:
-    inline_variables: bool = False
     expand_music_functions: bool = True
     resolve_transpose: bool = True
     expand_repeat_unfold: bool = True
@@ -31,7 +30,6 @@ _DEFAULT_PARSE_OPTIONS = ParseOptions()
 
 @dataclass
 class ParseReport:
-    variables_inlined: int = 0
     transpose_blocks: int = 0
     repeats_unfolded: int = 0
     tuplets_normalized: int = 0
@@ -90,148 +88,6 @@ def _detect_note_language(source: str) -> Optional[str]:
     if language_match:
         return language_match.group(1)
     return None
-
-
-RE_ASSIGN = re.compile(r"(^|[^\w-])([A-Za-z][\w-]*)\s*=\s*", re.M)
-
-
-def _collect_named_music(source: str) -> dict[str, str]:
-    environment = {}
-    i = 0
-    n = len(source)
-
-    while i < n:
-        match = RE_ASSIGN.search(source, i)
-        if not match:
-            break
-
-        rhs = match.end()
-        while rhs < n and source[rhs].isspace():
-            rhs += 1
-
-        name = match.group(2)
-
-        if rhs < n and source[rhs] in ("_", "^"):
-            i = rhs + 1
-            continue
-
-        if any(source.startswith(p, rhs) for p in ("\\override", "\\set", "\\tupletSpan", "\\revert", "\\unset")):
-            i = rhs + 1
-            continue
-
-        if source.startswith("\\relative", rhs):
-            m = RE_RELATIVE_BLK.search(source, rhs)
-            if m:
-                end = _grab_braces(source, m.end() - 1)
-                environment[name] = source[rhs:end]
-                i = end
-            else:
-                i = rhs + 1
-
-        elif source.startswith("\\transpose", rhs):
-            m = RE_TRANSPOSE.search(source, rhs)
-            if m:
-                end = _grab_braces(source, m.end() - 1)
-                environment[name] = source[rhs:end]
-                i = end
-            else:
-                i = rhs + 1
-
-        elif rhs < n and source[rhs] == "{":
-            end = _grab_braces(source, rhs)
-            environment[name] = source[rhs:end]
-            i = end
-
-        elif source.startswith("<<", rhs):
-            end = _grab_angles(source, rhs)
-            environment[name] = source[rhs:end]
-            i = end
-
-        else:
-            end = rhs
-            while end < n and not source[end].isspace() and source[end] not in "{}<>":
-                end += 1
-            environment[name] = source[rhs:end]
-            i = end
-
-    return environment
-
-
-def _inline_once(source: str, env: dict[str, str]) -> tuple[str, int]:
-    if not env:
-        return source, 0
-    count = 0
-    pattern = r"\\(" + "|".join(re.escape(n) for n in sorted(env, key=len, reverse=True)) + r")\b"
-
-    def replace(m: re.Match) -> str:
-        nonlocal count
-        name = m.group(1)
-        if name in env:
-            count += 1
-            return env[name]
-        return m.group(0)
-
-    return re.sub(pattern, replace, source), count
-
-
-def _inline_named_music_recursive(source: str, env: dict[str, str], *, max_passes: int = 8) -> tuple[str, int]:
-    total = 0
-    seen = set()
-    current = source
-
-    for _ in range(max_passes):
-        h = hash(current)
-        if h in seen:
-            break
-        seen.add(h)
-        current, count = _inline_once(current, env)
-        total += count
-        if count == 0:
-            return current, total
-
-    return current, total
-
-
-def _inline_named_music_with_lilypond(source: str, env: dict[str, str], *, lily_cmd: str, preserve_linebreaks: bool) -> tuple[str, int]:
-    if not env:
-        return source, 0
-
-    preamble_lines = []
-    for name, rhs in env.items():
-        preamble_lines.append(f"{name} = {rhs}")
-    preamble = "\n".join(preamble_lines)
-
-    names = list(env.keys())
-    blocks = [f"\\{name}" for name in names]
-    expanded = _run_lily_batch(
-        blocks,
-        lily_cmd,
-        preserve_linebreaks=preserve_linebreaks,
-        preamble=preamble,
-    )
-
-    repl: dict[str, str] = {}
-    for name, value in zip(names, expanded):
-        if value and _is_safe_music_expansion(value):
-            repl[name] = value
-
-    if not repl:
-        return source, 0
-
-    names_sorted = sorted(repl.keys(), key=len, reverse=True)
-    pattern = r"\\(" + "|".join(re.escape(name) for name in names_sorted) + r")\b"
-    count = 0
-
-    def _replace(match: re.Match) -> str:
-        nonlocal count
-        name = match.group(1)
-        if name in repl:
-            count += 1
-            return repl[name]
-        return match.group(0)
-
-    updated = re.sub(pattern, _replace, source)
-    return updated, count
 
 
 def _is_safe_music_expansion(text: str) -> bool:
@@ -840,20 +696,6 @@ def process_string(
     report = ParseReport(notes=[])
     text = src
 
-    if opts.inline_variables:
-        env = _collect_named_music(text)
-        if lily_available(lily_cmd):
-            text_after_inline, count = _inline_named_music_with_lilypond(
-                text,
-                env,
-                lily_cmd=lily_cmd,
-                preserve_linebreaks=opts.preserve_linebreaks,
-            )
-        else:
-            text_after_inline, count = _inline_named_music_recursive(text, env)
-        report.variables_inlined = count
-        text = text_after_inline
-
     if opts.expand_music_functions:
         text_after_functions, ok_count, fail_count = expand_music_functions_with_lily(
             text,
@@ -910,7 +752,6 @@ except Exception:
         strip_scheme_blocks: bool = True
         strip_comments: bool = True
         normalize_whitespace: bool = False
-        inline_variables: bool = True
         expand_music_functions: bool = True
         resolve_transpose: bool = True
         expand_repeat_unfold: bool = True
@@ -950,8 +791,7 @@ def run(text: str, opts: "NormOptions") -> str:
     output, report = process_string(text, lily_cmd=lily_cmd, opts=parse_opts)
 
     print(
-        f"[normalize] vars:{report.variables_inlined} "
-        f"transpose_ok:{report.transpose_blocks} "
+        f"[normalize] transpose_ok:{report.transpose_blocks} "
         f"repeat:{report.repeats_unfolded} "
         f"tuplets:{report.tuplets_normalized} "
         f"drums:{report.drum_blocks_normalized} "
@@ -1000,7 +840,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
                 help=f"Enable {flag.replace('-', ' ')}",
             )
 
-    add_onoff("inline-variables", "inline_variables", True)
     add_onoff("expand-music-functions", "expand_music_functions", True)
     add_onoff("resolve-transpose", "resolve_transpose", True)
     add_onoff("expand-repeat-unfold", "expand_repeat_unfold", True)
@@ -1035,7 +874,6 @@ def main() -> int:
     src = in_path.read_text(encoding="utf-8", errors="ignore")
 
     cli_opts = ParseOptions(
-        inline_variables=args.inline_variables,
         expand_music_functions=args.expand_music_functions,
         resolve_transpose=args.resolve_transpose,
         expand_repeat_unfold=args.expand_repeat_unfold,
