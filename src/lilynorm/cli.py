@@ -16,7 +16,6 @@ if _src_dir.exists():
 from lilynorm.utils.options import NormOptions
 from lilynorm.normalize import normalize_file
 from lilynorm.stages import tokenization as tokenize_gpt
-from lilynorm.stages.normalization.utils.voice_extraction import find_voice_blocks
 from lilynorm.utils.formatting import format_full_text, format_example
 
 
@@ -167,11 +166,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
-        "--single-voice-only",
-        action="store_true",
-        help="Filter outputs to files containing exactly one voice assignment.",
-    )
-    parser.add_argument(
         "--tokenizer-model",
         default=tokenize_gpt.DEFAULT_MODEL_NAME,
         help=(
@@ -203,9 +197,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 def main() -> int:
     args = build_arg_parser().parse_args()
 
-    log_dir = Path(
-        "data/single_voice/logs" if args.single_voice_only else "data/logs"
-    ).expanduser()
+    log_dir = Path("data/logs").expanduser()
     log_dir.mkdir(parents=True, exist_ok=True)
     log_path = log_dir / "process_dataset.log"
 
@@ -223,24 +215,13 @@ def main() -> int:
             print(f"[dataset] input folder not found: {input_root}", file=sys.stderr)
             return 2
 
-        normalized_out = args.normalized_out
-        tokenized_out = args.tokenized_out
-        if args.single_voice_only:
-            single_base = Path("data/single_voice")
-            if normalized_out == DEFAULT_NORMALIZED_OUT:
-                normalized_out = str(single_base / "normalized_dataset")
-            if tokenized_out == DEFAULT_TOKENIZED_OUT:
-                tokenized_out = str(single_base / "tokenized_dataset")
-
-        norm_root = Path(normalized_out).expanduser().resolve()
-        tok_root = Path(tokenized_out).expanduser().resolve()
+        norm_root = Path(args.normalized_out).expanduser().resolve()
+        tok_root = Path(args.tokenized_out).expanduser().resolve()
 
         opts = NormOptions(keep_engraving=args.keep_compilable)
 
         processed = 0
         skipped = 0
-        trimmed_multi_voice = 0
-        single_voice_missing = 0
 
         stats: dict[str, int] = {
             "line_removed": 0,
@@ -290,35 +271,6 @@ def main() -> int:
             header_version, header_language, variabili_include = _read_header_metadata(
                 src.parent
             )
-
-            processed_pieces = []
-            for piece in forma_pieces:
-                if args.single_voice_only:
-                    voice_blocks = find_voice_blocks(piece)
-                    if not voice_blocks:
-                        single_voice_missing += 1
-                        print(
-                            f"[dataset] ! skipped {rel} (voices=0) "
-                            "due to --single-voice-only"
-                        )
-                        continue
-
-                    selected_voice, block_start, block_end = voice_blocks[0]
-                    prefix = piece[:block_start]
-                    piece = (
-                        prefix + piece[block_start:block_end]
-                    ).rstrip() + "\n"
-
-                    if len(voice_blocks) > 1:
-                        trimmed_multi_voice += 1
-                        print(
-                            f"[dataset] ! trimmed {rel} to single voice {selected_voice} "
-                            f"(removed {len(voice_blocks) - 1} voices)"
-                        )
-
-                processed_pieces.append(piece)
-
-            forma_pieces = processed_pieces
 
             if args.dry_run:
                 processed += 1
@@ -392,12 +344,6 @@ def main() -> int:
             f"[dataset] done. processed={processed} skipped={skipped} "
             f"normalized_out={norm_root}"
             + ("" if args.skip_tokenize else f" tokenized_out={tok_root}")
-            + (
-                ""
-                if not args.single_voice_only
-                else f" single_voice_trimmed={trimmed_multi_voice} "
-                     f"single_voice_skipped={single_voice_missing}"
-            )
         )
 
         print("--- Stage summaries ---")

@@ -60,7 +60,6 @@ python src/lilynorm/stages/splitting/build_splits.py \
 Convenience scripts for Windows (in `bin/`):
 
 - `normalize_only.bat` - Normalization only
-- `run_dataset_single_voice.bat` - Single-voice filtering
 - `run_full_pipeline.bat` - End-to-end pipeline
 
 ## Training
@@ -101,8 +100,6 @@ src/lilynorm/
       expand.py           - Expand relative/transpose/repeat
       engrave_strip.py    - Strip engraving directives
       postprocessing.py   - Fix malformed patterns
-      utils/
-        voice_extraction.py - Voice detection heuristics
     tokenization/         - GPT tokenization
       tokenize_gpt.py     - Basic tokenization
       dataset_standard.py - Full-sequence dataset
