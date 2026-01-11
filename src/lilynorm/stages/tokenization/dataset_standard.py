@@ -27,10 +27,12 @@ class LilyStandardDataset(Dataset):
         jsonl_path: str | Path,
         tokenizer: PreTrainedTokenizer,
         max_length: int = 2048,
+        mask_input: bool = False,
     ):
         self.path = Path(jsonl_path)
         self.tokenizer = tokenizer
         self.max_length = max_length
+        self.mask_input = mask_input
 
         if not self.path.exists():
             raise FileNotFoundError(f"Dataset file not found: {self.path}")
@@ -59,14 +61,47 @@ class LilyStandardDataset(Dataset):
 
                 full_text = input_text + output_text
 
-                input_ids = self.tokenizer.encode(
-                    full_text,
-                    add_special_tokens=False,
-                    max_length=self.max_length,
-                    truncation=True,
-                )
+                if self.mask_input and input_text and output_text:
+                    input_ids_prefix = self.tokenizer.encode(
+                        input_text,
+                        add_special_tokens=False,
+                    )
+                    output_ids = self.tokenizer.encode(
+                        output_text,
+                        add_special_tokens=False,
+                    )
+                    eos_id = self.tokenizer.eos_token_id
+                    if eos_id is not None and (not output_ids or output_ids[-1] != eos_id):
+                        output_ids.append(eos_id)
 
-                labels = input_ids.copy()
+                    if self.max_length and self.max_length > 0:
+                        allowed_out = self.max_length - len(input_ids_prefix)
+                        if allowed_out <= 0:
+                            input_ids = input_ids_prefix[:self.max_length]
+                            labels = [-100] * len(input_ids)
+                        else:
+                            output_ids = output_ids[:allowed_out]
+                            input_ids = input_ids_prefix + output_ids
+                            labels = ([-100] * len(input_ids_prefix)) + output_ids
+                    else:
+                        input_ids = input_ids_prefix + output_ids
+                        labels = ([-100] * len(input_ids_prefix)) + output_ids
+                else:
+                    input_ids = self.tokenizer.encode(
+                        full_text,
+                        add_special_tokens=False,
+                    )
+                    eos_id = self.tokenizer.eos_token_id
+                    if eos_id is not None:
+                        if self.max_length and self.max_length > 0:
+                            if len(input_ids) >= self.max_length:
+                                input_ids = input_ids[:max(0, self.max_length - 1)]
+                        if not input_ids or input_ids[-1] != eos_id:
+                            input_ids.append(eos_id)
+                    if self.max_length and len(input_ids) > self.max_length:
+                        input_ids = input_ids[:self.max_length]
+
+                    labels = input_ids.copy()
 
                 if len(input_ids) < 10:
                     print(f"Warning: Skipping example {example_id} - too short ({len(input_ids)} tokens)")

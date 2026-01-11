@@ -74,6 +74,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Maximum sequence length (default: 1024).",
     )
     parser.add_argument(
+        "--mask-input",
+        action="store_true",
+        help="Mask input tokens so loss is only on the output/completion.",
+    )
+    parser.add_argument(
         "--lora-r",
         type=int,
         default=8,
@@ -152,7 +157,10 @@ def main() -> int:
     print("="*80)
     print("STANDARD TRAINING APPROACH (No Loss Masking)")
     print("="*80)
-    print("This trains on FULL sequences (all tokens contribute to loss).")
+    if args.mask_input:
+        print("This trains with INPUT MASKING (loss only on the output/completion).")
+    else:
+        print("This trains on FULL sequences (all tokens contribute to loss).")
     print("This is the standard approach for domain adaptation and code generation.")
     print("="*80)
     print()
@@ -173,12 +181,14 @@ def main() -> int:
     train_dataset = LilyStandardDataset(
         train_path,
         tokenizer=tokenizer,
-        max_length=args.max_length
+        max_length=args.max_length,
+        mask_input=args.mask_input,
     )
     val_dataset = LilyStandardDataset(
         val_path,
         tokenizer=tokenizer,
-        max_length=args.max_length
+        max_length=args.max_length,
+        mask_input=args.mask_input,
     )
 
     print(f"[train_standard] train samples: {len(train_dataset)}")

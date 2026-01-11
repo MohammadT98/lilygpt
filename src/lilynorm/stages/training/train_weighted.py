@@ -133,6 +133,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Maximum sequence length (default: 1024).",
     )
     parser.add_argument(
+        "--mask-input",
+        action="store_true",
+        help="Mask input tokens so loss is only on the output/completion.",
+    )
+    parser.add_argument(
         "--lora-r",
         type=int,
         default=8,
@@ -217,6 +222,10 @@ def main() -> int:
     print("="*80)
     print("WEIGHTED LOSS TRAINING (Structural Token Emphasis)")
     print("="*80)
+    if args.mask_input:
+        print("This experiment uses INPUT MASKING (loss only on the output/completion).")
+    else:
+        print("This experiment trains on FULL sequences (all tokens contribute to loss).")
     print("This experiment applies HIGHER LOSS WEIGHT to structural tokens:")
     print(f"  - Closing brace }}: {args.structural_weight}x weight")
     print(f"  - Final newline before }}: {args.structural_weight/4.0}x weight")
@@ -242,12 +251,14 @@ def main() -> int:
     train_dataset = LilyStandardDataset(
         train_path,
         tokenizer=tokenizer,
-        max_length=args.max_length
+        max_length=args.max_length,
+        mask_input=args.mask_input,
     )
     val_dataset = LilyStandardDataset(
         val_path,
         tokenizer=tokenizer,
-        max_length=args.max_length
+        max_length=args.max_length,
+        mask_input=args.mask_input,
     )
 
     print(f"[train_weighted] train samples: {len(train_dataset)}")
