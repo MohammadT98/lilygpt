@@ -42,7 +42,11 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
             stats["tuplets_removed"] += max(0, before["tuplets"] - after["tuplets"])
 
         # Stage 3: Prepend global structure to music variables
-        stage3 = structure_prepend.run(stage2, opts)
+        # Skip if \forma is referenced; Stage 4 will inline the full structure.
+        if re.search(r"\\forma\\b", stage2):
+            stage3 = stage2
+        else:
+            stage3 = structure_prepend.run(stage2, opts)
 
         # Stage 4: Inline forma into voices (remove parallel structure lane)
         stage4 = forma_inline.run(stage3, opts)
