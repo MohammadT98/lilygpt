@@ -19,7 +19,7 @@ class ParseOptions:
     resolve_transpose: bool = True
     expand_repeat_unfold: bool = True
     normalize_tuplets: bool = True
-    normalize_whitespace: bool = False
+    normalize_whitespace: bool = True
     preserve_linebreaks: bool = True
     canonicalize_chord_brackets: bool = True
 
@@ -343,6 +343,14 @@ def _run_lily_batch(
     return results
 
 
+def normalize_whitespace(source: str) -> str:
+    """Aggressive whitespace normalization: collapse all whitespace to single spaces."""
+    text = source.replace("\r\n", "\n").replace("\r", "\n")
+    lines = text.split("\n")
+    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in lines]
+    return "\n".join(lines).strip()
+
+
 RE_TRANSPOSE = re.compile(
     r"\\transpose\s+([^\s{}]+)\s+([^\s{}]+)\s*\{",
     re.I,
@@ -585,13 +593,6 @@ def expand_music_functions_with_lily(
     return "".join(output_parts), ok_count, fail_count
 
 
-def normalize_whitespace(source: str) -> str:
-    text = source.replace("\r\n", "\n").replace("\r", "\n")
-    lines = text.split("\n")
-    lines = [re.sub(r"[ \t]+", " ", line).strip() for line in lines]
-    return "\n".join(lines).strip()
-
-
 def process_string(
     src: str,
     lily_cmd: str,
@@ -649,7 +650,7 @@ except Exception:
         keep_engraving: bool = False
         strip_scheme_blocks: bool = True
         strip_comments: bool = True
-        normalize_whitespace: bool = False
+        normalize_whitespace: bool = True
         expand_music_functions: bool = True
         resolve_transpose: bool = True
         expand_repeat_unfold: bool = True
@@ -740,7 +741,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     add_onoff("resolve-transpose", "resolve_transpose", True)
     add_onoff("expand-repeat-unfold", "expand_repeat_unfold", True)
     add_onoff("normalize-tuplets", "normalize_tuplets", True)
-    add_onoff("normalize-whitespace", "normalize_whitespace", False)
+    add_onoff("normalize-whitespace", "normalize_whitespace", True)
     add_onoff("preserve-linebreaks", "preserve_linebreaks", True)
     add_onoff("canonicalize-chord-brackets", "canonicalize_chord_brackets", True)
 
