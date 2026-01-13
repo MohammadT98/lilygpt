@@ -18,7 +18,7 @@ source "$HOME/lilygpt/.venv/bin/activate"
 
 python - <<'PY'
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM, StoppingCriteria, StoppingCriteriaList
+from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
 
 BASE_MODEL = "openai/gpt-oss-20b"
@@ -26,20 +26,8 @@ LORA_PATH = "runs/lora_exp9_unweighted_eos_no_mask/final"
 OUT_PATH = "output/exp9_inference_test.ly"
 
 print("="*60)
-print("Testing exp9 (unweighted + EOS + NO input masking)")
+print("Testing exp9 (unweighted + EOS + NO input masking + ngram=3)")
 print("="*60)
-
-class BraceStoppingCriteria(StoppingCriteria):
-    def __init__(self, tokenizer, prompt_text):
-        self.tokenizer = tokenizer
-        self.initial_depth = prompt_text.count("{") - prompt_text.count("}")
-
-    def __call__(self, input_ids, scores, **kwargs):
-        if self.initial_depth <= 0:
-            return False
-        text = self.tokenizer.decode(input_ids[0], skip_special_tokens=True)
-        depth = text.count("{") - text.count("}")
-        return depth < self.initial_depth
 
 # Load tokenizer
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True)
@@ -69,19 +57,17 @@ print("\nGenerating...")
 inputs = tokenizer(prompt, return_tensors="pt")
 inputs = {k: v.to(next(model.parameters()).device) for k, v in inputs.items()}
 
-stopping = StoppingCriteriaList([BraceStoppingCriteria(tokenizer, prompt)])
-
-# Generate
+# Generate (CRITICAL: use no_repeat_ngram_size=3 for best musical quality)
 with torch.no_grad():
     out = model.generate(
         **inputs,
-        max_new_tokens=500,
+        max_new_tokens=3000,
         do_sample=True,
         temperature=0.7,
         top_p=0.9,
+        no_repeat_ngram_size=3,  # Optimal for Baroque music - prevents loops while allowing sequences
         eos_token_id=tokenizer.eos_token_id,
         pad_token_id=tokenizer.eos_token_id,
-        stopping_criteria=stopping,
     )
 
 # Decode
