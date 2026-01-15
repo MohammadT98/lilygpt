@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from .utils import grab_balanced
+
 RE_ASSIGNMENT = re.compile(
     r"(?m)^\s*([A-Za-z_@][\w@-]*)\s*=\s*(?:\\relative\b[^\n{]*\{|\{)"
 )
@@ -21,18 +23,6 @@ KEY_MODES = {
     "aeolian",
     "locrian",
 }
-
-
-def _grab_balanced(text: str, start: int, open_char: str = "{", close_char: str = "}") -> int:
-    depth = 1
-    for i in range(start + 1, len(text)):
-        if text[i] == open_char:
-            depth += 1
-        elif text[i] == close_char:
-            depth -= 1
-            if depth == 0:
-                return i
-    return -1
 
 
 def _extract_command(text: str, idx: int) -> tuple[str, int] | None:
@@ -117,7 +107,7 @@ def _extract_preferred_source(text: str) -> str:
         brace_start = text.find("{", match.end() - 1)
         if brace_start == -1:
             continue
-        brace_end = _grab_balanced(text, brace_start)
+        brace_end = grab_balanced(text, brace_start)
         if brace_end == -1:
             continue
         return text[brace_start + 1:brace_end]
@@ -128,7 +118,7 @@ def _extract_preferred_source(text: str) -> str:
         brace_start = text.find("{", match.end() - 1)
         if brace_start == -1:
             continue
-        brace_end = _grab_balanced(text, brace_start)
+        brace_end = grab_balanced(text, brace_start)
         if brace_end == -1:
             continue
         block = text[brace_start + 1:brace_end]
@@ -168,7 +158,7 @@ def run(text: str, _opts) -> str:
         brace_start = text.find("{", match.end() - 1)
         if brace_start == -1:
             continue
-        brace_end = _grab_balanced(text, brace_start)
+        brace_end = grab_balanced(text, brace_start)
         if brace_end == -1:
             continue
         out.append(text[cursor:brace_start + 1])
