@@ -87,6 +87,10 @@ python -m lilynorm.stages.training.train_weighted \
 
 SLURM job templates in `slurm/`.
 
+## Notebooks
+
+The `notebooks/` directory contains standalone prompt engineering experiments (zero-shot, few-shot, prompt configuration tests) for evaluating LLM generation capabilities. These are separate from the main normalization and training pipeline.
+
 ## Project structure
 
 ```
