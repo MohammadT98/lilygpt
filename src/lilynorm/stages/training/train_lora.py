@@ -13,7 +13,7 @@ from transformers import (
 )
 from peft import LoraConfig, get_peft_model, TaskType
 
-from lilynorm.stages.dataset.dataset_standard import (
+from lilynorm.stages.dataset.training_dataset import (
     LilyStandardDataset,
     collate_standard_batch
 )

@@ -1,6 +1,6 @@
 """Tokenization utilities and legacy dataset import path."""
 
-from lilynorm.stages.dataset.dataset_standard import (
+from lilynorm.stages.dataset.training_dataset import (
     LilyStandardDataset,
     StandardSample,
     collate_standard_batch,

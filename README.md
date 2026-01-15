@@ -87,7 +87,7 @@ src/lilynorm/
     tokenization/         - Tokenizer utilities
       special_tokens.py   - LilyPond special tokens
     dataset/              - Dataset loading for training
-      dataset_standard.py - Full-sequence dataset
+      training_dataset.py - Full-sequence dataset
     splitting/            - Train/val split
       build_splits.py
     training/             - LoRA fine-tuning
