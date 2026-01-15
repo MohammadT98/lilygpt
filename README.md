@@ -105,14 +105,6 @@ src/lilynorm/
     options.py            - Configuration
 ```
 
-## Configuration
-
-Normalization profiles in `configs/profiles/`:
-- `strict_strip.yaml` - Aggressive stripping
-- `keep_engraving.yaml` - Preserve more directives
-
-Default settings in `configs/defaults.yaml`.
-
 ## License
 
 MIT
