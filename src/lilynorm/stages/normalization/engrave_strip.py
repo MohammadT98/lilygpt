@@ -3,31 +3,7 @@ from __future__ import annotations
 import re
 import sys
 
-def _grab_balanced(text: str, start: int, open_char: str = "{", close_char: str = "}") -> int:
-    depth = 1
-    for i in range(start + 1, len(text)):
-        if text[i] == open_char:
-            depth += 1
-        elif text[i] == close_char:
-            depth -= 1
-            if depth == 0:
-                return i
-    return -1
-
-
-def _grab_angles(text: str, start: int) -> int:
-    depth = 1
-    i = start + 2
-    while i < len(text) and depth > 0:
-        if text.startswith("<<", i):
-            depth += 1
-            i += 2
-        elif text.startswith(">>", i):
-            depth -= 1
-            i += 2
-        else:
-            i += 1
-    return i if depth == 0 else -1
+from .utils import grab_balanced, grab_angles
 
 
 def _remove_metadata_headers(text: str) -> tuple[str, int]:
@@ -136,7 +112,7 @@ def _remove_block_commands(text: str) -> str:
 
             # Find matching closing brace
             brace_start = match.end() - 1
-            brace_end = _grab_balanced(text, brace_start, "{", "}")
+            brace_end = grab_balanced(text, brace_start, "{", "}")
 
             if brace_end != -1:
                 # Remove entire \\command{...} block
@@ -384,7 +360,7 @@ def _variable_contains_music(rhs_content: str) -> bool:
             break
 
         brace_start = match.end() - 1  # Position of opening brace
-        brace_end = _grab_balanced(content, brace_start, "{", "}")
+        brace_end = grab_balanced(content, brace_start, "{", "}")
 
         if brace_end != -1:
             content = content[:match.start()] + content[brace_end + 1:]
@@ -443,7 +419,7 @@ def _find_all_variable_assignments(text: str) -> list[tuple[int, int, str, str]]
                     m += 1
 
                 if m < n and text[m] == '{':
-                    brace_end = _grab_balanced(text, m, "{", "}")
+                    brace_end = grab_balanced(text, m, "{", "}")
                     end = brace_end + 1 if brace_end != -1 else m + 1
                 else:
                     end = text.find('\n', m)
@@ -456,14 +432,14 @@ def _find_all_variable_assignments(text: str) -> list[tuple[int, int, str, str]]
 
         # Block assignment: name = { ... }
         elif text[rhs] == '{':
-            brace_end = _grab_balanced(text, rhs, "{", "}")
+            brace_end = grab_balanced(text, rhs, "{", "}")
             end = brace_end + 1 if brace_end != -1 else rhs + 1
 
         # \relative, \transpose, etc.
         elif text.startswith("\\relative", rhs) or text.startswith("\\transpose", rhs):
             brace_pos = text.find('{', rhs)
             if brace_pos != -1:
-                brace_end = _grab_balanced(text, brace_pos, "{", "}")
+                brace_end = grab_balanced(text, brace_pos, "{", "}")
                 end = brace_end + 1 if brace_end != -1 else brace_pos + 1
             else:
                 end = text.find('\n', rhs)
@@ -472,7 +448,7 @@ def _find_all_variable_assignments(text: str) -> list[tuple[int, int, str, str]]
 
         # Angle brackets: name = << ... >>
         elif text.startswith("<<", rhs):
-            angle_end = _grab_angles(text, rhs)
+            angle_end = grab_angles(text, rhs)
             end = angle_end if angle_end != -1 else rhs + 2
 
         if end is not None:
