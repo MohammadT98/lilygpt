@@ -65,16 +65,6 @@ python -m lilynorm.stages.training.train_standard \
   --learning-rate 5e-5
 ```
 
-Weighted loss training (for structural tokens):
-```bash
-python -m lilynorm.stages.training.train_weighted \
-  --train data/splits_full/train.jsonl \
-  --val data/splits_full/val.jsonl \
-  --output-dir runs/experiment \
-  --structural-weight 5.0 \
-  --epochs 3
-```
-
 SLURM job templates in `slurm/`.
 
 ## Notebooks
