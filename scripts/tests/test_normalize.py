@@ -15,7 +15,6 @@ if src_dir.exists():
     sys.path.insert(0, str(src_dir))
 
 from lilynorm.stages.normalization import file_resolver, preparse, expand as expand_module
-from lilynorm.stages.normalization.file_resolver import split_on_multiple_forma
 from lilynorm.utils.options import NormOptions
 
 # Same blacklist as process_dataset.py
