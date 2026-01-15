@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import json
-import re
 import shutil
 import sys
 from pathlib import Path
@@ -15,8 +13,6 @@ if _src_dir.exists():
 
 from lilynorm.utils.options import NormOptions
 from lilynorm.normalize import normalize_file
-from lilynorm.stages import tokenization as tokenize_gpt
-from lilynorm.utils.formatting import format_full_text, format_example
 
 
 NAME_BLACKLIST = (
@@ -34,7 +30,7 @@ NAME_BLACKLIST = (
 )
 
 DEFAULT_NORMALIZED_OUT = "data/normalized_dataset"
-DEFAULT_TOKENIZED_OUT = "data/tokenized_dataset"
+
 
 class _Tee:
     def __init__(self, stream: TextIO, log_file: TextIO) -> None:
@@ -93,12 +89,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
              "(default: data/normalized_dataset).",
     )
     parser.add_argument(
-        "--tokenized-out",
-        default=DEFAULT_TOKENIZED_OUT,
-        help="Destination root for GPT-token files "
-             "(default: data/tokenized_dataset).",
-    )
-    parser.add_argument(
         "--dry-run",
         action="store_true",
         help="Scan and report which files would be processed without writing output.",
@@ -114,42 +104,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Keep files compilable with layout/midi/paper blocks. By default, files are stripped for ML training.",
     )
     parser.add_argument(
-        "--skip-tokenize",
-        action="store_true",
-        help="Do not produce GPT token files.",
-    )
-    parser.add_argument(
         "--mirror-variabili",
         action="store_true",
         help=(
             "Mirror variabili.ly files into normalized output so \\include continues to work. "
             "By default variabili.ly is NOT mirrored to keep training data clean."
         ),
-    )
-    parser.add_argument(
-        "--tokenizer-model",
-        default=tokenize_gpt.DEFAULT_MODEL_NAME,
-        help=(
-            "HuggingFace tokenizer to use for GPT tokenization "
-            "(default: openai/gpt-oss-20b)."
-        ),
-    )
-    parser.add_argument(
-        "--instruction-format",
-        choices=["none", "plain", "chatml"],
-        default="chatml",
-        help=(
-            "Wrap normalized music with instruction prompts for fine-tuning. "
-            "'none' = no wrapping (baseline); "
-            "'plain' = simple text prefix; "
-            "'chatml' = ChatML format with <|user|>/<|assistant|> tokens. "
-            "(default: chatml)"
-        ),
-    )
-    parser.add_argument(
-        "--instruction",
-        default="Generate LilyPond music notation.",
-        help="Instruction text to prepend when using --instruction-format. (default: 'Generate LilyPond music notation.')",
     )
 
     return parser
@@ -177,7 +137,6 @@ def main() -> int:
             return 2
 
         norm_root = Path(args.normalized_out).expanduser().resolve()
-        tok_root = Path(args.tokenized_out).expanduser().resolve()
 
         opts = NormOptions(keep_engraving=args.keep_compilable)
 
@@ -242,55 +201,6 @@ def main() -> int:
                 output_text = piece.lstrip() + "\n"
                 norm_path.write_text(output_text, encoding="utf-8")
 
-                if not args.skip_tokenize:
-                    text_to_tokenize = piece
-                    prompt_preview = ""
-                    prefix_token_count = 0
-                    if args.instruction_format != "none":
-                        text_to_tokenize = format_full_text(
-                            piece,
-                            instruction_format=args.instruction_format,
-                            instruction=args.instruction,
-                        )
-                        formatted = format_example(
-                            piece,
-                            instruction_format=args.instruction_format,
-                            instruction=args.instruction,
-                        )
-                        if isinstance(formatted, tuple):
-                            prompt_preview = formatted[0]
-                            prompt_tok = tokenize_gpt.tokenize_gpt.run(
-                                prompt_preview,
-                                model_name=args.tokenizer_model,
-                            )
-                            prefix_token_count = len(prompt_tok.get("input_ids", []))
-                        else:
-                            prompt_preview = args.instruction + "\n"
-                            prompt_tok = tokenize_gpt.tokenize_gpt.run(
-                                prompt_preview,
-                                model_name=args.tokenizer_model,
-                            )
-                            prefix_token_count = len(prompt_tok.get("input_ids", []))
-
-                    tok_info = tokenize_gpt.tokenize_gpt.run(
-                        text_to_tokenize,
-                        model_name=args.tokenizer_model,
-                    )
-                    tok_info["instruction_format"] = args.instruction_format
-                    tok_info["instruction"] = (
-                        args.instruction if args.instruction_format != "none" else None
-                    )
-                    tok_info["prompt_preview"] = prompt_preview
-                    tok_info["prefix_token_count"] = prefix_token_count
-
-                    tok_path = tok_root / norm_path.name
-                    tok_path = tok_path.with_suffix(".tokens.json")
-                    tok_path.parent.mkdir(parents=True, exist_ok=True)
-                    tok_path.write_text(
-                        json.dumps(tok_info) + "\n",
-                        encoding="utf-8",
-                    )
-
             processed += 1
 
         if not args.dry_run and args.mirror_variabili:
@@ -299,7 +209,6 @@ def main() -> int:
         print(
             f"[dataset] done. processed={processed} skipped={skipped} "
             f"normalized_out={norm_root}"
-            + ("" if args.skip_tokenize else f" tokenized_out={tok_root}")
         )
 
         print("--- Stage summaries ---")

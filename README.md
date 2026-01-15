@@ -31,16 +31,7 @@ Normalize LilyPond files:
 ```bash
 python -m lilynorm.cli \
   --input data/raw \
-  --normalized-out data/normalized \
-  --skip-tokenize
-```
-
-Full pipeline (normalize + tokenize):
-```bash
-python -m lilynorm.cli \
-  --input data/raw \
-  --normalized-out data/normalized \
-  --tokenized-out data/tokenized
+  --normalized-out data/normalized
 ```
 
 Generate full assignment dataset:
@@ -59,7 +50,6 @@ python src/lilynorm/stages/splitting/build_splits.py \
 
 Convenience scripts for Windows (in `bin/`):
 
-- `normalize_only.bat` - Normalization only
 - `run_full_pipeline.bat` - End-to-end pipeline
 
 ## Training
@@ -104,8 +94,7 @@ src/lilynorm/
       expand.py           - Expand relative/transpose/repeat
       engrave_strip.py    - Strip engraving directives
       postprocessing.py   - Fix malformed patterns
-    tokenization/         - GPT tokenization
-      tokenize_gpt.py     - Basic tokenization
+    tokenization/         - Dataset loading for training
       dataset_standard.py - Full-sequence dataset
     splitting/            - Train/val split
       build_splits.py
@@ -114,7 +103,6 @@ src/lilynorm/
       train_weighted.py   - Weighted loss training
   utils/
     options.py            - Configuration
-    formatting.py         - Output formatting
 ```
 
 ## Configuration
