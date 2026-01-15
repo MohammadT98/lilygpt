@@ -88,36 +88,6 @@ def _detect_note_language(source: str) -> Optional[str]:
     return None
 
 
-def _is_safe_music_expansion(text: str) -> bool:
-    if not text:
-        return False
-
-    forbidden = (
-        "\\markup",
-        "\\paper",
-        "\\header",
-        "\\layout",
-        "\\score",
-        "\\context",
-        "\\set",
-        "\\override",
-        "\\revert",
-        "\\lyricmode",
-        "#(",
-    )
-    if any(tok in text for tok in forbidden):
-        return False
-
-    note_re = re.compile(r"\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[',#isbf]*\d", re.I)
-    if not note_re.search(text):
-        return False
-
-    if "{}" in text or "{ }" in text:
-        return False
-
-    return True
-
-
 RE_DMF_HEADER = re.compile(
     r"(^|[\n;])\s*([A-Za-z][\w-]*)\s*=\s*#\(\s*define-music-function\b",
     re.S,
