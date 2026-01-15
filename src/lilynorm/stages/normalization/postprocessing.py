@@ -3,6 +3,9 @@ from __future__ import annotations
 import re
 from typing import Tuple
 
+from .utils import grab_balanced
+
+
 def apply_postprocessing_fixes(text: str) -> str:
     note = r"(?:do|re|mi|fa|sol|la|si|[a-gr])[a-z]*"
     solfege = r"(?:dod|red|mid|fad|sold|lad|sid|do|re|mi|fa|sol|la|si)"
@@ -200,18 +203,6 @@ def close_unclosed_braces(text: str) -> str:
     return "\n".join(out) + ("\n" if text.endswith("\n") else "")
 
 
-def _grab_balanced(text: str, start: int, open_char: str = "{", close_char: str = "}") -> int:
-    depth = 1
-    for i in range(start + 1, len(text)):
-        if text[i] == open_char:
-            depth += 1
-        elif text[i] == close_char:
-            depth -= 1
-            if depth == 0:
-                return i
-    return -1
-
-
 def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
     def _is_empty_content(content: str) -> bool:
         s = re.sub(r'\\clef\s+\w+', '', content)
@@ -245,7 +236,7 @@ def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
 
         var_name = match.group(1)
         if re.search(r"cadenza", var_name, re.I):
-            assignment_end = _grab_balanced(text, text.find("{", match.end() - 1))
+            assignment_end = grab_balanced(text, text.find("{", match.end() - 1))
             if assignment_end != -1:
                 assignment_end += 1
                 while assignment_end < len(text) and text[assignment_end] == '\n':
@@ -254,7 +245,7 @@ def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
             i = match.end()
             continue
         brace_start = text.find("{", match.end() - 1)
-        brace_end = _grab_balanced(text, brace_start)
+        brace_end = grab_balanced(text, brace_start)
 
         if brace_end != -1:
             body = text[brace_start + 1:brace_end]
