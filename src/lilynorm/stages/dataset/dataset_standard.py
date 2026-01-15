@@ -9,6 +9,8 @@ import torch
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
 
+from lilynorm.stages.tokenization.special_tokens import add_structural_tokens
+
 
 @dataclass
 class StandardSample:
@@ -28,11 +30,13 @@ class LilyStandardDataset(Dataset):
         tokenizer: PreTrainedTokenizer,
         max_length: int = 2048,
         mask_input: bool = False,
+        use_structural_tokens: bool = True,
     ):
         self.path = Path(jsonl_path)
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.mask_input = mask_input
+        self.use_structural_tokens = use_structural_tokens
 
         if not self.path.exists():
             raise FileNotFoundError(f"Dataset file not found: {self.path}")
@@ -58,6 +62,12 @@ class LilyStandardDataset(Dataset):
                 var_name = obj.get('var_name', '')
                 input_text = obj.get('input', '')
                 output_text = obj.get('output', '')
+
+                if self.use_structural_tokens:
+                    if input_text:
+                        input_text = add_structural_tokens(input_text)
+                    if output_text:
+                        output_text = add_structural_tokens(output_text)
 
                 full_text = input_text + output_text
 

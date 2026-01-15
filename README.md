@@ -84,7 +84,9 @@ src/lilynorm/
       expand.py           - Expand relative/transpose/repeat
       engrave_strip.py    - Strip engraving directives
       postprocessing.py   - Fix malformed patterns
-    tokenization/         - Dataset loading for training
+    tokenization/         - Tokenizer utilities
+      special_tokens.py   - LilyPond special tokens
+    dataset/              - Dataset loading for training
       dataset_standard.py - Full-sequence dataset
     splitting/            - Train/val split
       build_splits.py

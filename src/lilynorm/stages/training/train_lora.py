@@ -13,10 +13,11 @@ from transformers import (
 )
 from peft import LoraConfig, get_peft_model, TaskType
 
-from lilynorm.stages.tokenization.dataset_standard import (
+from lilynorm.stages.dataset.dataset_standard import (
     LilyStandardDataset,
     collate_standard_batch
 )
+from lilynorm.stages.tokenization.special_tokens import apply_special_tokens
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -77,6 +78,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--mask-input",
         action="store_true",
         help="Mask input tokens so loss is only on the output/completion.",
+    )
+    parser.add_argument(
+        "--no-structural-tokens",
+        action="store_true",
+        help="Disable structural token injection for key/time/tempo/voice.",
     )
     parser.add_argument(
         "--lora-r",
@@ -171,6 +177,13 @@ def main() -> int:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
+    use_structural_tokens = not args.no_structural_tokens
+    special_tokens_added = 0
+    if use_structural_tokens:
+        special_tokens_added = apply_special_tokens(tokenizer)
+        if special_tokens_added:
+            print(f"[train_lora] added {special_tokens_added} special tokens")
+
     pad_token_id = tokenizer.pad_token_id
     print(f"[train_lora] pad_token_id: {pad_token_id}")
 
@@ -183,12 +196,14 @@ def main() -> int:
         tokenizer=tokenizer,
         max_length=args.max_length,
         mask_input=args.mask_input,
+        use_structural_tokens=use_structural_tokens,
     )
     val_dataset = LilyStandardDataset(
         val_path,
         tokenizer=tokenizer,
         max_length=args.max_length,
         mask_input=args.mask_input,
+        use_structural_tokens=use_structural_tokens,
     )
 
     print(f"[train_lora] train samples: {len(train_dataset)}")
@@ -201,6 +216,9 @@ def main() -> int:
         device_map="auto",
         trust_remote_code=True,
     )
+    if special_tokens_added:
+        model.resize_token_embeddings(len(tokenizer))
+        print(f"[train_lora] resized token embeddings to {len(tokenizer)}")
 
     print(f"[train_lora] applying LoRA (r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout})")
     lora_config = LoraConfig(
