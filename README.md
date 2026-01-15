@@ -125,19 +125,6 @@ Normalization profiles in `configs/profiles/`:
 
 Default settings in `configs/defaults.yaml`.
 
-## Deprecated Methods
-
-Failed experimental approaches are preserved in `deprecated/` for research documentation:
-
-**Continuation method** (`deprecated/continuation_method/`) - Experiments 1-4
-- Approach: Three-way fragmentation of musical assignments (start/middle/near-end splits)
-- Outcome: Structural incompleteness (66% unclosed examples) resulted in invalid syntax generation
-- Status: Superseded by full assignment method (Experiments 5+)
-
-Refer to `deprecated/continuation_method/README.md` for detailed failure analysis.
-
-These implementations are maintained solely for thesis documentation and should not be used in production.
-
 ## License
 
 MIT
