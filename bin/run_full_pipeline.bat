@@ -22,7 +22,7 @@ echo ========================================
 echo STEP 2: Generate Full Assignment Examples
 echo ========================================
 echo.
-uv run python -m lilynorm.stages.dataset.prepare_full_assignment_dataset
+uv run python -m lilynorm.stages.dataset.build_full_assignment_dataset
 
 if errorlevel 1 (
     echo ERROR: Full assignment dataset preparation failed!

@@ -36,7 +36,7 @@ python -m lilynorm.cli \
 
 Generate full assignment dataset:
 ```bash
-python -m lilynorm.stages.dataset.prepare_full_assignment_dataset
+python -m lilynorm.stages.dataset.build_full_assignment_dataset
 ```
 
 Build train/val/test splits:
