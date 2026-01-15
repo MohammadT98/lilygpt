@@ -56,7 +56,7 @@ Convenience scripts for Windows (in `bin/`):
 
 Standard full-sequence training:
 ```bash
-python -m lilynorm.stages.training.train_standard \
+python -m lilynorm.stages.training.train_lora \
   --train data/splits_full/train.jsonl \
   --val data/splits_full/val.jsonl \
   --output-dir runs/experiment \
@@ -89,7 +89,7 @@ src/lilynorm/
     splitting/            - Train/val split
       build_splits.py
     training/             - LoRA fine-tuning
-      train_standard.py   - Standard training
+      train_lora.py       - LoRA training
       train_weighted.py   - Weighted loss training
   utils/
     options.py            - Configuration

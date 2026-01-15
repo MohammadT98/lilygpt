@@ -37,7 +37,7 @@ echo "=== Dataset ==="
 echo "Train/Val splits: data/splits_full"
 echo ""
 
-python -m lilynorm.stages.training.train_standard \
+python -m lilynorm.stages.training.train_lora \
     --train "data/splits_full/train.jsonl" \
     --val "data/splits_full/val.jsonl" \
     --output-dir "runs/lora_exp9_unweighted_eos_no_mask" \

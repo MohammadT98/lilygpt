@@ -1,3 +1,3 @@
 """Training stage: fine-tuning with LoRA."""
 
-__all__ = ["train_standard"]
+__all__ = ["train_lora"]

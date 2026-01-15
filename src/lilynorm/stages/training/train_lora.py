@@ -148,10 +148,10 @@ def main() -> int:
     output_dir = Path(args.output_dir).expanduser().resolve()
 
     if not train_path.exists():
-        print(f"[train_standard] train split not found: {train_path}", file=sys.stderr)
+        print(f"[train_lora] train split not found: {train_path}", file=sys.stderr)
         return 2
     if not val_path.exists():
-        print(f"[train_standard] val split not found: {val_path}", file=sys.stderr)
+        print(f"[train_lora] val split not found: {val_path}", file=sys.stderr)
         return 2
 
     print("="*80)
@@ -165,16 +165,16 @@ def main() -> int:
     print("="*80)
     print()
 
-    print(f"[train_standard] loading tokenizer: {args.model_name}")
+    print(f"[train_lora] loading tokenizer: {args.model_name}")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
 
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     pad_token_id = tokenizer.pad_token_id
-    print(f"[train_standard] pad_token_id: {pad_token_id}")
+    print(f"[train_lora] pad_token_id: {pad_token_id}")
 
-    print(f"[train_standard] loading datasets...")
+    print(f"[train_lora] loading datasets...")
     print(f"  train: {train_path}")
     print(f"  val:   {val_path}")
 
@@ -191,10 +191,10 @@ def main() -> int:
         mask_input=args.mask_input,
     )
 
-    print(f"[train_standard] train samples: {len(train_dataset)}")
-    print(f"[train_standard] val samples:   {len(val_dataset)}")
+    print(f"[train_lora] train samples: {len(train_dataset)}")
+    print(f"[train_lora] val samples:   {len(val_dataset)}")
 
-    print(f"[train_standard] loading model: {args.model_name}")
+    print(f"[train_lora] loading model: {args.model_name}")
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
         torch_dtype=torch.float16 if args.fp16 else (torch.bfloat16 if args.bf16 else torch.float32),
@@ -202,7 +202,7 @@ def main() -> int:
         trust_remote_code=True,
     )
 
-    print(f"[train_standard] applying LoRA (r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout})")
+    print(f"[train_lora] applying LoRA (r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout})")
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
         r=args.lora_r,
@@ -244,7 +244,7 @@ def main() -> int:
         ddp_find_unused_parameters=False,
     )
 
-    print("[train_standard] initializing Trainer...")
+    print("[train_lora] initializing Trainer...")
     trainer = Trainer(
         model=model,
         args=training_args,
@@ -253,19 +253,19 @@ def main() -> int:
         data_collator=collate_fn,
     )
 
-    print("[train_standard] starting training...")
+    print("[train_lora] starting training...")
     if args.resume_from_checkpoint:
-        print(f"[train_standard] resuming from checkpoint: {args.resume_from_checkpoint}")
+        print(f"[train_lora] resuming from checkpoint: {args.resume_from_checkpoint}")
         trainer.train(resume_from_checkpoint=args.resume_from_checkpoint)
     else:
         trainer.train()
 
     final_dir = output_dir / "final"
-    print(f"[train_standard] saving final model to {final_dir}")
+    print(f"[train_lora] saving final model to {final_dir}")
     trainer.save_model(str(final_dir))
     tokenizer.save_pretrained(str(final_dir))
 
-    print("[train_standard] ✅ training complete!")
+    print("[train_lora] ✅ training complete!")
     return 0
 
 
