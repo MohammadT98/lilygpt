@@ -33,15 +33,8 @@ NAME_BLACKLIST = (
     "violoncello",
 )
 
-ITALIAN_SOLFEGE = ("do", "re", "mi", "fa", "sol", "la", "si")
-DEFAULT_VERSION = "2.24.0"
 DEFAULT_NORMALIZED_OUT = "data/normalized_dataset"
 DEFAULT_TOKENIZED_OUT = "data/tokenized_dataset"
-
-VERSION_DECL_RE = re.compile(r"\\version\s+\"([^\"]+)\"", re.I)
-LANGUAGE_DECL_RE = re.compile(r"\\language\s+\"([^\"]+)\"", re.I)
-VARIABILI_INCLUDE_RE = re.compile(r"\\include\s+\"([^\"]*variabili[^\"]*)\"", re.I)
-RELATIVE_LANG_RE = re.compile(r"\\relative\s+([^\s{]+)", re.I)
 
 class _Tee:
     def __init__(self, stream: TextIO, log_file: TextIO) -> None:
@@ -73,38 +66,6 @@ def should_process(path: Path, text: str) -> bool:
         return True
 
     return False
-
-
-def _read_header_metadata(work_dir: Path) -> tuple[str | None, str | None, str | None]:
-    version: str | None = None
-    language: str | None = None
-    variabili_include: str | None = None
-
-    for header in sorted(work_dir.glob("*header*.ly")):
-        try:
-            text = header.read_text(encoding="utf-8", errors="ignore")
-        except OSError:
-            continue
-
-        if version is None:
-            match = VERSION_DECL_RE.search(text)
-            if match:
-                version = match.group(1)
-
-        if language is None:
-            match = LANGUAGE_DECL_RE.search(text)
-            if match:
-                language = match.group(1)
-
-        if variabili_include is None:
-            match = VARIABILI_INCLUDE_RE.search(text)
-            if match:
-                variabili_include = match.group(1)
-
-        if version and language and variabili_include:
-            break
-
-    return version, language, variabili_include
 
 
 def _copy_variabili_files(input_root: Path, output_root: Path) -> None:
@@ -266,10 +227,6 @@ def main() -> int:
                 )
                 stats["lily_fail"] += 1
                 continue
-
-            header_version, header_language, variabili_include = _read_header_metadata(
-                src.parent
-            )
 
             if args.dry_run:
                 processed += 1
