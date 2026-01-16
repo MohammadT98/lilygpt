@@ -141,6 +141,8 @@ def _final_cleanup(text: str) -> tuple[str, int]:
     text = re.sub(r'(?m)^\s*alignAboveContext\s*=.*$', '', text)
     text = re.sub(r'(?m)^.*StaffSymbol\s*=.*$', '', text)
     text = re.sub(r'StaffSymbol\s*=\s*#\([^)]*\)', '', text)
+    text = re.sub(r'(?m)^\s*[A-Za-z_][\w-]*\.[\w.-]+\s*=\s*$', '', text)
+    text = re.sub(r'(?m)^\s*TupletBracket\s*=\s*$', '', text)
 
     text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
 
@@ -263,6 +265,8 @@ def _final_cleanup(text: str) -> tuple[str, int]:
     # Remove corrupted structural lines with key/time/tempo (they're already in forma variables)
     # Pattern: lines starting with context names (PianoStaff, Staff, Voice, etc.) followed by <<
     text = re.sub(r'(?m)^\s*(?:PianoStaff|Staff|Voice|StaffGroup|ChoirStaff)\s+<<.*$', '', text)
+    text = re.sub(r'(?m)^\s*Score\.[^\n]*$', '', text)
+    text = re.sub(r'(?m)^\s*TupletBracket(?:\.[^\n]*)?\s*=\s*.*$', '', text)
 
     return text, whitelist_removed
 
@@ -286,11 +290,6 @@ def _variable_contains_music(rhs_content: str) -> bool:
         else:
             content = content[:match.start()] + content[match.end():]
             break
-
-    # Check for musical metadata (key/time/tempo signatures)
-    metadata_pattern = r'\\(?:key|time|tempo)\b'
-    if re.search(metadata_pattern, content, re.I):
-        return True
 
     note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[is|es|isbf|esbf]*[,\']*\d'
     if re.search(note_pattern, content, re.I):
