@@ -294,41 +294,25 @@ wheels = [
 name = "lilynorm"
 version = "0.1.0"
 source = { editable = "." }
-dependencies = [
-    { name = "peft" },
-    { name = "torch" },
-    { name = "transformers" },
-]
 
 [package.optional-dependencies]
-full = [
-    { name = "accelerate" },
-    { name = "peft" },
-    { name = "tensorboard" },
-    { name = "torch" },
-]
 train = [
     { name = "accelerate" },
     { name = "peft" },
     { name = "tensorboard" },
     { name = "torch" },
+    { name = "transformers" },
 ]
 
 [package.metadata]
 requires-dist = [
-    { name = "accelerate", marker = "extra == 'full'", specifier = ">=0.20" },
     { name = "accelerate", marker = "extra == 'train'", specifier = ">=0.20" },
-    { name = "peft", specifier = ">=0.4" },
-    { name = "peft", marker = "extra == 'full'", specifier = ">=0.4" },
     { name = "peft", marker = "extra == 'train'", specifier = ">=0.4" },
-    { name = "tensorboard", marker = "extra == 'full'", specifier = ">=2.13" },
     { name = "tensorboard", marker = "extra == 'train'", specifier = ">=2.13" },
-    { name = "torch", specifier = ">=2.0" },
-    { name = "torch", marker = "extra == 'full'", specifier = ">=2.0" },
     { name = "torch", marker = "extra == 'train'", specifier = ">=2.0" },
-    { name = "transformers", specifier = ">=4.40" },
+    { name = "transformers", marker = "extra == 'train'", specifier = ">=4.40" },
 ]
-provides-extras = ["train", "full"]
+provides-extras = ["train"]
 
 [[package]]
 name = "markdown"
