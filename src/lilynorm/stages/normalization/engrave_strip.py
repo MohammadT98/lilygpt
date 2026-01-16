@@ -18,6 +18,8 @@ def _remove_block_commands(text: str) -> str:
     block_commands = [
         'incipit',
         'with',
+        'figures',
+        'figuremode',
     ]
 
     for cmd in block_commands:
