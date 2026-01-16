@@ -35,6 +35,7 @@ VOICE_MAP = {
 
 
 def add_structural_tokens(text: str) -> str:
+    """Insert structural tokens for key, time, tempo, voice, and bars."""
     text = RE_KEY_SIG.sub(
         lambda m: f"{KEY_TOKEN}{m.group(1)}_{m.group(2)}{CLOSE_TOKEN}",
         text,
@@ -56,20 +57,21 @@ def add_structural_tokens(text: str) -> str:
 
 
 def add_voice_label(text: str, var_name: str | None) -> str:
+    """Prefix a block with a voice label derived from the variable name."""
     if not text or not var_name:
         return text
 
     if var_name.lower().endswith("global"):
         return text
 
-    stripped = text.lstrip()
-    if stripped.startswith(VOICE_TOKEN):
+    if text.lstrip().startswith(VOICE_TOKEN):
         return text
 
     return f"{VOICE_TOKEN}{var_name}{CLOSE_TOKEN} {text}"
 
 
 def build_special_tokens(extra_tokens: Iterable[str] | None = None) -> list[str]:
+    """Return a de-duplicated list of special tokens."""
     tokens = list(DEFAULT_SPECIAL_TOKENS)
     if extra_tokens:
         tokens.extend(extra_tokens)
@@ -88,6 +90,7 @@ def apply_special_tokens(
     tokenizer: PreTrainedTokenizer,
     extra_tokens: Iterable[str] | None = None,
 ) -> int:
+    """Register special tokens on the tokenizer."""
     tokens = build_special_tokens(extra_tokens)
     if not tokens:
         return 0

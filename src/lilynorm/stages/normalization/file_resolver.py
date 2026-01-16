@@ -1,3 +1,5 @@
+"""Resolve LilyPond \\include directives and split multi-forma files."""
+
 from __future__ import annotations
 
 import re
@@ -7,24 +9,40 @@ from pathlib import Path
 from typing import Optional
 
 INCLUDE_RE = re.compile(r'\\include\s+"([^"]+)"', re.I)
+FORMA_RE = re.compile(r"(?m)^forma\s*=\s*\{")
+LANG_FILES = {
+    "italiano",
+    "english",
+    "deutsch",
+    "francais",
+    "espanol",
+    "nederlands",
+    "norsk",
+    "suomi",
+    "svenska",
+    "vlaams",
+}
+
 
 class FileResolver:
+    """Resolve \\include directives with caching and recursion guards."""
+
     def __init__(self, base_dir: Path, max_depth: int = 10, exclude_pattern: Optional[str] = None):
         self.base_dir = Path(base_dir)
         self.max_depth = max_depth
         self.exclude_pattern = re.compile(exclude_pattern, re.I) if exclude_pattern else None
-        self.resolved_cache = {}
-        self.in_progress = set()
+        self.resolved_cache: dict[str, str] = {}
+        self.in_progress: set[str] = set()
 
     def _find_include_file(self, include_path: str) -> Optional[Path]:
-        for base in [self.base_dir, self.base_dir.parent]:
+        for base in (self.base_dir, self.base_dir.parent):
             candidate = base / include_path
             if candidate.exists():
                 return candidate
 
         include_norm = unicodedata.normalize("NFC", include_path)
         if include_norm != include_path:
-            for base in [self.base_dir, self.base_dir.parent]:
+            for base in (self.base_dir, self.base_dir.parent):
                 candidate = base / include_norm
                 if candidate.exists():
                     return candidate
@@ -39,7 +57,6 @@ class FileResolver:
             return file_path.read_text(encoding="utf-8", errors="ignore")
 
         file_key = str(file_path.resolve())
-
         if file_key in self.resolved_cache:
             return self.resolved_cache[file_key]
 
@@ -48,7 +65,6 @@ class FileResolver:
             return ""
 
         self.in_progress.add(file_key)
-
         try:
             content = file_path.read_text(encoding="utf-8", errors="ignore")
 
@@ -62,10 +78,12 @@ class FileResolver:
                     include_name = Path(include_path).name
                     if include_name.lower().endswith(".ly"):
                         lang = include_name.rsplit(".", 1)[0].lower()
-                        lang_map = {"italiano", "english", "deutsch", "francais", "espanol", "nederlands", "norsk", "suomi", "svenska", "vlaams"}
-                        if lang in lang_map:
+                        if lang in LANG_FILES:
                             return f'\\language "{lang}"'
-                    print(f"warning: Include file not found: {include_path} (from {file_path})", file=sys.stderr)
+                    print(
+                        f"warning: Include file not found: {include_path} (from {file_path})",
+                        file=sys.stderr,
+                    )
                     return match.group(0)
 
                 return self._resolve_recursive(resolved_file, depth + 1)
@@ -73,17 +91,23 @@ class FileResolver:
             resolved = INCLUDE_RE.sub(replace_include, content)
             self.resolved_cache[file_key] = resolved
             return resolved
-
         finally:
             self.in_progress.discard(file_key)
 
     def resolve(self, file_path: Path) -> str:
+        """Resolve all includes in the given file."""
         self.resolved_cache.clear()
         self.in_progress.clear()
         return self._resolve_recursive(file_path)
 
 
-def run(file_path: Path, base_dir: Optional[Path] = None, exclude_variabili: bool = False, split_forma: bool = True) -> list[str]:
+def run(
+    file_path: Path,
+    base_dir: Optional[Path] = None,
+    exclude_variabili: bool = False,
+    split_forma: bool = True,
+) -> list[str]:
+    """Resolve includes and optionally split files with multiple forma blocks."""
     base_dir = base_dir or file_path.parent
     exclude_pattern = "variabili" if exclude_variabili else None
     resolver = FileResolver(base_dir, exclude_pattern=exclude_pattern)
@@ -92,7 +116,8 @@ def run(file_path: Path, base_dir: Optional[Path] = None, exclude_variabili: boo
 
 
 def split_on_multiple_forma(text: str) -> list[str]:
-    matches = list(re.finditer(r"(?m)^forma\s*=\s*\{", text))
+    """Split a file into multiple pieces when it defines several forma blocks."""
+    matches = list(FORMA_RE.finditer(text))
     if len(matches) <= 1:
         return [text]
 
@@ -117,4 +142,9 @@ def split_on_multiple_forma(text: str) -> list[str]:
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         pieces.append(prefix + text[start:end] + suffix)
 
-    return [re.sub(r'(?m)^\s*\\version\s+"[^"]+"\s*\r?\n?', "", p).lstrip() for p in pieces]
+    cleaned = []
+    for piece in pieces:
+        piece = re.sub(r'(?m)^\s*\\version\s+"[^"]+"\s*\r?\n?', "", piece)
+        cleaned.append(piece.lstrip())
+
+    return cleaned

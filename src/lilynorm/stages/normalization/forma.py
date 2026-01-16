@@ -1,3 +1,5 @@
+"""Inject or inline forma structure into LilyPond assignment blocks."""
+
 from __future__ import annotations
 
 import re
@@ -9,9 +11,7 @@ RE_ASSIGNMENT = re.compile(
 )
 RE_ASSIGN_NAME = re.compile(r"(?m)^\s*([A-Za-z_@][\w@-]*)\s*=\s*\{")
 RE_COMMAND = re.compile(r"\\(key|time|tempo|partial)\b", re.I)
-RE_NOTE = re.compile(
-    r"\b(?:do|re|mi|fa|sol|la|si|[a-g]|r|R)[isbfes']*\d*\b", re.I
-)
+RE_NOTE = re.compile(r"\b(?:do|re|mi|fa|sol|la|si|[a-g]|r|R)[isbfes']*\d*\b", re.I)
 KEY_MODES = {
     "major",
     "minor",
@@ -39,7 +39,18 @@ SEMANTIC_CMD_RE = re.compile(
 SKIP_RE = re.compile(r"\bs[0-9.']*(?:\*\d+)?\b")
 
 
+def _find_brace_block(text: str, start: int) -> tuple[int, int] | None:
+    brace_start = text.find("{", start)
+    if brace_start == -1:
+        return None
+    brace_end = grab_balanced(text, brace_start)
+    if brace_end == -1:
+        return None
+    return brace_start, brace_end
+
+
 def _extract_command(text: str, idx: int) -> tuple[str, int] | None:
+    """Extract a structural command and the next cursor position."""
     match = RE_COMMAND.match(text, idx)
     if not match:
         return None
@@ -93,6 +104,7 @@ def _extract_command(text: str, idx: int) -> tuple[str, int] | None:
 
 
 def _extract_structure(text: str) -> str:
+    """Return the first occurrences of key/time/tempo/partial commands."""
     structure: list[str] = []
     seen = set()
     i = 0
@@ -114,27 +126,24 @@ def _extract_structure(text: str) -> str:
 
 
 def _extract_preferred_source(text: str) -> str:
+    """Pick the most relevant block to extract structure from."""
     for match in RE_ASSIGN_NAME.finditer(text):
         if match.group(1).lower() != "forma":
             continue
-        brace_start = text.find("{", match.end() - 1)
-        if brace_start == -1:
+        bounds = _find_brace_block(text, match.end() - 1)
+        if not bounds:
             continue
-        brace_end = grab_balanced(text, brace_start)
-        if brace_end == -1:
-            continue
-        return text[brace_start + 1:brace_end]
+        brace_start, brace_end = bounds
+        return text[brace_start + 1 : brace_end]
 
     for match in RE_ASSIGN_NAME.finditer(text):
         if not match.group(1).lower().endswith("global"):
             continue
-        brace_start = text.find("{", match.end() - 1)
-        if brace_start == -1:
+        bounds = _find_brace_block(text, match.end() - 1)
+        if not bounds:
             continue
-        brace_end = grab_balanced(text, brace_start)
-        if brace_end == -1:
-            continue
-        block = text[brace_start + 1:brace_end]
+        brace_start, brace_end = bounds
+        block = text[brace_start + 1 : brace_end]
         if RE_COMMAND.search(block):
             return block
 
@@ -142,6 +151,7 @@ def _extract_preferred_source(text: str) -> str:
 
 
 def _should_prepend(block: str) -> bool:
+    """Return True when a block starts with notes before structure."""
     note_match = RE_NOTE.search(block)
     if not note_match:
         return False
@@ -152,6 +162,7 @@ def _should_prepend(block: str) -> bool:
 
 
 def prepend_structure(text: str, _opts) -> str:
+    """Prepend structure tokens into assignment blocks when needed."""
     source = _extract_preferred_source(text)
     structure = _extract_structure(source)
     if structure:
@@ -168,14 +179,12 @@ def prepend_structure(text: str, _opts) -> str:
         lower_name = var_name.lower()
         if lower_name == "forma" or lower_name.endswith("global"):
             continue
-        brace_start = text.find("{", match.end() - 1)
-        if brace_start == -1:
+        bounds = _find_brace_block(text, match.end() - 1)
+        if not bounds:
             continue
-        brace_end = grab_balanced(text, brace_start)
-        if brace_end == -1:
-            continue
-        out.append(text[cursor:brace_start + 1])
-        block = text[brace_start + 1:brace_end]
+        brace_start, brace_end = bounds
+        out.append(text[cursor : brace_start + 1])
+        block = text[brace_start + 1 : brace_end]
         if _should_prepend(block):
             prefix = "\n" if block.startswith("\n") else " "
             block = f"{prefix}{structure}\n{block.lstrip()}"
@@ -186,6 +195,7 @@ def prepend_structure(text: str, _opts) -> str:
 
 
 def _extract_forma(text: str) -> tuple[str | None, tuple[int, int] | None]:
+    """Return the forma body and its span in the source text."""
     match = FORMA_START.search(text)
     if not match:
         return None, None
@@ -197,6 +207,7 @@ def _extract_forma(text: str) -> tuple[str | None, tuple[int, int] | None]:
 
 
 def _strip_skips_and_layout(forma_body: str) -> str:
+    """Keep only semantic commands, stripping skips and layout markers."""
     parts: list[str] = []
     tokens = forma_body.splitlines()
     for line in tokens:
@@ -212,6 +223,7 @@ def _strip_skips_and_layout(forma_body: str) -> str:
 
 
 def _split_simul_block(block: str) -> list[str]:
+    """Split a simultaneous block into top-level chunks."""
     chunks: list[str] = []
     i = 0
     n = len(block)
@@ -247,6 +259,7 @@ def _split_simul_block(block: str) -> list[str]:
 
 
 def _inline_forma_in_simul(text: str, forma_semantics: str) -> str:
+    """Inline forma semantics into simultaneous voice blocks."""
     if not forma_semantics:
         return text
     out: list[str] = []
@@ -278,6 +291,7 @@ def _inline_forma_in_simul(text: str, forma_semantics: str) -> str:
 
 
 def _remove_forma_assignment(text: str, forma_span: tuple[int, int] | None) -> str:
+    """Remove the original forma assignment after inlining."""
     if not forma_span:
         return text
     start, end = forma_span
@@ -289,6 +303,7 @@ def _remove_forma_assignment(text: str, forma_span: tuple[int, int] | None) -> s
 
 
 def inline_forma(text: str, _opts) -> str:
+    """Inline forma semantics and drop the original forma block."""
     forma_body, forma_span = _extract_forma(text)
     if not forma_body:
         return text

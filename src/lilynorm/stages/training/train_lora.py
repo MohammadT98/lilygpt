@@ -1,26 +1,26 @@
 from __future__ import annotations
 
+"""Train a causal language model on LilyPond data using LoRA adapters."""
+
 import argparse
 import sys
 from pathlib import Path
 
 import torch
-from transformers import (
-    AutoModelForCausalLM,
-    AutoTokenizer,
-    TrainingArguments,
-    Trainer,
-)
-from peft import LoraConfig, get_peft_model, TaskType
+from peft import LoraConfig, TaskType, get_peft_model
+from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
 
 from lilynorm.stages.dataset.training_dataset import (
     LilyStandardDataset,
-    collate_standard_batch
+    collate_standard_batch,
 )
 from lilynorm.stages.tokenization.special_tokens import apply_special_tokens
 
+BANNER_LINE = "=" * 80
+
 
 def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the CLI parser for LoRA training."""
     parser = argparse.ArgumentParser(
         description="Train GPT-OSS-20B on LilyPond data with LoRA (STANDARD approach - no masking)."
     )
@@ -146,12 +146,38 @@ def build_arg_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _print_training_banner(mask_input: bool) -> None:
+    print(BANNER_LINE)
+    print("STANDARD TRAINING APPROACH (No Loss Masking)")
+    print(BANNER_LINE)
+    if mask_input:
+        print("This trains with INPUT MASKING (loss only on the output/completion).")
+    else:
+        print("This trains on FULL sequences (all tokens contribute to loss).")
+    print("This is the standard approach for domain adaptation and code generation.")
+    print(BANNER_LINE)
+    print()
+
+
+def _resolve_path(path: str) -> Path:
+    return Path(path).expanduser().resolve()
+
+
+def _torch_dtype(fp16: bool, bf16: bool) -> torch.dtype:
+    if fp16:
+        return torch.float16
+    if bf16:
+        return torch.bfloat16
+    return torch.float32
+
+
 def main() -> int:
+    """Run LoRA training for a LilyPond dataset split."""
     args = build_arg_parser().parse_args()
 
-    train_path = Path(args.train).expanduser().resolve()
-    val_path = Path(args.val).expanduser().resolve()
-    output_dir = Path(args.output_dir).expanduser().resolve()
+    train_path = _resolve_path(args.train)
+    val_path = _resolve_path(args.val)
+    output_dir = _resolve_path(args.output_dir)
 
     if not train_path.exists():
         print(f"[train_lora] train split not found: {train_path}", file=sys.stderr)
@@ -160,20 +186,10 @@ def main() -> int:
         print(f"[train_lora] val split not found: {val_path}", file=sys.stderr)
         return 2
 
-    print("="*80)
-    print("STANDARD TRAINING APPROACH (No Loss Masking)")
-    print("="*80)
-    if args.mask_input:
-        print("This trains with INPUT MASKING (loss only on the output/completion).")
-    else:
-        print("This trains on FULL sequences (all tokens contribute to loss).")
-    print("This is the standard approach for domain adaptation and code generation.")
-    print("="*80)
-    print()
+    _print_training_banner(args.mask_input)
 
     print(f"[train_lora] loading tokenizer: {args.model_name}")
     tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
-
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -187,7 +203,7 @@ def main() -> int:
     pad_token_id = tokenizer.pad_token_id
     print(f"[train_lora] pad_token_id: {pad_token_id}")
 
-    print(f"[train_lora] loading datasets...")
+    print("[train_lora] loading datasets...")
     print(f"  train: {train_path}")
     print(f"  val:   {val_path}")
 
@@ -212,7 +228,7 @@ def main() -> int:
     print(f"[train_lora] loading model: {args.model_name}")
     model = AutoModelForCausalLM.from_pretrained(
         args.model_name,
-        torch_dtype=torch.float16 if args.fp16 else (torch.bfloat16 if args.bf16 else torch.float32),
+        torch_dtype=_torch_dtype(args.fp16, args.bf16),
         device_map="auto",
         trust_remote_code=True,
     )
@@ -220,13 +236,16 @@ def main() -> int:
         model.resize_token_embeddings(len(tokenizer))
         print(f"[train_lora] resized token embeddings to {len(tokenizer)}")
 
-    print(f"[train_lora] applying LoRA (r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout})")
+    print(
+        "[train_lora] applying LoRA "
+        f"(r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout})"
+    )
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
-        target_modules="all-linear",  # Apply to all linear layers
+        target_modules="all-linear",  # Apply to all linear layers.
         bias="none",
     )
     model = get_peft_model(model, lora_config)

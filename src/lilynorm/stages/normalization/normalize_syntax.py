@@ -1,20 +1,23 @@
-import re
-import sys
-import os
+"""Normalize LilyPond syntax using safe, lossless transformations."""
+
+import argparse
 import json
+import os
+import re
 import shutil
 import subprocess
+import sys
 import tempfile
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 from typing import Optional
-from dataclasses import dataclass, asdict, field, fields
-import argparse
 
 DEFAULT_LILYPOND_PATH = r"C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe"
 
 
 @dataclass
 class ParseOptions:
+    """Options that control normalization steps."""
     expand_music_functions: bool = True
     resolve_transpose: bool = True
     expand_repeat_unfold: bool = True
@@ -29,6 +32,7 @@ _DEFAULT_PARSE_OPTIONS = ParseOptions()
 
 @dataclass
 class ParseReport:
+    """Summary counters for normalization steps."""
     transpose_blocks: int = 0
     repeats_unfolded: int = 0
     tuplets_normalized: int = 0
@@ -63,6 +67,7 @@ def _grab_angles(s: str, start_index: int) -> int:
 
 
 def lily_available(lily_cmd: str) -> bool:
+    """Return True if the LilyPond executable is callable."""
     try:
         result = subprocess.run([lily_cmd, "--version"], capture_output=True, text=True, timeout=5)
         return result.returncode == 0
@@ -71,6 +76,7 @@ def lily_available(lily_cmd: str) -> bool:
 
 
 def resolve_lily_cmd() -> str:
+    """Resolve a runnable LilyPond executable path."""
     for candidate in [shutil.which("lilypond"), os.environ.get("LILYPOND_BIN"), DEFAULT_LILYPOND_PATH]:
         if candidate and lily_available(candidate):
             return candidate
@@ -210,6 +216,7 @@ def _run_lily_batch(
     preserve_linebreaks: bool,
     preamble: str = "",
 ) -> list[Optional[str]]:
+    """Evaluate multiple LilyPond blocks and return normalized text per block."""
     parts: list[str] = []
     if preamble:
         parts.append(preamble)
@@ -313,7 +320,7 @@ def _run_lily_batch(
 
 
 def normalize_whitespace(source: str) -> str:
-    """Aggressive whitespace normalization: collapse all whitespace to single spaces."""
+    """Collapse whitespace in each line to single spaces."""
     text = source.replace("\r\n", "\n").replace("\r", "\n")
     lines = text.split("\n")
     lines = [re.sub(r"[ \t]+", " ", line).strip() for line in lines]
@@ -349,6 +356,7 @@ def resolve_transpose_with_lily_batched(
     *,
     preserve_linebreaks: bool,
 ) -> tuple[str, int, int]:
+    """Resolve \\transpose blocks using LilyPond and return counts."""
     blocks = _find_transpose_blocks(source)
     if not blocks:
         return source, 0, 0
@@ -423,6 +431,7 @@ def expand_repeat_unfold(
     *,
     max_passes: int = 8,
 ) -> tuple[str, int]:
+    """Expand \\repeat unfold blocks up to a fixed number of passes."""
     total_expanded = 0
     current = source
 
@@ -472,6 +481,7 @@ def _dedupe_nested_tuplets_once(text: str) -> tuple[str, int]:
 
 
 def normalize_tuplets(source: str) -> tuple[str, int]:
+    """Normalize tuplet syntax and return the number of changes."""
     total_changes = 0
     text = source
 
@@ -526,6 +536,7 @@ def expand_music_functions_with_lily(
     *,
     preserve_linebreaks: bool,
 ) -> tuple[str, int, int]:
+    """Expand user-defined music functions via LilyPond."""
     func_names = _collect_music_function_names(source)
     if not func_names:
         return source, 0, 0
@@ -567,6 +578,7 @@ def process_string(
     lily_cmd: str,
     opts: ParseOptions,
 ) -> tuple[str, ParseReport]:
+    """Apply normalization steps to a LilyPond source string."""
     report = ParseReport()
     text = src
 
@@ -629,6 +641,7 @@ except Exception:
 
 
 def _map_options(norm_opts: "NormOptions") -> ParseOptions:
+    """Convert NormOptions into ParseOptions with defaults."""
     defaults = _DEFAULT_PARSE_OPTIONS
     values = {
         field_def.name: getattr(norm_opts, field_def.name, getattr(defaults, field_def.name))
@@ -640,6 +653,7 @@ def _map_options(norm_opts: "NormOptions") -> ParseOptions:
 
 
 def run(text: str, opts: "NormOptions") -> str:
+    """Normalize LilyPond syntax using settings from NormOptions."""
     lily_cmd = resolve_lily_cmd()
     parse_opts = _map_options(opts)
 
@@ -667,6 +681,7 @@ def run(text: str, opts: "NormOptions") -> str:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser."""
     parser = argparse.ArgumentParser(
         description="Standalone LilyPond lossless normalizer.",
     )
@@ -718,10 +733,9 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
-
+    """CLI entry point for standalone normalization."""
     parser = build_arg_parser()
     args = parser.parse_args()
-
 
     in_path = Path(args.inp)
     if not in_path.exists():

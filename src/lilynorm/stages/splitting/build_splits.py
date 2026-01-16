@@ -1,4 +1,4 @@
-# python -m scripts.build_splits
+"""Create train/val/test splits without cross-work leakage."""
 
 from __future__ import annotations
 
@@ -19,16 +19,19 @@ DEFAULT_SEED = 42
 
 @dataclass
 class Sample:
+    """Lightweight wrapper for JSONL samples."""
     id: str
     source_file: str | None
     raw_data: Dict[str, Any]
 
 
 def _get_base_work(source_file: str) -> str:
+    """Strip part suffixes to group parts from the same work."""
     return re.sub(r'_part\d+$', '', source_file)
 
 
 def _load_from_jsonl(jsonl_path: Path) -> List[Sample]:
+    """Load samples from a JSONL dataset."""
     samples: List[Sample] = []
 
     with jsonl_path.open("r", encoding="utf-8") as f:
@@ -67,6 +70,7 @@ def _train_val_test_split(
     val_ratio: float,
     seed: int,
 ) -> tuple[List[Sample], List[Sample], List[Sample]]:
+    """Split samples by base work to avoid leakage."""
     rng = random.Random(seed)
 
     work_to_samples: Dict[str, List[Sample]] = {}
@@ -123,6 +127,7 @@ def _train_val_test_split(
 
 
 def _write_jsonl(samples: List[Sample], path: Path) -> None:
+    """Write samples to a JSONL file."""
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("w", encoding="utf-8") as f:
         for s in samples:
@@ -130,6 +135,7 @@ def _write_jsonl(samples: List[Sample], path: Path) -> None:
 
 
 def _print_stats(name: str, samples: List[Sample]) -> None:
+    """Print a brief summary of the split."""
     if not samples:
         print(f"[build_splits] {name}: empty")
         return
@@ -139,6 +145,7 @@ def _print_stats(name: str, samples: List[Sample]) -> None:
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser."""
     parser = argparse.ArgumentParser(description="Split dataset by base work to avoid leakage")
     parser.add_argument("--input-jsonl", default=DEFAULT_INPUT_JSONL)
     parser.add_argument("--output-dir", default=DEFAULT_OUTPUT_DIR)
@@ -149,6 +156,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """CLI entry point for dataset splitting."""
     args = build_arg_parser().parse_args()
 
     input_jsonl = Path(args.input_jsonl).expanduser().resolve()

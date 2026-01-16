@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+"""CLI entry point for normalizing LilyPond datasets."""
+
 import argparse
 import shutil
 import sys
@@ -11,9 +13,12 @@ _src_dir = _repo_root / "src"
 if _src_dir.exists():
     sys.path.insert(0, str(_src_dir))
 
-from lilynorm.utils.options import NormOptions
 from lilynorm.normalize import normalize_file
+from lilynorm.utils.options import NormOptions
 
+DEFAULT_NORMALIZED_OUT = "data/normalized_dataset"
+LOG_DIR = Path("data/logs")
+LOG_FILENAME = "process_dataset.log"
 
 NAME_BLACKLIST = (
     "format",
@@ -29,10 +34,10 @@ NAME_BLACKLIST = (
     "violoncello",
 )
 
-DEFAULT_NORMALIZED_OUT = "data/normalized_dataset"
-
 
 class _Tee:
+    """Write output to a stream and a log file simultaneously."""
+
     def __init__(self, stream: TextIO, log_file: TextIO) -> None:
         self._stream = stream
         self._log_file = log_file
@@ -47,13 +52,13 @@ class _Tee:
         self._log_file.flush()
 
     @property
-    def encoding(self):
+    def encoding(self) -> str | None:
         return getattr(self._stream, "encoding", None)
 
 
 def should_process(path: Path, text: str) -> bool:
+    """Return True for score files that should be normalized."""
     stem = path.stem.lower()
-
     for tag in NAME_BLACKLIST:
         if stem == tag or stem.endswith(f"_{tag}"):
             return False
@@ -62,6 +67,10 @@ def should_process(path: Path, text: str) -> bool:
         return True
 
     return False
+
+
+def _resolve_path(path: str) -> Path:
+    return Path(path).expanduser().resolve()
 
 
 def _copy_variabili_files(input_root: Path, output_root: Path) -> None:
@@ -74,7 +83,46 @@ def _copy_variabili_files(input_root: Path, output_root: Path) -> None:
         shutil.copy2(src, dest)
 
 
+def _init_stats() -> dict[str, int]:
+    return {
+        "line_removed": 0,
+        "block_removed": 0,
+        "vars_removed": 0,
+        "transpose_removed": 0,
+        "repeat_removed": 0,
+        "tuplets_removed": 0,
+        "lily_fail": 0,
+        "overrides_removed": 0,
+        "markups_removed": 0,
+        "marks_removed": 0,
+        "dynamics_removed": 0,
+        "hairpins_removed": 0,
+        "quotes_removed": 0,
+    }
+
+
+def _print_stage_summaries(stats: dict[str, int]) -> None:
+    print("--- Stage summaries ---")
+    print(
+        f"[preprocess] line_removed={stats['line_removed']} "
+        f"block_removed={stats['block_removed']}"
+    )
+    print(
+        f"[normalize] vars_removed:{stats['vars_removed']} "
+        f"transpose_removed:{stats['transpose_removed']} repeat_removed:{stats['repeat_removed']} "
+        f"tuplets_removed:{stats['tuplets_removed']} "
+        f"lily_fail:{stats['lily_fail']}"
+    )
+    print(
+        f"[engrave_strip] overrides_removed:{stats['overrides_removed']} "
+        f"markups_removed:{stats['markups_removed']} marks_removed:{stats['marks_removed']} "
+        f"dynamics_removed:{stats['dynamics_removed']} "
+        f"hairpins_removed:{stats['hairpins_removed']} quotes_removed:{stats['quotes_removed']}"
+    )
+
+
 def build_arg_parser() -> argparse.ArgumentParser:
+    """Build the CLI argument parser for dataset normalization."""
     parser = argparse.ArgumentParser(description="Normalize a LilyPond dataset.")
 
     parser.add_argument(
@@ -85,8 +133,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--normalized-out",
         default=DEFAULT_NORMALIZED_OUT,
-        help="Destination root for normalized .ly files "
-             "(default: data/normalized_dataset).",
+        help=(
+            "Destination root for normalized .ly files "
+            "(default: data/normalized_dataset)."
+        ),
     )
     parser.add_argument(
         "--dry-run",
@@ -96,7 +146,10 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--keep-compilable",
         action="store_true",
-        help="Keep files compilable with layout/midi/paper blocks. By default, files are stripped for ML training.",
+        help=(
+            "Keep files compilable with layout/midi/paper blocks. "
+            "By default, files are stripped for ML training."
+        ),
     )
     parser.add_argument(
         "--mirror-variabili",
@@ -111,11 +164,12 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def main() -> int:
+    """Normalize a dataset and emit a processing log."""
     args = build_arg_parser().parse_args()
 
-    log_dir = Path("data/logs").expanduser()
+    log_dir = LOG_DIR.expanduser()
     log_dir.mkdir(parents=True, exist_ok=True)
-    log_path = log_dir / "process_dataset.log"
+    log_path = log_dir / LOG_FILENAME
 
     stdout_backup = sys.stdout
     stderr_backup = sys.stderr
@@ -126,33 +180,17 @@ def main() -> int:
         sys.stdout = _Tee(stdout_backup, log_file)
         sys.stderr = _Tee(stderr_backup, log_file)
 
-        input_root = Path(args.input).expanduser().resolve()
+        input_root = _resolve_path(args.input)
         if not input_root.exists():
             print(f"[dataset] input folder not found: {input_root}", file=sys.stderr)
             return 2
 
-        norm_root = Path(args.normalized_out).expanduser().resolve()
-
+        norm_root = _resolve_path(args.normalized_out)
         opts = NormOptions(keep_engraving=args.keep_compilable)
 
         processed = 0
         skipped = 0
-
-        stats: dict[str, int] = {
-            "line_removed": 0,
-            "block_removed": 0,
-            "vars_removed": 0,
-            "transpose_removed": 0,
-            "repeat_removed": 0,
-            "tuplets_removed": 0,
-            "lily_fail": 0,
-            "overrides_removed": 0,
-            "markups_removed": 0,
-            "marks_removed": 0,
-            "dynamics_removed": 0,
-            "hairpins_removed": 0,
-            "quotes_removed": 0,
-        }
+        stats = _init_stats()
 
         ly_files = sorted(input_root.rglob("*.ly"))
         if not ly_files:
@@ -206,24 +244,7 @@ def main() -> int:
             f"normalized_out={norm_root}"
         )
 
-        print("--- Stage summaries ---")
-        print(
-            f"[preprocess] line_removed={stats['line_removed']} "
-            f"block_removed={stats['block_removed']}"
-        )
-        print(
-            f"[normalize] vars_removed:{stats['vars_removed']} "
-            f"transpose_removed:{stats['transpose_removed']} repeat_removed:{stats['repeat_removed']} "
-            f"tuplets_removed:{stats['tuplets_removed']} "
-            f"lily_fail:{stats['lily_fail']}"
-        )
-        print(
-            f"[engrave_strip] overrides_removed:{stats['overrides_removed']} "
-            f"markups_removed:{stats['markups_removed']} marks_removed:{stats['marks_removed']} "
-            f"dynamics_removed:{stats['dynamics_removed']} "
-            f"hairpins_removed:{stats['hairpins_removed']} quotes_removed:{stats['quotes_removed']}"
-        )
-
+        _print_stage_summaries(stats)
         return 0
 
     finally:

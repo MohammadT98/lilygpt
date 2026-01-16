@@ -1,9 +1,64 @@
+"""Strip engraving-only LilyPond content and cleanup notation."""
+
 from __future__ import annotations
 
 import re
 import sys
 
 from .utils import grab_balanced, grab_angles
+
+BLOCK_COMMANDS = (
+    "incipit",
+    "with",
+    "figures",
+    "figuremode",
+)
+
+MUSICAL_MODES = {
+    "major",
+    "minor",
+    "ionian",
+    "dorian",
+    "phrygian",
+    "lydian",
+    "mixolydian",
+    "aeolian",
+    "locrian",
+}
+
+COMMAND_WHITELIST = {
+    "relative",
+    "absolute",
+    "time",
+    "key",
+    "tempo",
+    "partial",
+    "repeat",
+    "alternative",
+    "tuplet",
+    "bar",
+} | MUSICAL_MODES
+
+UNSUPPORTED_COMMANDS = (
+    "mbreak",
+    "trasp",
+    "notrasp",
+    "typeset",
+    "notypeset",
+    "terzine",
+    "con",
+    "senza",
+    "notrasp",
+    "etc",
+    "tu",
+)
+
+NOTE_PATTERN = r"\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[is|es|isbf|esbf]*[,']*\d"
+CHORD_PATTERN = (
+    r"(?<![<>])<[^<>]*\b(?:do|re|mi|fa|sol|la|si|[a-g])[is|es|isbf|esbf]*[,']*\d?[^<>]*>(?![<>])(?:\d+)?"
+)
+
+WITH_BLOCK_PLACEHOLDER = "<<<WITH_BLOCK_{}>>>"
 
 
 def _remove_metadata_headers(text: str) -> tuple[str, int]:
@@ -19,16 +74,8 @@ def _split_inline_assignments(text: str) -> str:
 
 
 def _remove_block_commands(text: str) -> str:
-    """Remove commands that take brace-delimited blocks (e.g., \\incipit{...})"""
-    # Commands that should be removed along with their {...} blocks
-    block_commands = [
-        'incipit',
-        'with',
-        'figures',
-        'figuremode',
-    ]
-
-    for cmd in block_commands:
+    """Remove commands that take brace-delimited blocks (e.g., \\incipit{...})."""
+    for cmd in BLOCK_COMMANDS:
         pattern = r'\\' + cmd + r'\s*\{'
         while True:
             match = re.search(pattern, text)
@@ -47,24 +94,18 @@ def _remove_block_commands(text: str) -> str:
                 text = text[:match.start()] + text[match.end():]
                 break
 
-    # Commands that take a single word argument (e.g., \clef soprano)
-    # Remove both the command and its argument
     text = re.sub(r'\\clef\s+\w+', '', text)
 
     return text
 
 
 def _remove_non_whitelisted_commands(text: str) -> tuple[str, int]:
-    # Musical modes for key signatures
-    modes = {'major', 'minor', 'ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'}
-    # Core musical commands to preserve
-    # NOTE: key/time/tempo are kept in whitelist - corrupted structural lines are removed later in postprocessing
-    whitelist = {'relative', 'absolute', 'time', 'key', 'tempo', 'partial', 'repeat', 'alternative', 'tuplet', 'bar'} | modes
+    """Strip non-musical commands while keeping structural ones."""
     count = 0
 
     def replace(m):
         nonlocal count
-        if m.group(1) in whitelist:
+        if m.group(1) in COMMAND_WHITELIST:
             return m.group(0)
         count += 1
         return ''
@@ -76,7 +117,49 @@ def _remove_non_whitelisted_commands(text: str) -> tuple[str, int]:
     return re.sub(r'\\([a-zA-Z]+)\b', replace, text), count
 
 
+def _shield_with_blocks(text: str) -> tuple[str, list[str]]:
+    """Replace \\with{...} blocks with placeholders to preserve them."""
+    with_blocks: list[str] = []
+    result: list[str] = []
+    i = 0
+    while i < len(text):
+        if text.startswith(r"\with", i):
+            j = i + 5
+            while j < len(text) and text[j] in " \t\n":
+                j += 1
+
+            if j < len(text) and text[j] == "{":
+                brace_count = 1
+                k = j + 1
+                while k < len(text) and brace_count > 0:
+                    if text[k] == "{":
+                        brace_count += 1
+                    elif text[k] == "}":
+                        brace_count -= 1
+                    k += 1
+
+                with_block = text[i:k]
+                idx = len(with_blocks)
+                with_blocks.append(with_block)
+                result.append(WITH_BLOCK_PLACEHOLDER.format(idx))
+                i = k
+                continue
+
+        result.append(text[i])
+        i += 1
+
+    return "".join(result), with_blocks
+
+
+def _restore_with_blocks(text: str, with_blocks: list[str]) -> str:
+    """Restore \\with{...} blocks replaced by _shield_with_blocks."""
+    for idx, with_block in enumerate(with_blocks):
+        text = text.replace(WITH_BLOCK_PLACEHOLDER.format(idx), with_block)
+    return text
+
+
 def _final_cleanup(text: str) -> tuple[str, int]:
+    """Apply late-stage cleanup passes and return whitelist removals."""
     text = re.sub(r'(?m)^\s*#\(set-default-paper-size\s+"a4"\)\s*\r?\n?', "", text)
     text = re.sub(r"#\(\s*[A-Za-z0-9_-]+\s*\)", "", text)
     text = re.sub(r'#"[^"]*"', "", text)
@@ -86,20 +169,7 @@ def _final_cleanup(text: str) -> tuple[str, int]:
     text = re.sub(r'[\^_-]*-?align\b', "", text)
     text = re.sub(r"(?m)^[ \t]*[A-Z_][\w-]*[ \t]+[^\s=][^\n]*$", "", text)
 
-    unsupported = (
-        "mbreak",
-        "trasp",
-        "notrasp",
-        "typeset",
-        "notypeset",
-        "terzine",
-        "con",
-        "senza",
-        "notrasp",
-        "etc",
-        "tu",
-    )
-    text = re.sub(r"\\(?:" + "|".join(unsupported) + r")\b", "", text)
+    text = re.sub(r"\\(?:" + "|".join(UNSUPPORTED_COMMANDS) + r")\b", "", text)
 
     text = re.sub(r"\\once\s+\\override\s+Stem\s+#'transparent\s+=\s+##t\s*", "", text)
     text = re.sub(r"\\override\s+Stem\s+#'transparent\s+=\s+##t\s*", "", text)
@@ -118,10 +188,8 @@ def _final_cleanup(text: str) -> tuple[str, int]:
     text = re.sub(r'[\^_]"[^"]*"', '', text)
     text = re.sub(r'[\^_]\s*\{[^}]*\}', '', text)
 
-    # Remove standalone dynamic markings
     text = re.sub(r'\b(pp?p?p?|ff?f?f?|mf|mp|sf|sfz|rfz|fz)\b', '', text)
 
-    # Remove standalone quoted strings (NOT preceded by #)
     text = re.sub(r'(?<!#)"[^"]*"', '', text)
 
     text = re.sub(r'\\grace\s+(?:\S+|\{[^}]*\})\s*', ' ', text)
@@ -158,38 +226,7 @@ def _final_cleanup(text: str) -> tuple[str, int]:
     text = re.sub(r'\\(?:stemUp|stemDown|stemNeutral|slurUp|slurDown|slurNeutral|tieUp|tieDown|tieNeutral|shiftOn|shiftOff|shiftOnn|shiftOnnn)\b', '', text)
 
     text = re.sub(r'\\once\s*', '', text)
-    with_blocks = []
-    placeholder_template = "<<<WITH_BLOCK_{}>>>"
-
-    result = []
-    i = 0
-    while i < len(text):
-        if text[i:i+5] == r'\with':
-            j = i + 5
-            while j < len(text) and text[j] in ' \t\n':
-                j += 1
-
-            if j < len(text) and text[j] == '{':
-                brace_count = 1
-                k = j + 1
-                while k < len(text) and brace_count > 0:
-                    if text[k] == '{':
-                        brace_count += 1
-                    elif text[k] == '}':
-                        brace_count -= 1
-                    k += 1
-
-                with_block = text[i:k]
-                idx = len(with_blocks)
-                with_blocks.append(with_block)
-                result.append(placeholder_template.format(idx))
-                i = k
-                continue
-
-        result.append(text[i])
-        i += 1
-
-    text = ''.join(result)
+    text, with_blocks = _shield_with_blocks(text)
 
     text = re.sub(
         r"\\override\s+\S+(?:\.[^\s=]+)*(?:\s+#'[\w\-]+)?\s*=\s*(?:#'?\([\s\w\d.+\-]*\)|#[#']?[\w\-+.]+|\d+)\s*",
@@ -197,8 +234,7 @@ def _final_cleanup(text: str) -> tuple[str, int]:
         text
     )
 
-    for idx, with_block in enumerate(with_blocks):
-        text = text.replace(placeholder_template.format(idx), with_block)
+    text = _restore_with_blocks(text, with_blocks)
 
     text = re.sub(r'\\revert\s+\S+', '', text)
 
@@ -220,7 +256,6 @@ def _final_cleanup(text: str) -> tuple[str, int]:
     text = re.sub(r"(?m)^\}\s*\n\s*\}\s*$", "}", text, flags=re.MULTILINE)
     text = re.sub(r"(?s)\\score\s*\{\s*>>\s*(?:\\(?:midi|layout)\s*\{[^}]*\}\s*)*\}", "", text)
 
-    # Token tweaks
     text = re.sub(r"(?m)^\s*\+\s*", "", text)
     text = re.sub(r"(?<=\s)\+(?=\s)", "", text)
     text = re.sub(r"(?<=\w)\+(?=[)\]\}])", "", text)
@@ -272,8 +307,7 @@ def _final_cleanup(text: str) -> tuple[str, int]:
 
     text = re.sub(r'\\\s+', ' ', text)
 
-    # Remove corrupted structural lines with key/time/tempo (they're already in forma variables)
-    # Pattern: lines starting with context names (PianoStaff, Staff, Voice, etc.) followed by <<
+    # Drop leftover context scaffolding.
     text = re.sub(r'(?m)^\s*(?:PianoStaff|Staff|Voice|StaffGroup|ChoirStaff)\s+<<.*$', '', text)
     text = re.sub(r'(?m)^\s*Score\.[^\n]*$', '', text)
     text = re.sub(r'(?m)^\s*TupletBracket(?:\.[^\n]*)?\s*=\s*.*$', '', text)
@@ -301,15 +335,14 @@ def _variable_contains_music(rhs_content: str) -> bool:
             content = content[:match.start()] + content[match.end():]
             break
 
-    note_pattern = r'\b(?:do|re|mi|fa|sol|la|si|[a-g]|r)[is|es|isbf|esbf]*[,\']*\d'
-    if re.search(note_pattern, content, re.I):
+    if re.search(NOTE_PATTERN, content, re.I):
         return True
 
-    chord_pattern = r'(?<![<>])<[^<>]*\b(?:do|re|mi|fa|sol|la|si|[a-g])[is|es|isbf|esbf]*[,\']*\d?[^<>]*>(?![<>])(?:\d+)?'
-    if re.search(chord_pattern, content, re.I):
+    if re.search(CHORD_PATTERN, content, re.I):
         return True
 
     return False
+
 
 def _find_all_variable_assignments(text: str) -> list[tuple[int, int, str, str]]:
     results = []
@@ -416,7 +449,6 @@ def _remove_engraving_only_paragraphs(text: str) -> tuple[str, int]:
     assignment_ranges = [(start, end) for start, end, _, _ in assignments]
 
     def is_inside_assignment(pos):
-        # Check if position is inside a variable assignment.
         for start, end in assignment_ranges:
             if start <= pos < end:
                 return True
@@ -467,7 +499,6 @@ def _remove_engraving_only_top_level(text: str) -> tuple[str, int]:
     assignment_ranges = [(start, end) for start, end, _, _ in assignments]
 
     def is_inside_assignment(pos):
-        # Check if position is inside a variable assignment.
         for start, end in assignment_ranges:
             if start <= pos < end:
                 return True
@@ -480,7 +511,7 @@ def _remove_engraving_only_top_level(text: str) -> tuple[str, int]:
 
     for line in lines:
         line_start = current_pos
-        line_end = current_pos + len(line) + 1  # +1 for newline
+        line_end = current_pos + len(line) + 1
         current_pos = line_end
 
         if not line.strip():
@@ -511,10 +542,12 @@ try:
     from lilynorm.utils.options import NormOptions
 except Exception:
     class NormOptions:  # type: ignore[override]
+        """Fallback options when lilynorm.utils.options is unavailable."""
         keep_engraving: bool = True  # default: keep engravings
 
 
 def run(text: str, opts: NormOptions) -> str:
+    """Strip engraving-only content based on the provided options."""
     messages: list[str] = []
 
     def _add_count(label: str, count: int) -> None:

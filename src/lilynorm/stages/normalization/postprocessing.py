@@ -1,3 +1,5 @@
+"""Postprocessing cleanup for normalized LilyPond data."""
+
 from __future__ import annotations
 
 import re
@@ -7,6 +9,7 @@ from .utils import grab_balanced
 
 
 def apply_postprocessing_fixes(text: str) -> str:
+    """Apply cleanup passes after normalization and engraving stripping."""
     note = r"(?:do|re|mi|fa|sol|la|si|[a-gr])[a-z]*"
     solfege = r"(?:dod|red|mid|fad|sold|lad|sid|do|re|mi|fa|sol|la|si)"
 
@@ -36,11 +39,8 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(r'(?m)^\s*alignAboveContext\s*=.*$', "", text)
     text = re.sub(r'(?m)^\s*StaffSymbol\s*=.*$', "", text)
     text = re.sub(r'(?m)^.*StaffSymbol\s*=.*$', "", text)
-    # Catch inline StaffSymbol fragments that may share lines with braces.
     text = re.sub(r'StaffSymbol\s*=\s*#\([^)]*\)', "", text)
-    # Drop glued stem commands like \\stemUpmi4.
     text = re.sub(r'\\stem(?:Up|Down|Neutral)', "", text)
-    # Normalize runaway voice separators.
     text = re.sub(r'\\\\{2,}', r'\\\\', text)
     text = re.sub(r'\\\\[!,.]', r'\\\\', text)
     text = re.sub(r'\\\\\s+\\\\', r'\\\\', text)
@@ -52,7 +52,6 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(r'\\\\\s+relative\b', r'\\relative', text)
     text = re.sub(r'(?<![A-Za-z])[!]\d+', "", text)
     text = re.sub(r'(?<![A-Za-z]),\d+', "", text)
-    # Drop structure-only brace lines (artifact from stripping voices).
     struct_cmd = re.compile(r'\\(?:time|key|tempo|partial|repeat|alternative|bar)\b')
     note_token = re.compile(rf'\\b{note}[,\']*\\d*\\b|\\bR\\d*\\b|\\br\\d*\\b', re.I)
     filtered = []
@@ -62,13 +61,13 @@ def apply_postprocessing_fixes(text: str) -> str:
                 continue
         filtered.append(line)
     text = "\n".join(filtered) + ("\n" if text.endswith("\n") else "")
-    text = re.sub(r'(?m)^\s*\d+\s*$', "", text)  # Remove orphaned numbers (tempo fragments)
-    text = re.sub(r'Rest\s+#\'.*?(?=\s|$)', "", text)  # Remove Rest with scheme properties
-    text = re.sub(r'#\'[\s\w\-\(\.\-\)]+', "", text)  # Remove scheme code fragments and pairs
+    text = re.sub(r'(?m)^\s*\d+\s*$', "", text)
+    text = re.sub(r'Rest\s+#\'.*?(?=\s|$)', "", text)
+    text = re.sub(r'#\'[\s\w\-\(\.\-\)]+', "", text)
     text = re.sub(r'(?m)^\s*\\mark\s*"?[^"\n]*"?\s*$', "", text)
     text = re.sub(r'\{\s*"\s*"\s*\}', "", text)
     text = re.sub(r'Score\.measureLength\s*=\s*#\(.*?\)\s*', "", text)
-    text = re.sub(r'R\d+\^', "", text)  # Remove malformed rests with articulation marks
+    text = re.sub(r'R\d+\^', "", text)
     text = re.sub(r"\[\s*tr\s*\]", "", text)
     text = re.sub(rf"\b({solfege})([',]*?)({solfege})([',]*\d*)\b", r"\1\2 \3\4", text)
     text = _collapse_parallel_voices(text)
@@ -184,6 +183,7 @@ def _collapse_parallel_voices(text: str) -> str:
 
 
 def close_unclosed_braces(text: str) -> str:
+    """Close dangling braces when new assignments start."""
     assign_re = re.compile(r"^[A-Za-z_][\w-]*\s*=")
     lines = text.splitlines()
     out = []
@@ -202,6 +202,7 @@ def close_unclosed_braces(text: str) -> str:
 
 
 def remove_empty_variable_assignments(text: str) -> Tuple[str, int]:
+    """Remove assignments with no musical content."""
     def _is_empty_content(content: str) -> bool:
         s = re.sub(r'\\clef\s+\w+', '', content)
         s = re.sub(r'\\(?:key|time|tempo|partial)\b[^\n]*', '', s)

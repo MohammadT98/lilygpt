@@ -1,3 +1,5 @@
+"""Preprocess LilyPond files by removing comments and normalizing whitespace."""
+
 from __future__ import annotations
 
 import re
@@ -10,6 +12,7 @@ _RE_MARKUP_TOKEN = re.compile(r"\\markup(?![A-Za-z])")
 
 @dataclass
 class CleanOptions:
+    """Options controlling preprocessing cleanup behavior."""
     keep_line_comments: bool = False
     keep_block_comments: bool = False
     max_blank_lines: int = 1
@@ -18,6 +21,7 @@ class CleanOptions:
 
 @dataclass
 class CleanStats:
+    """Counters for removed comment types."""
     line_comments_removed: int = 0
     block_comments_removed: int = 0
 
@@ -171,7 +175,12 @@ def _post_whitespace_cleanup(text: str, opts: CleanOptions) -> str:
 
     return output
 
-def clean_text(src: str, opts: CleanOptions | None = None, stats: CleanStats | None = None) -> Tuple[str, CleanStats]:
+def clean_text(
+    src: str,
+    opts: CleanOptions | None = None,
+    stats: CleanStats | None = None,
+) -> Tuple[str, CleanStats]:
+    """Return cleaned text and comment-removal statistics."""
     opts = opts or CleanOptions()
     stats = stats or CleanStats()
     text = _normalize_newlines(src)
@@ -188,6 +197,7 @@ except Exception:
         normalize_whitespace: bool = True
 
 def run(text: str, opts: "NormOptions") -> str:
+    """Preprocess text using options compatible with NormOptions."""
     clean_opts = CleanOptions(
         keep_line_comments=not getattr(opts, "strip_comments", True),
         keep_block_comments=not getattr(opts, "strip_comments", True),
