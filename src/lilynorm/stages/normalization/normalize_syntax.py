@@ -33,7 +33,6 @@ class ParseReport:
     repeats_unfolded: int = 0
     tuplets_normalized: int = 0
     lily_failures: int = 0
-    notes: list[str] = field(default_factory=list)
 
 
 def _grab_braces(s: str, start_index: int) -> int:
@@ -568,7 +567,7 @@ def process_string(
     lily_cmd: str,
     opts: ParseOptions,
 ) -> tuple[str, ParseReport]:
-    report = ParseReport(notes=[])
+    report = ParseReport()
     text = src
 
     if opts.expand_music_functions:
