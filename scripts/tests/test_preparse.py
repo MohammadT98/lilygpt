@@ -1,6 +1,6 @@
 """
-Minimal processing: file_resolver + preparse only.
-Outputs to data/minimal_processed/
+Minimal processing: file_resolver + preprocess only.
+Outputs to data/test_preprocess/
 """
 
 from __future__ import annotations
@@ -14,7 +14,7 @@ src_dir = repo_root / "src"
 if src_dir.exists():
     sys.path.insert(0, str(src_dir))
 
-from lilynorm.stages.normalization import file_resolver, preparse
+from lilynorm.stages.normalization import file_resolver, preprocess
 from lilynorm.utils.options import NormOptions
 
 # Same blacklist as process_dataset.py
@@ -55,7 +55,7 @@ def should_process(path: Path, text: str) -> bool:
 
 def main():
     input_root = Path("data/raw").resolve()
-    output_root = Path("data/test_preparse").resolve()
+    output_root = Path("data/test_preprocess").resolve()
     
     if not input_root.exists():
         print(f"Error: Input folder not found: {input_root}", file=sys.stderr)
@@ -84,10 +84,10 @@ def main():
             # Stage 0: File resolver (returns list of strings)
             stage0_pieces = file_resolver.run(src, exclude_variabili=False)
 
-            # Stage 1: Preparse each piece
+            # Stage 1: Preprocess each piece
             pieces = []
             for piece in stage0_pieces:
-                stage1 = preparse.run(piece, opts)
+                stage1 = preprocess.run(piece, opts)
                 pieces.append(stage1)
 
             for idx, piece in enumerate(pieces, start=1):

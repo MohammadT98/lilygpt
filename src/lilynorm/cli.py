@@ -213,7 +213,7 @@ def main() -> int:
 
         print("--- Stage summaries ---")
         print(
-            f"[preparse] line_removed={stats['line_removed']} "
+            f"[preprocess] line_removed={stats['line_removed']} "
             f"block_removed={stats['block_removed']}"
         )
         print(

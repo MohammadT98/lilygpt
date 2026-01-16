@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 @dataclass
 class NormOptions:
-    # Preparse options
+    # Preprocess options
     strip_scheme_blocks: bool = True
     strip_comments: bool = True
     normalize_whitespace: bool = True

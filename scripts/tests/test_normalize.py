@@ -1,5 +1,5 @@
 """
-Test processing: file_resolver + preparse + normalize.
+Test processing: file_resolver + preprocess + normalize.
 Outputs to data/test_normalize/
 """
 
@@ -14,7 +14,7 @@ src_dir = repo_root / "src"
 if src_dir.exists():
     sys.path.insert(0, str(src_dir))
 
-from lilynorm.stages.normalization import file_resolver, preparse, normalize_syntax as expand_module
+from lilynorm.stages.normalization import file_resolver, preprocess, normalize_syntax as expand_module
 from lilynorm.utils.options import NormOptions
 
 # Same blacklist as process_dataset.py
@@ -97,13 +97,13 @@ def main():
             # Stage 0: File resolver (returns list of strings)
             stage0_pieces = file_resolver.run(src, exclude_variabili=False)
 
-            # Process each piece through preparse and normalize
+            # Process each piece through preprocess and normalize
             pieces = []
             for stage0 in stage0_pieces:
-                # Stage 1: Preparse
-                stage1 = preparse.run(stage0, opts)
+                # Stage 1: Preprocess
+                stage1 = preprocess.run(stage0, opts)
 
-                # Track preparse changes
+                # Track preprocess changes
                 if len(stage1.splitlines()) < len(stage0.splitlines()):
                     stats["line_removed"] += 1
                 if stage1.count("{") < stage0.count("{"):
@@ -148,7 +148,7 @@ def main():
     print(f"=== Processed {processed}/{len(ly_files)} files ===")
     print(f"Output saved to: {output_root}")
     print()
-    print(f"[preparse] line_removed={stats['line_removed']} block_removed={stats['block_removed']}")
+    print(f"[preprocess] line_removed={stats['line_removed']} block_removed={stats['block_removed']}")
     print(f"[normalize] rel:{stats['rel']} vars:{stats['vars']} transpose_ok:{stats['transpose_ok']} repeat:{stats['repeat']} tuplets:{stats['tuplets']} drums:{stats['drums']} lily_fail:{stats['lily_fail']}")
     
     return 0

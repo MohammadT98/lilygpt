@@ -1,5 +1,5 @@
 @echo off
-REM Test processing: file_resolver + preparse + normalize
+REM Test processing: file_resolver + preprocess + normalize
 
 setlocal enabledelayedexpansion
 pushd "%~dp0..\.."
@@ -11,7 +11,7 @@ set logfile=data\logs\test_normalize_%datetime:~0,4%-%datetime:~4,2%-%datetime:~
 REM Ensure logs directory exists
 if not exist "data\logs" mkdir "data\logs"
 
-echo === Testing file_resolver + preparse + normalize ===
+echo === Testing file_resolver + preprocess + normalize ===
 echo.
 
 uv run python scripts/tests/test_normalize.py >> "!logfile!" 2>&1

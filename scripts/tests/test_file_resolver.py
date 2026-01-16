@@ -1,5 +1,5 @@
 """
-Test-only: file_resolver only (no preparse).
+Test-only: file_resolver only (no preprocess).
 Outputs to data/test_file_resolver preserving folder structure.
 """
 

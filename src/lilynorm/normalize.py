@@ -17,8 +17,8 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
     normalized_pieces = []
 
     for piece in stage0_pieces:
-        # Stage 1: Preparse (remove comments, clean whitespace)
-        stage1 = normalization.preparse.run(piece, opts)
+        # Stage 1: Preprocess (remove comments, clean whitespace)
+        stage1 = normalization.preprocess.run(piece, opts)
         if stats is not None:
             stats["line_removed"] += max(0, len(piece.splitlines()) - len(stage1.splitlines()))
             stats["block_removed"] += max(0, piece.count("{") - stage1.count("{"))

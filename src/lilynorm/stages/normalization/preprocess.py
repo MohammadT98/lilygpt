@@ -187,5 +187,5 @@ def run(text: str, opts: "NormOptions") -> str:
         trim_trailing_ws=getattr(opts, "normalize_whitespace", True),
     )
     cleaned, stats = clean_text(text, clean_opts)
-    print(f"[preparse] line_removed={stats.line_comments_removed} block_removed={stats.block_comments_removed}", file=sys.stderr)
+    print(f"[preprocess] line_removed={stats.line_comments_removed} block_removed={stats.block_comments_removed}", file=sys.stderr)
     return cleaned
