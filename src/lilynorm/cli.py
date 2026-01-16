@@ -94,11 +94,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Scan and report which files would be processed without writing output.",
     )
     parser.add_argument(
-        "--keep-figures",
-        action="store_true",
-        help="Preserve basso-figure (`\\figuremode`) blocks in normalized output.",
-    )
-    parser.add_argument(
         "--keep-compilable",
         action="store_true",
         help="Keep files compilable with layout/midi/paper blocks. By default, files are stripped for ML training.",

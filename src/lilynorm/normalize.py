@@ -69,7 +69,7 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
                 }
 
             before = count_engraving(stage2)
-            after = count_engraving(stage3)
+            after = count_engraving(stage5)
             stats["overrides_removed"] += max(0, before["overrides"] - after["overrides"])
             stats["markups_removed"] += max(0, before["markups"] - after["markups"])
             stats["marks_removed"] += max(0, before["marks"] - after["marks"])
@@ -81,7 +81,9 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
         stage6 = apply_postprocessing_fixes(stage5)
 
         # Stage 7: Remove empty variable assignments
-        stage7, _ = remove_empty_variable_assignments(stage6)
+        stage7, empty_removed = remove_empty_variable_assignments(stage6)
+        if stats is not None:
+            stats["vars_removed"] += empty_removed
 
         normalized_pieces.append(stage7)
 
