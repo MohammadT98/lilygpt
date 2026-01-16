@@ -51,7 +51,7 @@ def _remove_non_whitelisted_commands(text: str) -> tuple[str, int]:
     modes = {'major', 'minor', 'ionian', 'dorian', 'phrygian', 'lydian', 'mixolydian', 'aeolian', 'locrian'}
     # Core musical commands to preserve
     # NOTE: key/time/tempo are kept in whitelist - corrupted structural lines are removed later in postprocessing
-    whitelist = {'relative', 'absolute', 'time', 'key', 'tempo', 'partial', 'repeat', 'alternative', 'tuplet'} | modes
+    whitelist = {'relative', 'absolute', 'time', 'key', 'tempo', 'partial', 'repeat', 'alternative', 'tuplet', 'bar'} | modes
     count = 0
 
     def replace(m):

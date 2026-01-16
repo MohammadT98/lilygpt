@@ -10,18 +10,21 @@ DEFAULT_SPECIAL_TOKENS: List[str] = [
     "<TIME:",
     "<TEMPO:",
     "<VOICE:",
+    "<BAR>",
 ]
 
 KEY_TOKEN = "<KEY:"
 TIME_TOKEN = "<TIME:"
 TEMPO_TOKEN = "<TEMPO:"
 VOICE_TOKEN = "<VOICE:"
+BAR_TOKEN = "<BAR>"
 CLOSE_TOKEN = ">"
 
 RE_KEY_SIG = re.compile(r"\\key\s+([a-g](?:is|es)?)\s+\\(major|minor)", re.I)
 RE_TIME_SIG = re.compile(r"\\time\s+(\d+/\d+)", re.I)
 RE_TEMPO = re.compile(r"\\tempo\s+([^\\]+)", re.I)
 RE_VOICE = re.compile(r"\\voice(One|Two|Three|Four)\b")
+RE_BAR = re.compile(r"\|")
 
 VOICE_MAP = {
     "One": "1",
@@ -48,6 +51,7 @@ def add_structural_tokens(text: str) -> str:
         lambda m: f"{VOICE_TOKEN}{VOICE_MAP.get(m.group(1), m.group(1))}{CLOSE_TOKEN}",
         text,
     )
+    text = RE_BAR.sub(f" {BAR_TOKEN} ", text)
     return text
 
 
