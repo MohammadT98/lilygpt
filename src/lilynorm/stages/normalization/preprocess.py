@@ -34,6 +34,12 @@ class Context:
 def _normalize_newlines(text: str) -> str:
     return text.lstrip(BOM).replace("\r\n", "\n").replace("\r", "\n")
 
+
+def _split_inline_assignments(text: str) -> str:
+    text = re.sub(r"}\s+(?=[A-Za-z_][\w-]*\s*=)", "}\n\n", text)
+    text = re.sub(r"\)\s+(?=[A-Za-z_][\w-]*\s*=)", ")\n\n", text)
+    return text
+
 def _remove_comments(text: str, opts: CleanOptions, stats: CleanStats) -> str:
     ctx = Context()
     out_chars = []
@@ -171,6 +177,7 @@ def clean_text(src: str, opts: CleanOptions | None = None, stats: CleanStats | N
     text = _normalize_newlines(src)
     text = _remove_comments(text, opts, stats)
     text = _post_whitespace_cleanup(text, opts)
+    text = _split_inline_assignments(text)
     return text, stats
 
 try:

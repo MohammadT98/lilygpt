@@ -12,6 +12,12 @@ def _remove_metadata_headers(text: str) -> tuple[str, int]:
     return text, count1 + count2
 
 
+def _split_inline_assignments(text: str) -> str:
+    text = re.sub(r"}\s+(?=[A-Za-z_][\w-]*\s*=)", "}\n\n", text)
+    text = re.sub(r"\)\s+(?=[A-Za-z_][\w-]*\s*=)", ")\n\n", text)
+    return text
+
+
 def _remove_block_commands(text: str) -> str:
     """Remove commands that take brace-delimited blocks (e.g., \\incipit{...})"""
     # Commands that should be removed along with their {...} blocks
@@ -522,6 +528,7 @@ def run(text: str, opts: NormOptions) -> str:
 
         cleaned, metadata_count = _remove_metadata_headers(cleaned)
         _add_count("metadata", metadata_count)
+        cleaned = _split_inline_assignments(cleaned)
 
         cleaned, engrave_var_count = _remove_engraving_only_variables(cleaned)
         _add_count("engrave_vars", engrave_var_count)

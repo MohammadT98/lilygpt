@@ -11,6 +11,11 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
     from lilynorm.stages.normalization.postprocessing import apply_postprocessing_fixes, remove_empty_variable_assignments
     from lilynorm.stages.normalization import forma
 
+    def _split_inline_assignments(text: str) -> str:
+        text = re.sub(r"}\s+(?=[A-Za-z_][\w-]*\s*=)", "}\n\n", text)
+        text = re.sub(r"\)\s+(?=[A-Za-z_][\w-]*\s*=)", ")\n\n", text)
+        return text
+
     # Stage 0: Resolve includes and split on forma blocks
     stage0_pieces = normalization.file_resolver.run(path, exclude_variabili=False, split_forma=True)
 
@@ -25,6 +30,7 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
 
         # Stage 2: Expand syntax (transpositions, repeats, tuplets)
         stage2 = normalization.normalize_syntax.run(stage1, opts)
+        stage2 = _split_inline_assignments(stage2)
         if stats is not None:
             def count_occurrences(text: str) -> dict[str, int]:
                 return {
@@ -41,12 +47,9 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
             stats["repeat_removed"] += max(0, before["repeat"] - after["repeat"])
             stats["tuplets_removed"] += max(0, before["tuplets"] - after["tuplets"])
 
-        # Stage 3: Prepend global structure to music variables
-        # Skip if \forma is referenced; Stage 4 will inline the full structure.
-        if re.search(r"\\forma\\b", stage2):
-            stage3 = stage2
-        else:
-            stage3 = forma.prepend_structure(stage2, opts)
+        # Stage 3: Prepend global structure to music variables.
+        # Even when \forma is present, prepend_structure uses it as the source.
+        stage3 = forma.prepend_structure(stage2, opts)
 
         # Stage 4: Inline forma into voices (remove parallel structure lane)
         stage4 = forma.inline_forma(stage3, opts)
