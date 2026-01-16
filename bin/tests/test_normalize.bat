@@ -4,7 +4,7 @@ pushd "%~dp0..\.."
 
 REM Test: file_resolver + preprocess + normalize
 
-set "SCRIPT_PATH=scripts/tests/test_normalize.py"
+set "SCRIPT_PATH=scripts/tests/test_normalize_syntax.py"
 set "LOG_DIR=data\logs"
 set "TEST_NAME=test_normalize"
 set "PAUSE_ON_EXIT=1"

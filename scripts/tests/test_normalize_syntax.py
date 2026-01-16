@@ -1,14 +1,12 @@
-"""
-Test processing: file_resolver + preprocess + normalize.
-Outputs to data/test_normalize/
-"""
+"""Run file_resolver, preprocess, and normalize on raw files."""
 
 from __future__ import annotations
 
+import re
 import sys
 from pathlib import Path
 
-# Add src to path
+# Add src to path so this script can run from the repo root.
 repo_root = Path(__file__).resolve().parents[2]
 src_dir = repo_root / "src"
 if src_dir.exists():
@@ -17,7 +15,7 @@ if src_dir.exists():
 from lilynorm.stages.normalization import file_resolver, preprocess, normalize_syntax as expand_module
 from lilynorm.utils.options import NormOptions
 
-# Same blacklist as process_dataset.py
+# Same blacklist as process_dataset.py.
 NAME_BLACKLIST = (
     "format",
     "header",
@@ -34,39 +32,36 @@ NAME_BLACKLIST = (
 
 
 def should_process(path: Path, text: str) -> bool:
-    """Return True if this .ly file contains actual music definitions."""
+    """Return True for score-like LilyPond files worth processing."""
     stem = path.stem.lower()
-    
+
     for tag in NAME_BLACKLIST:
         if stem == tag or stem.endswith(f"_{tag}"):
             return False
-    
-    # Only process files that have "score" in the name
+
     if "score" not in stem:
         return False
-    
-    # Must have version declaration or at least one note
-    import re
+
     if not re.search(r"\\version|\\language", text):
         return False
-    
+
     return True
 
 
 def main():
+    """Process raw data through normalization and write outputs."""
     input_root = Path("data/raw").resolve()
     output_root = Path("data/test_normalize").resolve()
-    
+
     if not input_root.exists():
         print(f"Error: Input folder not found: {input_root}", file=sys.stderr)
         return 1
-    
+
     output_root.mkdir(parents=True, exist_ok=True)
-    
+
     opts = NormOptions()
     processed = 0
-    
-    # Statistics counters
+
     stats = {
         "line_removed": 0,
         "block_removed": 0,
@@ -78,41 +73,34 @@ def main():
         "drums": 0,
         "lily_fail": 0,
     }
-    
+
     ly_files = sorted(input_root.rglob("*.ly"))
     print(f"Found {len(ly_files)} .ly files")
     print()
-    
+
     for src in ly_files:
         rel = src.relative_to(input_root)
         text = src.read_text(encoding="utf-8", errors="ignore")
-        
-        # Skip blacklisted files
+
         if not should_process(src, text):
             continue
-        
+
         print(f"[{processed + 1}] Processing: {rel}")
-        
+
         try:
-            # Stage 0: File resolver (returns list of strings)
             stage0_pieces = file_resolver.run(src, exclude_variabili=False)
 
-            # Process each piece through preprocess and normalize
             pieces = []
             for stage0 in stage0_pieces:
-                # Stage 1: Preprocess
                 stage1 = preprocess.run(stage0, opts)
 
-                # Track preprocess changes
                 if len(stage1.splitlines()) < len(stage0.splitlines()):
                     stats["line_removed"] += 1
                 if stage1.count("{") < stage0.count("{"):
                     stats["block_removed"] += 1
 
-                # Stage 2: Normalize
                 stage2 = expand_module.run(stage1, opts)
 
-                # Track normalize features (heuristic detection)
                 if "\\relative" in stage2:
                     stats["rel"] += 1
                 if "=" in stage2 and "{" in stage2:
@@ -128,7 +116,6 @@ def main():
 
                 pieces.append(stage2)
 
-            # Save output
             for idx, piece in enumerate(pieces, start=1):
                 out_path = output_root / rel
                 if len(pieces) > 1:
@@ -136,14 +123,14 @@ def main():
 
                 out_path.parent.mkdir(parents=True, exist_ok=True)
                 out_path.write_text(piece, encoding="utf-8")
-            
+
             processed += 1
-            
+
         except Exception as exc:
             print(f"  ERROR: {exc}", file=sys.stderr)
             stats["lily_fail"] += 1
             continue
-    
+
     print()
     print(f"=== Processed {processed}/{len(ly_files)} files ===")
     print(f"Output saved to: {output_root}")
