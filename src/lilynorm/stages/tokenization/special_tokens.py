@@ -22,7 +22,7 @@ CLOSE_TOKEN = ">"
 
 RE_KEY_SIG = re.compile(r"\\key\s+([a-g](?:is|es)?)\s+\\(major|minor)", re.I)
 RE_TIME_SIG = re.compile(r"\\time\s+(\d+/\d+)", re.I)
-RE_TEMPO = re.compile(r"\\tempo\s+([^\\]+)", re.I)
+RE_TEMPO = re.compile(r"\\tempo\s+([^\n\\\\]+)", re.I)
 RE_VOICE = re.compile(r"\\voice(One|Two|Three|Four)\b")
 RE_BAR = re.compile(r"\|")
 
