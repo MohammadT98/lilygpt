@@ -1,27 +1,48 @@
 @echo off
-REM Test processing: file_resolver + preprocess + normalize
-
-setlocal enabledelayedexpansion
+setlocal EnableExtensions EnableDelayedExpansion
 pushd "%~dp0..\.."
 
-REM Create timestamped log filename
-for /f "tokens=2 delims==" %%i in ('wmic os get localdatetime /value') do set datetime=%%i
-set logfile=data\logs\test_normalize_%datetime:~0,4%-%datetime:~4,2%-%datetime:~6,2%_%datetime:~8,2%-%datetime:~10,2%-%datetime:~12,2%.log
+REM Test: file_resolver + preprocess + normalize
 
-REM Ensure logs directory exists
-if not exist "data\logs" mkdir "data\logs"
+set "SCRIPT_PATH=scripts/tests/test_normalize.py"
+set "LOG_DIR=data\logs"
+set "TEST_NAME=test_normalize"
+set "PAUSE_ON_EXIT=1"
 
-echo === Testing file_resolver + preprocess + normalize ===
+call :timestamp
+
+if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
+set "LOG_FILE=%LOG_DIR%\%TEST_NAME%_%TIMESTAMP%.log"
+
+echo ========================================
+echo TEST: Normalize
+echo ========================================
+echo.
+echo Running %SCRIPT_PATH%
 echo.
 
-uv run python scripts/tests/test_normalize.py >> "!logfile!" 2>&1
-type "!logfile!"
+uv run python "%SCRIPT_PATH%" > "%LOG_FILE%" 2>&1
+set "EXIT_CODE=%ERRORLEVEL%"
+
+type "%LOG_FILE%"
 
 echo.
-echo === Log saved to: !logfile! ===
+echo Log saved to: %LOG_FILE%
+echo.
 
+if %EXIT_CODE% NEQ 0 (
+    echo ERROR: Test failed (exit code %EXIT_CODE%).
+)
+
+if /i "%PAUSE_ON_EXIT%"=="1" pause
 popd
 endlocal
+exit /b %EXIT_CODE%
 
-echo.
-pause
+:timestamp
+for /f "delims=" %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss" 2^>nul') do set "TIMESTAMP=%%i"
+if not defined TIMESTAMP (
+    set "TIMESTAMP=%date:~-4%-%date:~-10,2%-%date:~-7,2%_%time:~0,2%-%time:~3,2%-%time:~6,2%"
+    set "TIMESTAMP=%TIMESTAMP: =0%"
+)
+exit /b 0

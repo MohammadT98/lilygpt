@@ -1,29 +1,48 @@
 @echo off
-REM Run file_resolver test and save log
-
-setlocal enabledelayedexpansion
+setlocal EnableExtensions EnableDelayedExpansion
 pushd "%~dp0..\.."
 
-echo === Running File Resolver Test ===
+REM Test: file_resolver
+
+set "SCRIPT_PATH=scripts/tests/test_file_resolver.py"
+set "LOG_DIR=data\logs"
+set "TEST_NAME=test_file_resolver"
+set "PAUSE_ON_EXIT=1"
+
+call :timestamp
+
+if not exist "%LOG_DIR%" mkdir "%LOG_DIR%"
+set "LOG_FILE=%LOG_DIR%\%TEST_NAME%_%TIMESTAMP%.log"
+
+echo ========================================
+echo TEST: File Resolver
+echo ========================================
+echo.
+echo Running %SCRIPT_PATH%
 echo.
 
-set "logfile=data\logs\test_file_resolver_%date:~-4%-%date:~-10,2%-%date:~-7,2%_%time:~0,2%-%time:~3,2%-%time:~6,2%.log"
-set "logfile=!logfile: =0!"
+uv run python "%SCRIPT_PATH%" > "%LOG_FILE%" 2>&1
+set "EXIT_CODE=%ERRORLEVEL%"
 
-mkdir data\logs 2>nul
-
-echo Test started at %date% %time% > "!logfile!"
-echo. >> "!logfile!"
-
-REM Run and capture to log, then display log to console
-uv run python scripts/tests/test_file_resolver.py >> "!logfile!" 2>&1
-type "!logfile!"
+type "%LOG_FILE%"
 
 echo.
-echo === Log saved to: !logfile! ===
+echo Log saved to: %LOG_FILE%
 echo.
 
+if %EXIT_CODE% NEQ 0 (
+    echo ERROR: Test failed (exit code %EXIT_CODE%).
+)
+
+if /i "%PAUSE_ON_EXIT%"=="1" pause
 popd
 endlocal
+exit /b %EXIT_CODE%
 
-pause
+:timestamp
+for /f "delims=" %%i in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HH-mm-ss" 2^>nul') do set "TIMESTAMP=%%i"
+if not defined TIMESTAMP (
+    set "TIMESTAMP=%date:~-4%-%date:~-10,2%-%date:~-7,2%_%time:~0,2%-%time:~3,2%-%time:~6,2%"
+    set "TIMESTAMP=%TIMESTAMP: =0%"
+)
+exit /b 0
