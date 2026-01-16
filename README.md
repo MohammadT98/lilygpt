@@ -86,6 +86,8 @@ src/lilynorm/
       forma.py            - Prepend structure and inline \forma
       engrave_strip.py    - Strip engraving directives
       postprocessing.py   - Fix malformed patterns
+      utils/              - Normalization helpers
+        brackets.py       - Balanced bracket parsing
     tokenization/         - Tokenizer utilities
       special_tokens.py   - LilyPond special tokens
     dataset/              - Dataset loading for training
