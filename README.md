@@ -82,6 +82,7 @@ src/lilynorm/
       file_resolver.py    - Resolve includes, split on \forma
       preparse.py         - Remove comments, clean whitespace
       expand.py           - Expand relative/transpose/repeat
+      forma.py            - Prepend structure and inline \forma
       engrave_strip.py    - Strip engraving directives
       postprocessing.py   - Fix malformed patterns
     tokenization/         - Tokenizer utilities

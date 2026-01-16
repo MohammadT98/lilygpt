@@ -9,7 +9,7 @@ from lilynorm.stages import normalization
 
 def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None = None) -> list[str]:
     from lilynorm.stages.normalization.postprocessing import apply_postprocessing_fixes, remove_empty_variable_assignments
-    from lilynorm.stages.normalization import forma_inline, structure_prepend
+    from lilynorm.stages.normalization import forma
 
     # Stage 0: Resolve includes and split on forma blocks
     stage0_pieces = normalization.file_resolver.run(path, exclude_variabili=False, split_forma=True)
@@ -46,10 +46,10 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
         if re.search(r"\\forma\\b", stage2):
             stage3 = stage2
         else:
-            stage3 = structure_prepend.run(stage2, opts)
+            stage3 = forma.prepend_structure(stage2, opts)
 
         # Stage 4: Inline forma into voices (remove parallel structure lane)
-        stage4 = forma_inline.run(stage3, opts)
+        stage4 = forma.inline_forma(stage3, opts)
 
         # Stage 5: Strip engraving directives
         stage5 = normalization.engrave_strip.run(stage4, opts)
