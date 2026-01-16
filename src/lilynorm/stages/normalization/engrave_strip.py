@@ -124,8 +124,13 @@ def _final_cleanup(text: str) -> tuple[str, int]:
     # Remove standalone quoted strings (NOT preceded by #)
     text = re.sub(r'(?<!#)"[^"]*"', '', text)
 
-    text = re.sub(r'\\grace\s+(?:\S+|\{[^}]*\})\s*', '', text)
-    text = re.sub(r'\\appoggiatura(?:\s+\S+|\{[^}]*\})\s*', '', text)
+    text = re.sub(r'\\grace\s+(?:\S+|\{[^}]*\})\s*', ' ', text)
+    text = re.sub(r'\\appoggiatura(?:\s+\S+|\{[^}]*\})\s*', ' ', text)
+    text = re.sub(
+        r'[-_^]?\s*\\(?:staccatissimo|staccato|tenuto|accent|marcato|portato|fermata)',
+        ' ',
+        text,
+    )
 
     text = re.sub(r"([a-z]+)\s+([',]+)", r'\1\2', text)
     text = re.sub(r'-[!.+^_-]', '', text)
