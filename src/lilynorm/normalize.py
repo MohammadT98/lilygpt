@@ -24,7 +24,7 @@ def normalize_file(path: Path, opts: NormOptions, stats: dict[str, int] | None =
             stats["block_removed"] += max(0, piece.count("{") - stage1.count("{"))
 
         # Stage 2: Expand syntax (transpositions, repeats, tuplets)
-        stage2 = normalization.expand.run(stage1, opts)
+        stage2 = normalization.normalize_syntax.run(stage1, opts)
         if stats is not None:
             def count_occurrences(text: str) -> dict[str, int]:
                 return {
