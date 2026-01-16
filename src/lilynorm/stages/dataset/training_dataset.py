@@ -9,7 +9,10 @@ import torch
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
 
-from lilynorm.stages.tokenization.special_tokens import add_structural_tokens
+from lilynorm.stages.tokenization.special_tokens import (
+    add_structural_tokens,
+    add_voice_label,
+)
 
 
 @dataclass
@@ -64,6 +67,11 @@ class LilyStandardDataset(Dataset):
                 output_text = obj.get('output', '')
 
                 if self.use_structural_tokens:
+                    if input_text:
+                        input_text = add_voice_label(input_text, var_name)
+                    elif output_text:
+                        output_text = add_voice_label(output_text, var_name)
+
                     if input_text:
                         input_text = add_structural_tokens(input_text)
                     if output_text:

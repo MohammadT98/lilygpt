@@ -69,7 +69,6 @@ def apply_postprocessing_fixes(text: str) -> str:
     text = re.sub(r'\{\s*"\s*"\s*\}', "", text)
     text = re.sub(r'Score\.measureLength\s*=\s*#\(.*?\)\s*', "", text)
     text = re.sub(r'R\d+\^', "", text)  # Remove malformed rests with articulation marks
-    text = re.sub(r"(?m)^\s*<<[^>]*$", "", text)
     text = re.sub(r"\[\s*tr\s*\]", "", text)
     text = re.sub(rf"\b({solfege})([',]*?)({solfege})([',]*\d*)\b", r"\1\2 \3\4", text)
     text = _collapse_parallel_voices(text)
@@ -81,7 +80,7 @@ def apply_postprocessing_fixes(text: str) -> str:
 
 
 def _collapse_parallel_voices(text: str) -> str:
-    """Reduce << ... >> blocks by dropping non-musical voices; keep musical polyphony."""
+    """Filter << ... >> blocks by dropping empty voices while preserving polyphony."""
     def _find_matching_angles(source: str, start: int) -> int:
         depth = 1
         i = start + 2
@@ -150,9 +149,6 @@ def _collapse_parallel_voices(text: str) -> str:
     def _has_music(segment: str) -> bool:
         return bool(chord_re.search(segment) or note_re.search(segment))
 
-    def _note_count(segment: str) -> int:
-        return len(chord_re.findall(segment)) + len(note_re.findall(segment))
-
     out: list[str] = []
     i = 0
     while i < len(text):
@@ -163,19 +159,21 @@ def _collapse_parallel_voices(text: str) -> str:
                 break
             inner = text[i + 2:end - 2]
             parts = _split_top_level(inner)
-            musical_parts = []
+            musical_parts: list[str] = []
             for part in parts:
                 part_text = part.strip()
+                if not part_text:
+                    continue
                 part_for_check = _strip_wrapping_braces(part_text)
                 if _has_music(part_for_check):
-                    musical_parts.append((part_text, _note_count(part_for_check)))
+                    musical_parts.append(part_text)
 
             if not musical_parts:
                 keep = ""
+            elif len(musical_parts) == 1:
+                keep = musical_parts[0]
             else:
-                # Option 1: keep only the musical part with the most note tokens.
-                best_part = max(musical_parts, key=lambda item: item[1])[0]
-                keep = _strip_wrapping_braces(best_part)
+                keep = "<< " + " \\\\ ".join(musical_parts) + " >>"
 
             out.append(keep)
             i = end

@@ -215,7 +215,6 @@ def _final_cleanup(text: str) -> tuple[str, int]:
 
     text = re.sub(r"<<\s*>>", "", text)
     text = re.sub(r"^[A-Za-z_][\w-]*\s*=\s*\{\s*\}", "", text, flags=re.MULTILINE)
-    text = re.sub(r"(?m)^\s*>>\s*$", "", text)
     text = re.sub(r"(?m)(#\([^)]*\).*\n)\n*\}\s*$", r"\1", text, flags=re.MULTILINE)
     text = re.sub(r"(?m)(\\pageBreak\s*\n)\n*\}\s*$", r"\1", text, flags=re.MULTILINE)
     text = re.sub(r"(?m)^\}\s*\n\s*\}\s*$", "}", text, flags=re.MULTILINE)

@@ -55,6 +55,20 @@ def add_structural_tokens(text: str) -> str:
     return text
 
 
+def add_voice_label(text: str, var_name: str | None) -> str:
+    if not text or not var_name:
+        return text
+
+    if var_name.lower().endswith("global"):
+        return text
+
+    stripped = text.lstrip()
+    if stripped.startswith(VOICE_TOKEN):
+        return text
+
+    return f"{VOICE_TOKEN}{var_name}{CLOSE_TOKEN} {text}"
+
+
 def build_special_tokens(extra_tokens: Iterable[str] | None = None) -> list[str]:
     tokens = list(DEFAULT_SPECIAL_TOKENS)
     if extra_tokens:
