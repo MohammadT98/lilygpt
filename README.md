@@ -8,10 +8,11 @@ This tool processes raw LilyPond source files through a multi-stage normalizatio
 
 1. **File resolution** - Merges `\include` directives, splits multi-movement scores
 2. **Preprocessing** - Removes comments, normalizes whitespace
-3. **Expansion** - Converts relative notation to absolute, unfolds repeats and tuplets
-4. **Stripping** - Removes engraving directives (layout, dynamics, articulations)
-5. **Postprocessing** - Fixes malformed syntax patterns
-6. **Dataset generation** - Creates train/validation/test splits with balanced work distribution
+3. **Syntax normalization** - Expands music functions/transposes, unfolds repeats, normalizes tuplets
+4. **Forma handling** - Prepends structure and inlines `\forma`
+5. **Stripping** - Removes engraving directives (layout, dynamics, articulations)
+6. **Postprocessing** - Fixes malformed syntax patterns
+7. **Dataset generation** - Builds datasets and creates train/val/test splits
 
 ## Installation
 
@@ -31,7 +32,7 @@ Normalize LilyPond files:
 ```bash
 python -m lilynorm.cli \
   --input data/raw \
-  --normalized-out data/normalized
+  --normalized-out data/normalized_dataset
 ```
 
 Generate full assignment dataset:
@@ -54,7 +55,7 @@ Convenience scripts for Windows (in `bin/`):
 
 ## Training
 
-Standard full-sequence training:
+LoRA training:
 ```bash
 python -m lilynorm.stages.training.train_lora \
   --train data/splits_full/train.jsonl \
@@ -89,11 +90,11 @@ src/lilynorm/
       special_tokens.py   - LilyPond special tokens
     dataset/              - Dataset loading for training
       training_dataset.py - Full-sequence dataset
+      build_full_assignment_dataset.py - Build full assignment dataset
     splitting/            - Train/val split
       build_splits.py
     training/             - LoRA fine-tuning
       train_lora.py       - LoRA training
-      train_weighted.py   - Weighted loss training
   utils/
     options.py            - Configuration
 ```
