@@ -267,11 +267,8 @@ def main() -> int:
         save_steps=args.save_steps,
         eval_steps=args.eval_steps,
         eval_strategy="steps",
-        save_strategy="steps",
-        save_total_limit=3,
-        load_best_model_at_end=True,
-        metric_for_best_model="eval_loss",
-        greater_is_better=False,
+        save_strategy="no",  # Disable checkpoints to save disk space
+        load_best_model_at_end=False,
         fp16=args.fp16,
         bf16=args.bf16,
         dataloader_num_workers=0,
