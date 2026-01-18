@@ -20,7 +20,10 @@ BARE_VOICE_TOKEN = "<VOICE>"
 BAR_TOKEN = "<BAR>"
 CLOSE_TOKEN = ">"
 
-RE_KEY_SIG = re.compile(r"\\key\s+([a-g](?:is|es)?)\s+\\(major|minor)", re.I)
+RE_KEY_SIG = re.compile(
+    r"\\key\s+((?:[a-g](?:is|es)?|do|re|mi|fa|sol|la|si)(?:d|b)?)\s+\\(major|minor)",
+    re.I,
+)
 RE_TIME_SIG = re.compile(r"\\time\s+(\d+/\d+)", re.I)
 RE_TEMPO = re.compile(r"\\tempo\s+([^\n\\\\]+)", re.I)
 RE_BAR = re.compile(r"\|")
