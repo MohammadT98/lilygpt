@@ -10,7 +10,6 @@ DEFAULT_SPECIAL_TOKENS: List[str] = [
     "<TIME:",
     "<TEMPO:",
     "<VOICE>",
-    "<VOICE:",
     "<BAR>",
 ]
 
@@ -18,22 +17,13 @@ KEY_TOKEN = "<KEY:"
 TIME_TOKEN = "<TIME:"
 TEMPO_TOKEN = "<TEMPO:"
 BARE_VOICE_TOKEN = "<VOICE>"
-VOICE_TOKEN = "<VOICE:"
 BAR_TOKEN = "<BAR>"
 CLOSE_TOKEN = ">"
 
 RE_KEY_SIG = re.compile(r"\\key\s+([a-g](?:is|es)?)\s+\\(major|minor)", re.I)
 RE_TIME_SIG = re.compile(r"\\time\s+(\d+/\d+)", re.I)
 RE_TEMPO = re.compile(r"\\tempo\s+([^\n\\\\]+)", re.I)
-RE_VOICE = re.compile(r"\\voice(One|Two|Three|Four)\b")
 RE_BAR = re.compile(r"\|")
-
-VOICE_MAP = {
-    "One": "1",
-    "Two": "2",
-    "Three": "3",
-    "Four": "4",
-}
 
 
 def add_structural_tokens(text: str) -> str:
@@ -50,10 +40,6 @@ def add_structural_tokens(text: str) -> str:
         lambda m: f"{TEMPO_TOKEN}{m.group(1).strip()}{CLOSE_TOKEN}",
         text,
     )
-    text = RE_VOICE.sub(
-        lambda m: f"{VOICE_TOKEN}{VOICE_MAP.get(m.group(1), m.group(1))}{CLOSE_TOKEN}",
-        text,
-    )
     text = RE_BAR.sub(f" {BAR_TOKEN} ", text)
     return text
 
@@ -66,8 +52,7 @@ def add_voice_label(text: str, var_name: str | None) -> str:
     if var_name.lower().endswith("global"):
         return text
 
-    stripped = text.lstrip()
-    if stripped.startswith(VOICE_TOKEN) or stripped.startswith(BARE_VOICE_TOKEN):
+    if text.lstrip().startswith(BARE_VOICE_TOKEN):
         return text
 
     return f"{BARE_VOICE_TOKEN} {text}"
