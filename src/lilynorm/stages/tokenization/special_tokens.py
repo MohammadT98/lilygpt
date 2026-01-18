@@ -27,7 +27,7 @@ RE_BAR = re.compile(r"\|")
 
 
 def add_structural_tokens(text: str) -> str:
-    """Insert structural tokens for key, time, tempo, voice, and bars."""
+    """Insert structural tokens for key, time, tempo, and bars."""
     text = RE_KEY_SIG.sub(
         lambda m: f"{KEY_TOKEN}{m.group(1)}_{m.group(2)}{CLOSE_TOKEN}",
         text,
