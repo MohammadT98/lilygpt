@@ -9,6 +9,7 @@ DEFAULT_SPECIAL_TOKENS: List[str] = [
     "<KEY:",
     "<TIME:",
     "<TEMPO:",
+    "<VOICE>",
     "<VOICE:",
     "<BAR>",
 ]
@@ -16,6 +17,7 @@ DEFAULT_SPECIAL_TOKENS: List[str] = [
 KEY_TOKEN = "<KEY:"
 TIME_TOKEN = "<TIME:"
 TEMPO_TOKEN = "<TEMPO:"
+BARE_VOICE_TOKEN = "<VOICE>"
 VOICE_TOKEN = "<VOICE:"
 BAR_TOKEN = "<BAR>"
 CLOSE_TOKEN = ">"
@@ -57,17 +59,18 @@ def add_structural_tokens(text: str) -> str:
 
 
 def add_voice_label(text: str, var_name: str | None) -> str:
-    """Prefix a block with a voice label derived from the variable name."""
+    """Prefix a block with a bare voice label."""
     if not text or not var_name:
         return text
 
     if var_name.lower().endswith("global"):
         return text
 
-    if text.lstrip().startswith(VOICE_TOKEN):
+    stripped = text.lstrip()
+    if stripped.startswith(VOICE_TOKEN) or stripped.startswith(BARE_VOICE_TOKEN):
         return text
 
-    return f"{VOICE_TOKEN}{var_name}{CLOSE_TOKEN} {text}"
+    return f"{BARE_VOICE_TOKEN} {text}"
 
 
 def build_special_tokens(extra_tokens: Iterable[str] | None = None) -> list[str]:
