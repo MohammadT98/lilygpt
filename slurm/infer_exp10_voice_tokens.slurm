@@ -18,6 +18,7 @@ mkdir -p logs
 source "$HOME/lilygpt/.venv/bin/activate"
 
 python - <<'PY'
+import re
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
@@ -49,9 +50,14 @@ print("Loading LoRA weights from exp10...")
 model = PeftModel.from_pretrained(base, LORA_PATH, local_files_only=True)
 model.eval()
 
-# Prompt with voice token
-prompt = """<VOICE> \\relative do'' {
+# User-facing prompt (voice label injected internally)
+user_prompt = """\\relative do'' {
 """
+
+if user_prompt.lstrip().startswith("<VOICE>"):
+    prompt = user_prompt
+else:
+    prompt = f"<VOICE> {user_prompt}"
 
 print(f"\nPrompt: {repr(prompt)}")
 print("\nGenerating...")
@@ -73,9 +79,27 @@ with torch.no_grad():
         pad_token_id=tokenizer.eos_token_id,
     )
 
+def _detokenize(text: str) -> str:
+    def _repl_key(match: re.Match) -> str:
+        payload = match.group(1).strip()
+        if "_" in payload:
+            key, mode = payload.split("_", 1)
+            return f"\\\\key {key} \\\\{mode}"
+        return f"\\\\key {payload}"
+
+    text = re.sub(r"<KEY:([^>]+)>", _repl_key, text)
+    text = re.sub(r"<TIME:([^>]+)>", r"\\\\time \\1", text)
+    text = re.sub(r"<TEMPO:([^>]+)>", r"\\\\tempo \\1", text)
+    text = text.replace("<BAR>", "|")
+    text = text.replace("<VOICE>", "")
+    text = re.sub(r"[ \t]+", " ", text)
+    text = re.sub(r" +\n", "\n", text)
+    return text.strip()
+
 # Decode
 text = tokenizer.decode(out[0], skip_special_tokens=False)
 text = text.split("<|return|>", 1)[0].rstrip()
+text = _detokenize(text)
 
 print("\n" + "=" * 60)
 print("Generated Output:")
