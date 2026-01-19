@@ -249,6 +249,14 @@ def main() -> int:
         bias="none",
     )
     model = get_peft_model(model, lora_config)
+
+    # CRITICAL FIX: Make embedding layer trainable for new special tokens
+    # LoRA by default only trains adapters, not embeddings. New tokens need trained embeddings.
+    if special_tokens_added:
+        print(f"[train_lora] making embedding layer trainable for {special_tokens_added} new tokens")
+        for param in model.base_model.model.get_input_embeddings().parameters():
+            param.requires_grad = True
+
     model.print_trainable_parameters()
 
     def collate_fn(batch):
