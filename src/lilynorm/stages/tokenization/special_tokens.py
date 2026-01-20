@@ -21,12 +21,13 @@ BAR_TOKEN = "<BAR>"
 CLOSE_TOKEN = ">"
 
 RE_KEY_SIG = re.compile(
-    r"\\key\s+((?:[a-g](?:is|es)?|do|re|mi|fa|sol|la|si)(?:d|b)?)\s+\\(major|minor)",
+    r"\\key\s+((?:[a-g](?:is|es)?|do|re|mi|fa|sol|la|si)(?:d|b)?)\s*\\?(major|minor)\b",
     re.I,
 )
-RE_TIME_SIG = re.compile(r"\\time\s+(\d+/\d+)", re.I)
+RE_TIME_SIG = re.compile(r"\\time\s+(\d+)\s*/\s*(\d+)", re.I)
 RE_TEMPO = re.compile(r"\\tempo\s+([^\n\\\\]+)", re.I)
-RE_BAR = re.compile(r"\|")
+RE_BAR_CMD = re.compile(r"\\bar\s+\"?[^\s\"}]+\"?", re.I)
+RE_BAR_PIPE = re.compile(r"\|")
 
 
 def add_structural_tokens(text: str) -> str:
@@ -36,14 +37,15 @@ def add_structural_tokens(text: str) -> str:
         text,
     )
     text = RE_TIME_SIG.sub(
-        lambda m: f"{TIME_TOKEN}{m.group(1)}{CLOSE_TOKEN}",
+        lambda m: f"{TIME_TOKEN}{m.group(1)}/{m.group(2)}{CLOSE_TOKEN}",
         text,
     )
     text = RE_TEMPO.sub(
         lambda m: f"{TEMPO_TOKEN}{m.group(1).strip()}{CLOSE_TOKEN}",
         text,
     )
-    text = RE_BAR.sub(f" {BAR_TOKEN} ", text)
+    text = RE_BAR_CMD.sub(f" {BAR_TOKEN} ", text)
+    text = RE_BAR_PIPE.sub(f" {BAR_TOKEN} ", text)
     return text
 
 
