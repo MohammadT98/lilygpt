@@ -14,7 +14,10 @@ from lilynorm.stages.dataset.training_dataset import (
     LilyStandardDataset,
     collate_standard_batch,
 )
-from lilynorm.stages.tokenization.special_tokens import apply_special_tokens
+from lilynorm.stages.tokenization.special_tokens import (
+    apply_special_tokens,
+    build_special_tokens,
+)
 
 BANNER_LINE = "=" * 80
 
@@ -195,10 +198,18 @@ def main() -> int:
 
     use_structural_tokens = not args.no_structural_tokens
     special_tokens_added = 0
+    trainable_token_ids: list[int] = []
     if use_structural_tokens:
         special_tokens_added = apply_special_tokens(tokenizer)
+        added_vocab = tokenizer.get_added_vocab()
+        trainable_tokens = [t for t in build_special_tokens() if t in added_vocab]
+        trainable_token_ids = [added_vocab[t] for t in trainable_tokens]
         if special_tokens_added:
-            print(f"[train_lora] added {special_tokens_added} special tokens")
+            print(f"[train_lora] added {special_tokens_added} special tokens: {trainable_tokens}")
+        elif trainable_tokens:
+            print(f"[train_lora] using existing special tokens: {trainable_tokens}")
+        if trainable_token_ids:
+            print(f"[train_lora] special token ids: {trainable_token_ids}")
 
     pad_token_id = tokenizer.pad_token_id
     print(f"[train_lora] pad_token_id: {pad_token_id}")
@@ -250,12 +261,31 @@ def main() -> int:
     )
     model = get_peft_model(model, lora_config)
 
-    # CRITICAL FIX: Make embedding layer trainable for new special tokens
-    # LoRA by default only trains adapters, not embeddings. New tokens need trained embeddings.
-    if special_tokens_added:
-        print(f"[train_lora] making embedding layer trainable for {special_tokens_added} new tokens")
-        for param in model.base_model.model.get_input_embeddings().parameters():
-            param.requires_grad = True
+    def _mask_embedding_grads(embedding, token_ids: list[int], label: str) -> None:
+        if embedding is None or not token_ids:
+            return
+        weight = embedding.weight
+        weight.requires_grad = True
+        keep_ids = torch.tensor(sorted(set(token_ids)), dtype=torch.long)
+
+        def _hook(grad):
+            if grad is None:
+                return None
+            ids = keep_ids.to(grad.device)
+            kept = grad.index_select(0, ids)
+            grad.zero_()
+            grad.index_copy_(0, ids, kept)
+            return grad
+
+        weight.register_hook(_hook)
+        print(f"[train_lora] training {len(keep_ids)} token rows in {label} embeddings")
+
+    if trainable_token_ids:
+        input_emb = model.get_input_embeddings()
+        output_emb = model.get_output_embeddings()
+        _mask_embedding_grads(input_emb, trainable_token_ids, "input")
+        if output_emb is not None and output_emb is not input_emb and output_emb.weight is not input_emb.weight:
+            _mask_embedding_grads(output_emb, trainable_token_ids, "output")
 
     model.print_trainable_parameters()
 
