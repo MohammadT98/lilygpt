@@ -68,7 +68,8 @@ class LilyStandardDataset(Dataset):
                 if sample is not None:
                     self.samples.append(sample)
 
-        print(f"Loaded {len(self.samples)} training examples (standard approach, no masking)")
+        mask_note = "with input masking" if self.mask_input else "no masking"
+        print(f"Loaded {len(self.samples)} training examples (standard approach, {mask_note})")
 
     def _build_sample(self, obj: Dict[str, Any], line_num: int) -> StandardSample | None:
         example_id = obj.get("id", f"example_{line_num}")
