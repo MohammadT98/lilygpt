@@ -25,6 +25,8 @@ from peft import PeftModel
 
 BASE_MODEL = "openai/gpt-oss-20b"
 LORA_PATH = "runs/lora_exp10_voice_tokens/final"
+LILYPOND_VERSION = "2.24.4"
+LILYPOND_LANGUAGE = "italiano"
 
 print("=" * 60)
 print("Testing exp10 (voice labels + structural tokens)")
@@ -54,10 +56,7 @@ model.eval()
 user_prompt = """\\relative do'' {
 """
 
-if user_prompt.lstrip().startswith("<VOICE>"):
-    prompt = user_prompt
-else:
-    prompt = f"<VOICE> {user_prompt}"
+prompt = user_prompt if user_prompt.lstrip().startswith("<VOICE>") else f"<VOICE> {user_prompt}"
 
 print(f"\nPrompt: {repr(prompt)}")
 print("\nGenerating...")
@@ -79,31 +78,65 @@ with torch.no_grad():
         pad_token_id=tokenizer.eos_token_id,
     )
 
-def _detokenize(text: str) -> str:
-    def _repl_key(match: re.Match) -> str:
-        payload = match.group(1).strip()
-        if "_" in payload:
-            key, mode = payload.split("_", 1)
-            return f"\\\\key {key} \\\\{mode}"
-        return f"\\\\key {payload}"
-
-    text = re.sub(r"<KEY:([^>]+)>", _repl_key, text)
-    text = re.sub(r"<TIME:([^>]+)>", r"\\\\time \\1", text)
-    text = re.sub(r"<TEMPO:([^>]+)>", r"\\\\tempo \\1", text)
-    text = text.replace("<BAR>", "|")
-    text = text.replace("<VOICE>", "")
-    text = re.sub(r"[ \t]+", " ", text)
-    text = re.sub(r" +\n", "\n", text)
-    return text.strip()
-
-# Decode
-text = tokenizer.decode(out[0], skip_special_tokens=False)
-text = text.split("<|return|>", 1)[0].rstrip()
-text = _detokenize(text)
+raw_text = tokenizer.decode(out[0], skip_special_tokens=False)
+raw_text = raw_text.split("<|return|>", 1)[0].rstrip()
 
 print("\n" + "=" * 60)
-print("Generated Output:")
+print("Raw Output:")
 print("=" * 60)
-print(text)
+print(raw_text)
+print("=" * 60)
+
+def _clean_payload(payload: str) -> str:
+    return payload.strip().lstrip("\\")
+
+def _detokenize(text: str) -> str:
+    def _repl_key(match: re.Match) -> str:
+        payload = _clean_payload(match.group(1))
+        if "_" in payload:
+            key, mode = payload.split("_", 1)
+            return f"\\key {key} \\{mode}\n"
+        return f"\\key {payload}\n"
+
+    def _repl_time(match: re.Match) -> str:
+        return f"\\time {_clean_payload(match.group(1))}\n"
+
+    def _repl_tempo(match: re.Match) -> str:
+        return f"\\tempo {_clean_payload(match.group(1))}\n"
+
+    text = re.sub(r"<KEY:([^>]+)>[ \t]*\r?\n?", _repl_key, text)
+    text = re.sub(r"<TIME:([^>]+)>[ \t]*\r?\n?", _repl_time, text)
+    text = re.sub(r"<TEMPO:([^>]+)>[ \t]*\r?\n?", _repl_tempo, text)
+    text = text.replace("<BAR>", "|")
+    text = text.replace("<VOICE>", "")
+    text = re.sub(r"(\\key[^\n]*\n)\n+", r"\1", text)
+    text = re.sub(r"(\\time[^\n]*\n)\n+", r"\1", text)
+    text = re.sub(r"(\\tempo[^\n]*\n)\n+", r"\1", text)
+    return text.strip()
+
+def _wrap_score(text: str) -> str:
+    body = text.rstrip()
+    if "\\score" in body:
+        return body
+    header_lines = []
+    if "\\version" not in body:
+        header_lines.append(f'\\version "{LILYPOND_VERSION}"')
+    if "\\language" not in body:
+        header_lines.append(f'\\language "{LILYPOND_LANGUAGE}"')
+    header = ("\n".join(header_lines) + "\n") if header_lines else ""
+    return (
+        header
+        + "\\score {\n"
+        + body
+        + "\n\\layout {}\n\\midi {}\n}\n"
+    )
+
+clean_text = _detokenize(raw_text)
+final_text = _wrap_score(clean_text)
+
+print("\n" + "=" * 60)
+print("Detokenized Output:")
+print("=" * 60)
+print(final_text)
 print("=" * 60)
 PY
