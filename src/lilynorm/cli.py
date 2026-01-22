@@ -3,7 +3,6 @@ from __future__ import annotations
 """CLI entry point for normalizing LilyPond datasets."""
 
 import argparse
-import shutil
 import sys
 from pathlib import Path
 from typing import TextIO
@@ -73,16 +72,6 @@ def _resolve_path(path: str) -> Path:
     return Path(path).expanduser().resolve()
 
 
-def _copy_variabili_files(input_root: Path, output_root: Path) -> None:
-    for src in input_root.rglob("variabili.ly"):
-        rel = src.relative_to(input_root)
-        dest = output_root / rel
-        if dest.exists():
-            continue
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dest)
-
-
 def _init_stats() -> dict[str, int]:
     return {
         "line_removed": 0,
@@ -138,27 +127,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
             "(default: data/normalized_dataset)."
         ),
     )
-    parser.add_argument(
-        "--dry-run",
-        action="store_true",
-        help="Scan and report which files would be processed without writing output.",
-    )
-    parser.add_argument(
-        "--keep-compilable",
-        action="store_true",
-        help=(
-            "Keep files compilable with layout/midi/paper blocks. "
-            "By default, files are stripped for ML training."
-        ),
-    )
-    parser.add_argument(
-        "--mirror-variabili",
-        action="store_true",
-        help=(
-            "Mirror variabili.ly files into normalized output so \\include continues to work. "
-            "By default variabili.ly is NOT mirrored to keep training data clean."
-        ),
-    )
 
     return parser
 
@@ -186,7 +154,7 @@ def main() -> int:
             return 2
 
         norm_root = _resolve_path(args.normalized_out)
-        opts = NormOptions(keep_engraving=args.keep_compilable)
+        opts = NormOptions()
 
         processed = 0
         skipped = 0
@@ -220,10 +188,6 @@ def main() -> int:
                 stats["lily_fail"] += 1
                 continue
 
-            if args.dry_run:
-                processed += 1
-                continue
-
             for idx, piece in enumerate(forma_pieces, start=1):
                 norm_path = norm_root / rel
                 if len(forma_pieces) > 1:
@@ -235,9 +199,6 @@ def main() -> int:
                 norm_path.write_text(output_text, encoding="utf-8")
 
             processed += 1
-
-        if not args.dry_run and args.mirror_variabili:
-            _copy_variabili_files(input_root, norm_root)
 
         print(
             f"[dataset] done. processed={processed} skipped={skipped} "
