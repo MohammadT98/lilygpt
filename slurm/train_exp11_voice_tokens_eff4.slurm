@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=lilygpt-exp13-voice-tokens-bs32
+#SBATCH --job-name=lilygpt-exp11-eff4-acc2
 #SBATCH --partition=allgroups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
 #SBATCH --time=48:00:00
-#SBATCH --output=logs/exp13-voice-tokens-bs32-%j.out
-#SBATCH --error=logs/exp13-voice-tokens-bs32-%j.err
+#SBATCH --output=logs/exp11-eff4-acc2-%j.out
+#SBATCH --error=logs/exp11-eff4-acc2-%j.err
 #SBATCH --qos=allgroups_qos
 
 set -euo pipefail
@@ -19,18 +19,19 @@ mkdir -p logs runs
 source "$HOME/lilygpt/.venv/bin/activate"
 
 echo "================================================================================"
-echo "EXPERIMENT 13: VOICE LABELS + STRUCTURAL TOKENS (BATCH SIZE 32)"
+echo "EXPERIMENT 11: VOICE LABELS + STRUCTURAL TOKENS (EFFECTIVE BATCH 4)"
 echo "================================================================================"
 echo "Unweighted training (standard loss). Dataset uses EOS appended per sample."
 echo "NO INPUT MASKING - model trains on full prompt + completion context."
 echo "Voice labels injected at training time (e.g., <VOICE:IvlIn>)."
+echo "Per-GPU batch: 1 | Grad accum: 2 | GPUs: 2 | Effective batch: 4"
 echo "================================================================================"
 echo ""
 
 echo "=== Job Info ==="
 echo "Job ID: $SLURM_JOB_ID"
 echo "Node: $SLURM_NODELIST"
-echo "GPUs: $CUDA_VISIBLE_DEVICES"
+echo "GPUs: ${CUDA_VISIBLE_DEVICES:-UNSET}"
 echo "Start time: $(date)"
 echo ""
 
@@ -41,9 +42,9 @@ echo ""
 python -m lilynorm.stages.training.train_lora \
     --train "data/splits_full/train.jsonl" \
     --val "data/splits_full/val.jsonl" \
-    --output-dir "runs/lora_exp13_voice_tokens_bs32" \
-    --batch-size 32 \
-    --gradient-accumulation-steps 32 \
+    --output-dir "runs/lora_exp11_eff4_acc2" \
+    --batch-size 1 \
+    --gradient-accumulation-steps 2 \
     --learning-rate 5e-5 \
     --epochs 3 \
     --max-length 2048 \
