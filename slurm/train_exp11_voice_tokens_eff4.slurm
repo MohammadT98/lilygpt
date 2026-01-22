@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=lilygpt-exp11-eff4-acc2
+#SBATCH --job-name=lilygpt-exp11-voice-tokens-eff4-acc2
 #SBATCH --partition=allgroups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
 #SBATCH --time=48:00:00
-#SBATCH --output=logs/exp11-eff4-acc2-%j.out
-#SBATCH --error=logs/exp11-eff4-acc2-%j.err
+#SBATCH --output=logs/exp11-voice-tokens-eff4-%j.out
+#SBATCH --error=logs/exp11-voice-tokens-eff4-%j.err
 #SBATCH --qos=allgroups_qos
 
 set -euo pipefail
@@ -42,7 +42,7 @@ echo ""
 python -m lilynorm.stages.training.train_lora \
     --train "data/splits_full/train.jsonl" \
     --val "data/splits_full/val.jsonl" \
-    --output-dir "runs/lora_exp11_eff4_acc2" \
+    --output-dir "runs/lora_exp11_voice_tokens_eff4" \
     --batch-size 1 \
     --gradient-accumulation-steps 2 \
     --learning-rate 5e-5 \
