@@ -63,8 +63,10 @@ python -m lilynorm.stages.training.train_lora \
   --output-dir runs/experiment \
   --epochs 3 \
   --batch-size 1 \
+  --gradient-accumulation-steps 32 \
   --learning-rate 5e-5
 ```
+(Effective batch size = 1 × 32 = 32)
 
 SLURM job templates in `slurm/`.
 
