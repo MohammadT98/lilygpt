@@ -1,13 +1,13 @@
 #!/bin/bash
-#SBATCH --job-name=lilygpt-exp11-voice-tokens-eff4-acc2
+#SBATCH --job-name=lilygpt-exp12-voice-tokens-eff4
 #SBATCH --partition=allgroups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
 #SBATCH --time=48:00:00
-#SBATCH --output=logs/exp11-voice-tokens-eff4-%j.out
-#SBATCH --error=logs/exp11-voice-tokens-eff4-%j.err
+#SBATCH --output=logs/exp12-voice-tokens-eff4-%j.out
+#SBATCH --error=logs/exp12-voice-tokens-eff4-%j.err
 #SBATCH --qos=allgroups_qos
 
 set -euo pipefail
@@ -19,12 +19,12 @@ mkdir -p logs runs
 source "$HOME/lilygpt/.venv/bin/activate"
 
 echo "================================================================================"
-echo "EXPERIMENT 11: VOICE LABELS + STRUCTURAL TOKENS (EFFECTIVE BATCH 4)"
+echo "EXPERIMENT 12: VOICE LABELS + STRUCTURAL TOKENS (EFFECTIVE BATCH 4)"
 echo "================================================================================"
 echo "Unweighted training (standard loss). Dataset uses EOS appended per sample."
 echo "NO INPUT MASKING - model trains on full prompt + completion context."
 echo "Voice labels injected at training time (e.g., <VOICE:IvlIn>)."
-echo "Per-GPU batch: 1 | Grad accum: 2 | GPUs: 2 | Effective batch: 4"
+echo "Per-GPU batch: 1 | Grad accum: 4 | Effective batch: 4"
 echo "================================================================================"
 echo ""
 
@@ -42,9 +42,9 @@ echo ""
 python -m lilynorm.stages.training.train_lora \
     --train "data/splits_full/train.jsonl" \
     --val "data/splits_full/val.jsonl" \
-    --output-dir "runs/lora_exp11_voice_tokens_eff4" \
+    --output-dir "runs/lora_exp12_voice_tokens_eff4" \
     --batch-size 1 \
-    --gradient-accumulation-steps 2 \
+    --gradient-accumulation-steps 4 \
     --learning-rate 5e-5 \
     --epochs 3 \
     --max-length 2048 \
