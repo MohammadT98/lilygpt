@@ -50,14 +50,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--batch-size",
         type=int,
-        default=4,
-        help="Per-device train batch size (default: 4).",
+        default=1,
+        help="Per-device train batch size (default: 1).",
     )
     parser.add_argument(
         "--gradient-accumulation-steps",
         type=int,
-        default=4,
-        help="Gradient accumulation steps (default: 4).",
+        default=32,
+        help="Gradient accumulation steps (default: 32).",
     )
     parser.add_argument(
         "--learning-rate",
