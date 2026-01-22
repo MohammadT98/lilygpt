@@ -62,8 +62,8 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--learning-rate",
         type=float,
-        default=2e-4,
-        help="Learning rate (default: 2e-4).",
+        default=5e-5,
+        help="Learning rate (default: 5e-5).",
     )
     parser.add_argument(
         "--epochs",
