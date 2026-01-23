@@ -33,7 +33,7 @@ print("=" * 60)
 
 tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True)
 tokenizer.add_special_tokens(
-    {"additional_special_tokens": ["<KEY:", "<TIME:", "<TEMPO:", "<VOICE>", "<BAR>"]}
+    {"additional_special_tokens": ["<KEY:", "<TIME:", "<TEMPO:", "<VOICE>"]}
 )
 
 print("\nLoading base model...")
@@ -100,7 +100,6 @@ def _detokenize(text: str) -> str:
     text = re.sub(r"<KEY:([^>]+)>[ \t]*\r?\n?", _repl_key, text)
     text = re.sub(r"<TIME:([^>]+)>[ \t]*\r?\n?", _repl_time, text)
     text = re.sub(r"<TEMPO:([^>]+)>[ \t]*\r?\n?", _repl_tempo, text)
-    text = text.replace("<BAR>", "|")
     text = text.replace("<VOICE>", "")
     text = re.sub(r"(\\key[^\n]*\n)\n+", r"\1", text)
     text = re.sub(r"(\\time[^\n]*\n)\n+", r"\1", text)

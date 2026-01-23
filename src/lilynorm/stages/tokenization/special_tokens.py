@@ -10,14 +10,12 @@ DEFAULT_SPECIAL_TOKENS: List[str] = [
     "<TIME:",
     "<TEMPO:",
     "<VOICE>",
-    "<BAR>",
 ]
 
 KEY_TOKEN = "<KEY:"
 TIME_TOKEN = "<TIME:"
 TEMPO_TOKEN = "<TEMPO:"
 BARE_VOICE_TOKEN = "<VOICE>"
-BAR_TOKEN = "<BAR>"
 CLOSE_TOKEN = ">"
 
 RE_KEY_SIG = re.compile(
@@ -26,12 +24,10 @@ RE_KEY_SIG = re.compile(
 )
 RE_TIME_SIG = re.compile(r"\\time\s+(\d+)\s*/\s*(\d+)", re.I)
 RE_TEMPO = re.compile(r"\\tempo\s+([^\n\\\\]+)", re.I)
-RE_BAR_CMD = re.compile(r"\\bar\s+\"?[^\s\"}]+\"?", re.I)
-RE_BAR_PIPE = re.compile(r"\|")
 
 
 def add_structural_tokens(text: str) -> str:
-    """Insert structural tokens for key, time, tempo, and bars."""
+    """Insert structural tokens for key, time, and tempo."""
     text = RE_KEY_SIG.sub(
         lambda m: f"{KEY_TOKEN}{m.group(1)}_{m.group(2)}{CLOSE_TOKEN}",
         text,
@@ -44,8 +40,6 @@ def add_structural_tokens(text: str) -> str:
         lambda m: f"{TEMPO_TOKEN}{m.group(1).strip()}{CLOSE_TOKEN}",
         text,
     )
-    text = RE_BAR_CMD.sub(f" {BAR_TOKEN} ", text)
-    text = RE_BAR_PIPE.sub(f" {BAR_TOKEN} ", text)
     return text
 
 
