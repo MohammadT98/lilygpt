@@ -17,7 +17,7 @@ This tool processes raw LilyPond source files through a multi-stage normalizatio
 ## Installation
 
 ```bash
-cd lilynorm
+cd lilygpt
 pip install -e .
 ```
 
