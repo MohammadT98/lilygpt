@@ -15,6 +15,17 @@ set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs runs
 
+# Redirect caches to home directory (avoid /tmp filling up on compute node)
+export TMPDIR="$HOME/.cache/tmp"
+export TORCH_HOME="$HOME/.cache/torch"
+export TRITON_CACHE_DIR="$HOME/.cache/triton"
+export HF_HOME="$HOME/.cache/huggingface"
+mkdir -p "$TMPDIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" "$HF_HOME"
+
+# Debug flags (optional)
+export CUDA_LAUNCH_BLOCKING=1
+export PYTHONFAULTHANDLER=1
+
 # Activate venv (DO NOT load python modules)
 source "$HOME/lilygpt/.venv/bin/activate"
 
