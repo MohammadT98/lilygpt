@@ -6,8 +6,8 @@
 #SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
 #SBATCH --time=48:00:00
-#SBATCH --output=logs/exp12-voice-tokens-eff4-%j.out
-#SBATCH --error=logs/exp12-voice-tokens-eff4-%j.err
+#SBATCH --output=/tmp/exp12-voice-tokens-eff4-%j.out
+#SBATCH --error=/tmp/exp12-voice-tokens-eff4-%j.err
 #SBATCH --qos=allgroups_qos
 
 set -euo pipefail
@@ -54,11 +54,15 @@ echo ""
 sync_back() {
     echo "=== Syncing results back to home ==="
     mkdir -p "$RUN_HOME_DIR"
-    rsync -av --partial --info=progress2 "$RUN_SCRATCH_DIR/" "$RUN_HOME_DIR/" || true
+    rsync -av --partial "$RUN_SCRATCH_DIR/" "$RUN_HOME_DIR/" || true
+    # Copy logs from /tmp back to home
+    cp "/tmp/exp12-voice-tokens-eff4-$SLURM_JOB_ID.out" "$SLURM_SUBMIT_DIR/logs/" 2>/dev/null || true
+    cp "/tmp/exp12-voice-tokens-eff4-$SLURM_JOB_ID.err" "$SLURM_SUBMIT_DIR/logs/" 2>/dev/null || true
 }
 cleanup() {
     sync_back
     rm -rf "$SCRATCH" || true
+    rm -f "/tmp/exp12-voice-tokens-eff4-$SLURM_JOB_ID.out" "/tmp/exp12-voice-tokens-eff4-$SLURM_JOB_ID.err" || true
 }
 trap cleanup EXIT
 
