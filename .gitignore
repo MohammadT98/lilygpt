@@ -38,6 +38,8 @@ ENV/
 data/*
 !data/.gitkeep
 logs/
+cluster_logs/
+backup_runs/
 *.log
 docs/
 temp_path.txt
