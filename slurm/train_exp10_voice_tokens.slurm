@@ -5,7 +5,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:a40:1
 #SBATCH --mem=64G
-#SBATCH --time=48:00:00
+#SBATCH --time=24:00:00
 #SBATCH --output=/tmp/exp10-voice-tokens-%j.out
 #SBATCH --error=/tmp/exp10-voice-tokens-%j.err
 #SBATCH --qos=allgroups_qos
