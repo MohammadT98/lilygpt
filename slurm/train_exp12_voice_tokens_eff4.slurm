@@ -3,7 +3,7 @@
 #SBATCH --partition=allgroups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --gres=gpu:a40:1
+#SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
 #SBATCH --time=48:00:00
 #SBATCH --output=/tmp/exp12-voice-tokens-eff4-%j.out
