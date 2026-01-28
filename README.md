@@ -34,6 +34,8 @@ python -m lilynorm.cli \
   --input data/raw \
   --normalized-out data/normalized_dataset
 ```
+Note: Some normalization steps call the LilyPond binary. If it is not on PATH, set
+`LILYPOND_BIN` to its full path (e.g., `C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe`).
 
 Generate full assignment dataset:
 ```bash
