@@ -39,13 +39,13 @@ Note: Some normalization steps call the LilyPond binary. If it is not on PATH, s
 
 Generate full assignment dataset:
 ```bash
-python -m lilynorm.stages.dataset.build_full_assignment_dataset
+python -m lilynorm.stages.dataset.build_assignment_dataset
 ```
 
 Build train/val/test splits:
 ```bash
 python src/lilynorm/stages/splitting/build_splits.py \
-  --input-jsonl data/full_assignment_dataset/all_examples.jsonl \
+  --input-jsonl data/assignment_dataset/all_examples.jsonl \
   --output-dir data/splits_full
 ```
 
@@ -96,7 +96,7 @@ src/lilynorm/
       special_tokens.py   - LilyPond special tokens
     dataset/              - Dataset loading for training
       training_dataset.py - Full-sequence dataset
-      build_full_assignment_dataset.py - Build full assignment dataset
+      build_assignment_dataset.py - Build full assignment dataset
     splitting/            - Train/val split
       build_splits.py
     training/             - LoRA fine-tuning

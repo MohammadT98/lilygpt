@@ -70,7 +70,7 @@ def extract_assignments(ly_path: Path) -> List[Dict[str, Any]]:
 def main() -> None:
     """Create a JSONL dataset with one assignment per example."""
     normalized_root = Path("data/normalized_dataset")
-    output_dir = Path("data/full_assignment_dataset")
+    output_dir = Path("data/assignment_dataset")
     output_dir.mkdir(exist_ok=True)
 
     output_file = output_dir / "all_examples.jsonl"

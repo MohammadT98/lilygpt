@@ -5,12 +5,12 @@ pushd "%~dp0\.."
 REM Pipeline: normalize LilyPond files -> build full-assignment dataset -> split train/val/test
 REM Outputs:
 REM   - data/normalized_dataset
-REM   - data/full_assignment_dataset/all_examples.jsonl
+REM   - data/assignment_dataset/all_examples.jsonl
 REM   - data/splits_full/{train,val,test}.jsonl
 
 set "INPUT_DIR=data/raw"
 set "NORMALIZED_DIR=data/normalized_dataset"
-set "FULL_DATASET_DIR=data/full_assignment_dataset"
+set "FULL_DATASET_DIR=data/assignment_dataset"
 set "SPLIT_DIR=data/splits_full"
 set "PAUSE_ON_EXIT=1"
 
@@ -30,7 +30,7 @@ echo ========================================
 echo STEP 2: Build Full Assignment Dataset
 echo ========================================
 echo.
-uv run python -m lilynorm.stages.dataset.build_full_assignment_dataset
+uv run python -m lilynorm.stages.dataset.build_assignment_dataset
 if errorlevel 1 (
     echo ERROR: Full assignment dataset preparation failed.
     set "EXIT_CODE=1"
