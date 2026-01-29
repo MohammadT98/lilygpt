@@ -17,6 +17,22 @@ mkdir -p logs
 
 source "$HOME/lilygpt/.venv/bin/activate"
 
+SCRATCH_ROOT="${TMPDIR:-/tmp}"
+SCRATCH="$SCRATCH_ROOT/$USER-$SLURM_JOB_ID"
+mkdir -p "$SCRATCH"
+
+export TMPDIR="$SCRATCH/tmp"
+export TORCH_HOME="$SCRATCH/torch"
+export TRITON_CACHE_DIR="$SCRATCH/triton"
+
+export HF_HOME="$SCRATCH/huggingface"
+export HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
+export TRANSFORMERS_CACHE="$HF_HOME/transformers"
+export HF_DATASETS_CACHE="$HF_HOME/datasets"
+
+mkdir -p "$TMPDIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" \
+         "$HF_HOME" "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE"
+
 python - <<'PY'
 import re
 import random
@@ -35,7 +51,7 @@ print("Testing exp10 (voice labels + structural tokens)")
 print("=" * 60)
 
 # Load tokenizer from LoRA path (has special tokens)
-tokenizer = AutoTokenizer.from_pretrained(LORA_PATH, use_fast=True)
+tokenizer = AutoTokenizer.from_pretrained(LORA_PATH, use_fast=True, local_files_only=True)
 
 # Load base model
 print("\nLoading base model...")
@@ -129,9 +145,6 @@ def _wrap_score(text: str) -> str:
         + body
         + "\n\\layout {}\n\\midi {}\n}\n"
     )
-
-clean_text = _detokenize(raw_text)
-final_text = _wrap_score(clean_text)
 
 for i in range(NUM_SAMPLES):
     print(f"\nGenerating sample {i + 1}/{NUM_SAMPLES}...")

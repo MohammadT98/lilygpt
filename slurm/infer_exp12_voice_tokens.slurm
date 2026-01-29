@@ -15,6 +15,22 @@ set -euo pipefail
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
 
+SCRATCH_ROOT="${TMPDIR:-/tmp}"
+SCRATCH="$SCRATCH_ROOT/$USER-$SLURM_JOB_ID"
+mkdir -p "$SCRATCH"
+
+export TMPDIR="$SCRATCH/tmp"
+export TORCH_HOME="$SCRATCH/torch"
+export TRITON_CACHE_DIR="$SCRATCH/triton"
+
+export HF_HOME="$SCRATCH/huggingface"
+export HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
+export TRANSFORMERS_CACHE="$HF_HOME/transformers"
+export HF_DATASETS_CACHE="$HF_HOME/datasets"
+
+mkdir -p "$TMPDIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" \
+         "$HF_HOME" "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE"
+
 # Copy logs back at end
 copy_logs() {
     cp "/tmp/exp12-infer-$SLURM_JOB_ID.out" "$SLURM_SUBMIT_DIR/logs/" 2>/dev/null || true
@@ -42,10 +58,7 @@ print("=" * 60)
 print("Testing exp12 (voice labels + structural tokens, eff4)")
 print("=" * 60)
 
-tokenizer = AutoTokenizer.from_pretrained(BASE_MODEL, use_fast=True)
-tokenizer.add_special_tokens(
-    {"additional_special_tokens": ["<KEY:", "<TIME:", "<TEMPO:", "<VOICE>"]}
-)
+tokenizer = AutoTokenizer.from_pretrained(LORA_PATH, use_fast=True, local_files_only=True)
 
 print("\nLoading base model...")
 base = AutoModelForCausalLM.from_pretrained(
