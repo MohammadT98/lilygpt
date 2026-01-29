@@ -27,6 +27,7 @@ source "$HOME/lilygpt/.venv/bin/activate"
 
 python - <<'PY'
 import re
+import random
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from peft import PeftModel
@@ -35,6 +36,7 @@ BASE_MODEL = "openai/gpt-oss-20b"
 LORA_PATH = "runs/lora_exp12_voice_tokens_eff4/final"
 LILYPOND_VERSION = "2.24.4"
 LILYPOND_LANGUAGE = "italiano"
+NUM_SAMPLES = 10
 
 print("=" * 60)
 print("Testing exp12 (voice labels + structural tokens, eff4)")
@@ -63,31 +65,30 @@ user_prompt = """\\relative do'' {
 prompt = user_prompt if user_prompt.lstrip().startswith("<VOICE>") else f"<VOICE> {user_prompt}"
 
 print(f"\nPrompt: {repr(prompt)}")
-print("\nGenerating...")
+device = next(model.parameters()).device
 
-inputs = tokenizer(prompt, return_tensors="pt")
-inputs = {k: v.to(next(model.parameters()).device) for k, v in inputs.items()}
+def _generate_once(seed: int):
+    random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
-with torch.no_grad():
-    out = model.generate(
-        **inputs,
-        max_new_tokens=3000,
-        do_sample=True,
-        temperature=0.7,
-        top_p=0.9,
-        no_repeat_ngram_size=3,
-        eos_token_id=tokenizer.eos_token_id,
-        pad_token_id=tokenizer.eos_token_id,
-    )
+    inputs = tokenizer(prompt, return_tensors="pt")
+    inputs = {k: v.to(device) for k, v in inputs.items()}
 
-raw_text = tokenizer.decode(out[0], skip_special_tokens=False)
-raw_text = raw_text.split("<|return|>", 1)[0].rstrip()
-
-print("\n" + "=" * 60)
-print("Raw Output:")
-print("=" * 60)
-print(raw_text)
-print("=" * 60)
+    with torch.no_grad():
+        out = model.generate(
+            **inputs,
+            max_new_tokens=3000,
+            do_sample=True,
+            temperature=0.7,
+            top_p=0.9,
+            no_repeat_ngram_size=3,
+            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.eos_token_id,
+        )
+    raw_text = tokenizer.decode(out[0], skip_special_tokens=False)
+    return raw_text.split("<|return|>", 1)[0].rstrip()
 
 def _clean_payload(payload: str) -> str:
     return payload.strip().lstrip("\\")
@@ -132,12 +133,22 @@ def _wrap_score(text: str) -> str:
         + "\n\\layout {}\n\\midi {}\n}\n"
     )
 
-clean_text = _detokenize(raw_text)
-final_text = _wrap_score(clean_text)
+for i in range(NUM_SAMPLES):
+    print(f"\nGenerating sample {i + 1}/{NUM_SAMPLES}...")
+    raw_text = _generate_once(seed=1234 + i)
 
-print("\n" + "=" * 60)
-print("Detokenized Output:")
-print("=" * 60)
-print(final_text)
-print("=" * 60)
+    print("\n" + "=" * 60)
+    print(f"Raw Output {i + 1}:")
+    print("=" * 60)
+    print(raw_text)
+    print("=" * 60)
+
+    clean_text = _detokenize(raw_text)
+    final_text = _wrap_score(clean_text)
+
+    print("\n" + "=" * 60)
+    print(f"Detokenized Output {i + 1}:")
+    print("=" * 60)
+    print(final_text)
+    print("=" * 60)
 PY
