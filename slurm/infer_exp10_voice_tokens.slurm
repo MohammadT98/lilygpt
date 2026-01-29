@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
-#SBATCH --time=00:30:00
+#SBATCH --time=02:00:00
 #SBATCH --output=logs/exp10-infer-%j.out
 #SBATCH --error=logs/exp10-infer-%j.err
 
@@ -44,7 +44,7 @@ BASE_MODEL = "openai/gpt-oss-20b"
 LORA_PATH = "runs/lora_exp10_voice_tokens/final"
 LILYPOND_VERSION = "2.24.4"
 LILYPOND_LANGUAGE = "italiano"
-NUM_SAMPLES = 10
+NUM_SAMPLES = 100
 
 print("=" * 60)
 print("Testing exp10 (voice labels + structural tokens)")
