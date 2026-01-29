@@ -134,21 +134,21 @@ clean_text = _detokenize(raw_text)
 final_text = _wrap_score(clean_text)
 
 for i in range(NUM_SAMPLES):
-    print(f\"\\nGenerating sample {i + 1}/{NUM_SAMPLES}...\")
+    print(f"\nGenerating sample {i + 1}/{NUM_SAMPLES}...")
     raw_text = _generate_once(seed=1234 + i)
 
-    print(\"\\n\" + \"=\" * 60)
-    print(f\"Raw Output {i + 1}:\")
-    print(\"=\" * 60)
+    print("\n" + "=" * 60)
+    print(f"Raw Output {i + 1}:")
+    print("=" * 60)
     print(raw_text)
-    print(\"=\" * 60)
+    print("=" * 60)
 
     clean_text = _detokenize(raw_text)
     final_text = _wrap_score(clean_text)
 
-    print(\"\\n\" + \"=\" * 60)
-    print(f\"Detokenized Output {i + 1}:\")
-    print(\"=\" * 60)
+    print("\n" + "=" * 60)
+    print(f"Detokenized Output {i + 1}:")
+    print("=" * 60)
     print(final_text)
-    print(\"=\" * 60)
+    print("=" * 60)
 PY
