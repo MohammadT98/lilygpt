@@ -6,8 +6,8 @@
 #SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
 #SBATCH --time=06:00:00
-#SBATCH --output=/tmp/eval-test-%j.out
-#SBATCH --error=/tmp/eval-test-%j.err
+#SBATCH --output=logs/eval-test-%j.out
+#SBATCH --error=logs/eval-test-%j.err
 #SBATCH --qos=allgroups_qos
 
 set -euo pipefail
@@ -51,9 +51,4 @@ python -m lilynorm.stages.training.eval_lora \
     --max-length 2048 \
     --bf16
 
-# Copy logs back to project
-cp "/tmp/eval-test-$SLURM_JOB_ID.out" "$SLURM_SUBMIT_DIR/logs/" 2>/dev/null || true
-cp "/tmp/eval-test-$SLURM_JOB_ID.err" "$SLURM_SUBMIT_DIR/logs/" 2>/dev/null || true
-
 rm -rf "$SCRATCH" || true
-rm -f "/tmp/eval-test-$SLURM_JOB_ID.out" "/tmp/eval-test-$SLURM_JOB_ID.err" || true
