@@ -72,6 +72,17 @@ python -m lilynorm.stages.training.train_lora \
 
 SLURM job templates in `slurm/`.
 
+## Post-Inference
+
+Extract generated LilyPond samples from inference output files:
+```bash
+python scripts/extract_detokenized.py \
+  --input-dir "data/exp infer" \
+  --output-dir "data/extracted_ly"
+```
+
+This extracts all "Detokenized Output" sections and saves them as `.ly` files organized by experiment.
+
 ## Project structure
 
 ```
@@ -99,6 +110,8 @@ src/lilynorm/
       train_lora.py       - LoRA training
   utils/
     options.py            - Configuration
+scripts/
+  extract_detokenized.py  - Extract .ly files from inference outputs
 ```
 
 ## License
