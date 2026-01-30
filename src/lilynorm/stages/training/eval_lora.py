@@ -89,8 +89,8 @@ def main() -> int:
     print("EVALUATION: LoRA adapter")
     print(BANNER_LINE)
 
-    print(f"[eval_lora] loading tokenizer: {args.model_name}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
+    print(f"[eval_lora] loading tokenizer from: {lora_path}")
+    tokenizer = AutoTokenizer.from_pretrained(lora_path, use_fast=True, local_files_only=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
