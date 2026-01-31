@@ -24,7 +24,10 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-dependencies = []
+dependencies = [
+    "pandas>=1.5",
+    "music21>=9.1",
+]
 
 [project.optional-dependencies]
 train = [
