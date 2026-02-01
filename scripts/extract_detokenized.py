@@ -64,14 +64,14 @@ def main():
     parser.add_argument(
         "--input-dir",
         type=Path,
-        default=Path("data/inference_outputs"),
-        help="Directory containing the inference output files (default: data/inference_outputs)"
+        default=Path("data/inference/outputs"),
+        help="Directory containing the inference output files (default: data/inference/outputs)"
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("data/extracted_ly"),
-        help="Output directory for .ly files (default: data/extracted_ly)"
+        default=Path("data/inference/samples"),
+        help="Output directory for .ly files (default: data/inference/samples)"
     )
 
     args = parser.parse_args()
