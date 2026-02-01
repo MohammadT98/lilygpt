@@ -125,10 +125,23 @@ src/lilynorm/
       build_splits.py
     training/             - LoRA fine-tuning
       train_lora.py       - LoRA training
+      eval_lora.py        - LoRA evaluation
   utils/
     options.py            - Configuration
 scripts/
   extract_detokenized.py  - Extract .ly files from inference outputs
+  eval_extracted_ly.py    - Evaluate extracted LilyPond files
+  tests/                  - Unit tests
+    test_file_resolver.py
+    test_normalize_syntax.py
+    test_preprocess.py
+bin/
+  run_full_pipeline.bat   - End-to-end pipeline
+  tests/                  - Test batch scripts
+slurm/
+  train/                  - Training job templates
+  infer/                  - Inference job templates
+  eval/                   - Evaluation job templates
 ```
 
 ## License
