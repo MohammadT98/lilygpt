@@ -1502,9 +1502,11 @@ def main() -> int:
             lilypond_bin=lilypond_bin,
         )
 
+        group = _group_key(input_dir, ly_path)
+        midi_out_dir = midi_dir / group if group and group != "all" else midi_dir
         midi_render = lily_to_midi(
             ly_path,
-            midi_dir=midi_dir,
+            midi_dir=midi_out_dir,
             force=args.force_midi,
         )
 
