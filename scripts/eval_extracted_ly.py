@@ -1455,10 +1455,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Evaluate LilyPond files under a directory (Lily text + MIDI music21), Italian-aware, no bar checks.",
     )
-    parser.add_argument("input_dir", nargs="?", default="data/extracted_ly")
-    parser.add_argument("--out", default="data/extracted_ly_eval/eval.jsonl")
-    parser.add_argument("--summary", default="data/extracted_ly_eval/summary.json")
-    parser.add_argument("--midi-dir", default="data/extracted_ly_eval/midi")
+    parser.add_argument("input_dir", nargs="?", default="data/inference/samples")
+    parser.add_argument("--out", default="data/inference/sample_eval/eval.jsonl")
+    parser.add_argument("--summary", default="data/inference/sample_eval/summary.json")
+    parser.add_argument("--midi-dir", default="data/inference/sample_eval/midi")
     parser.add_argument("--expected-notation", default="relative")
     parser.add_argument("--require-lowercase", action="store_true", default=True)
     parser.add_argument("--no-require-lowercase", action="store_false", dest="require_lowercase")
