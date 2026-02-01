@@ -64,8 +64,8 @@ def main():
     parser.add_argument(
         "--input-dir",
         type=Path,
-        default=Path("data/exp infer"),
-        help="Directory containing the inference output files (default: data/exp infer)"
+        default=Path("data/inference_outputs"),
+        help="Directory containing the inference output files (default: data/inference_outputs)"
     )
     parser.add_argument(
         "--output-dir",
