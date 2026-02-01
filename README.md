@@ -83,6 +83,23 @@ python scripts/extract_detokenized.py \
 
 This extracts all "Detokenized Output" sections and saves them as `.ly` files organized by experiment.
 
+## Evaluation
+
+Evaluate extracted LilyPond files (text checks + MIDI analysis):
+```bash
+python scripts/eval_extracted_ly.py data/extracted_ly \
+  --out data/extracted_ly_eval/eval.jsonl \
+  --summary data/extracted_ly_eval/summary.json \
+  --midi-dir data/extracted_ly_eval/midi
+```
+
+Outputs:
+- `data/extracted_ly_eval/eval.jsonl` — per-sample metrics
+- `data/extracted_ly_eval/summary.json` — aggregate summary
+- `data/extracted_ly_eval/midi/` — rendered MIDI files (when LilyPond is available)
+
+Note: This evaluation uses the LilyPond binary for rendering (if available) and `music21` for MIDI analysis.
+
 ## Project structure
 
 ```
