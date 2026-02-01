@@ -155,11 +155,11 @@ data/
   logs/                   - Processing logs
   inference/
     outputs/              - Raw SLURM inference .out files
-    samples/              - Extracted .ly files (by experiment)
+    samples/              - Extracted .ly files
     sample_eval/          - Evaluation results
       eval.jsonl          - Per-sample metrics
       summary.json        - Aggregate summary
-      midi/               - Rendered MIDI files (by experiment)
+      midi/               - Rendered MIDI files
 ```
 
 ## License
