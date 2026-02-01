@@ -77,8 +77,8 @@ SLURM job templates in `slurm/`.
 Extract generated LilyPond samples from inference output files:
 ```bash
 python scripts/extract_detokenized.py \
-  --input-dir "data/exp infer" \
-  --output-dir "data/extracted_ly"
+  --input-dir data/inference/outputs \
+  --output-dir data/inference/samples
 ```
 
 This extracts all "Detokenized Output" sections and saves them as `.ly` files organized by experiment.
@@ -87,16 +87,16 @@ This extracts all "Detokenized Output" sections and saves them as `.ly` files or
 
 Evaluate extracted LilyPond files (text checks + MIDI analysis):
 ```bash
-python scripts/eval_extracted_ly.py data/extracted_ly \
-  --out data/extracted_ly_eval/eval.jsonl \
-  --summary data/extracted_ly_eval/summary.json \
-  --midi-dir data/extracted_ly_eval/midi
+python scripts/eval_extracted_ly.py data/inference/samples \
+  --out data/inference/sample_eval/eval.jsonl \
+  --summary data/inference/sample_eval/summary.json \
+  --midi-dir data/inference/sample_eval/midi
 ```
 
 Outputs:
-- `data/extracted_ly_eval/eval.jsonl` — per-sample metrics
-- `data/extracted_ly_eval/summary.json` — aggregate summary
-- `data/extracted_ly_eval/midi/` — rendered MIDI files (when LilyPond is available)
+- `data/inference/sample_eval/eval.jsonl` — per-sample metrics
+- `data/inference/sample_eval/summary.json` — aggregate summary
+- `data/inference/sample_eval/midi/` — rendered MIDI files (when LilyPond is available)
 
 Note: This evaluation uses the LilyPond binary for rendering (if available) and `music21` for MIDI analysis.
 
@@ -142,6 +142,24 @@ slurm/
   train/                  - Training job templates
   infer/                  - Inference job templates
   eval/                   - Evaluation job templates
+```
+
+## Data structure
+
+```
+data/
+  raw/                    - Raw input LilyPond files
+  normalized_dataset/     - Normalized output
+  assignment_dataset/     - Built assignment dataset
+  splits_full/            - Train/val/test splits
+  logs/                   - Processing logs
+  inference/
+    outputs/              - Raw SLURM inference .out files
+    samples/              - Extracted .ly files (by experiment)
+    sample_eval/          - Evaluation results
+      eval.jsonl          - Per-sample metrics
+      summary.json        - Aggregate summary
+      midi/               - Rendered MIDI files (by experiment)
 ```
 
 ## License
