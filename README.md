@@ -141,7 +141,7 @@ bin/
 slurm/
   train/                  - Training job templates
   infer/                  - Inference job templates
-  eval/                   - Evaluation job templates
+  test/                   - Test set evaluation job templates
 ```
 
 ## Data structure
