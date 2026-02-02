@@ -47,7 +47,7 @@ LILYPOND_LANGUAGE = "italiano"
 NUM_SAMPLES = 20
 
 print("=" * 60)
-print("Testing exp10 two-voice prompt (voice labels + structural tokens)")
+print("Testing exp10 two-voice prompt (dual <VOICE> markers)")
 print("=" * 60)
 
 # Load tokenizer from LoRA path (has special tokens)
@@ -70,16 +70,17 @@ print("Loading LoRA weights from exp10...")
 model = PeftModel.from_pretrained(base, LORA_PATH, local_files_only=True)
 model.eval()
 
-# Two-voice seed aligned to dataset style (assignment + no barlines)
-user_prompt = """IvlIn = \\relative do'' {
-<KEY:do_major><TIME:4/4><TEMPO:4 = 90>
-<<
-  { do'4 re' mi' fa' sol'4 la' si' do'' do''4 si' la' sol'
-  \\\\
-  { do4 si la sol fa4 mi re do do4 re mi fa
+# Two-voice seed for testing voice-token behavior across two assignments
+user_prompt = """<VOICE> V1 = \\relative do'' {
+<KEY:do_major><TIME:4/4>
+do4 re mi fa sol4 la si do
+}
+<VOICE> V2 = \\relative do' {
+<KEY:do_major><TIME:4/4>
+do4 si la sol fa4 mi re do
 """
 
-prompt = user_prompt if user_prompt.lstrip().startswith("<VOICE>") else f"<VOICE> {user_prompt}"
+prompt = user_prompt
 
 print(f"\nPrompt: {repr(prompt)}")
 
