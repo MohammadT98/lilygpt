@@ -6,7 +6,7 @@
 #SBATCH --cpus-per-task=8
 #SBATCH --gres=gpu:a40:2
 #SBATCH --mem=64G
-#SBATCH --time=02:00:00
+#SBATCH --time=05:00:00
 #SBATCH --output=logs/exp10-2voice-novoice-infer-%j.out
 #SBATCH --error=logs/exp10-2voice-novoice-infer-%j.err
 
