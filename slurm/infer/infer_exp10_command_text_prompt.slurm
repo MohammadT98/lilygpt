@@ -71,7 +71,7 @@ model = PeftModel.from_pretrained(base, LORA_PATH, local_files_only=True)
 model.eval()
 
 # Command-text prompt (single voice, with a minimal LilyPond seed)
-user_prompt = """Write LilyPond code only.
+user_prompt = """<VOICE> Write LilyPond code only.
 Use Italian note names (do re mi fa sol la si), key C major, time 4/4, and relative notation.
 
 Continue this:
@@ -82,7 +82,7 @@ IvlIn = \\relative do'' {
 do4 re mi fa sol4 la si do do4 si la sol
 """
 
-prompt = user_prompt if user_prompt.lstrip().startswith("<VOICE>") else f"<VOICE> {user_prompt}"
+prompt = user_prompt
 
 print(f"\nPrompt: {repr(prompt)}")
 
