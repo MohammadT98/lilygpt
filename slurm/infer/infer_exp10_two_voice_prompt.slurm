@@ -44,7 +44,7 @@ BASE_MODEL = "openai/gpt-oss-20b"
 LORA_PATH = "runs/lora_exp10_voice_tokens/final"
 LILYPOND_VERSION = "2.24.4"
 LILYPOND_LANGUAGE = "italiano"
-NUM_SAMPLES = 20
+NUM_SAMPLES = 100
 
 print("=" * 60)
 print("Testing exp10 two-voice prompt (dual <VOICE> markers)")
