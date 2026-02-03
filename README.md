@@ -100,6 +100,94 @@ Outputs:
 
 Note: This evaluation uses the LilyPond binary for rendering (if available) and `music21` for MIDI analysis.
 
+## Reproducibility
+
+### Environment
+
+- Python `>=3.10` (see `pyproject.toml`)
+- Core deps: `pandas`, `music21`
+- Training deps: `transformers`, `torch`, `peft`, `accelerate`, `tensorboard`
+- External tools: LilyPond (for compile/render checks), `music21` (MIDI analysis)
+
+Install:
+
+```bash
+pip install -e ".[train]"
+```
+
+### Run order (end-to-end)
+
+1. Normalize raw LilyPond files:
+
+```bash
+python -m lilynorm.cli \
+  --input data/raw \
+  --normalized-out data/normalized_dataset
+```
+
+2. Build assignment dataset:
+
+```bash
+python -m lilynorm.stages.dataset.build_assignment_dataset
+```
+
+3. Build train/val/test splits:
+
+```bash
+python -m lilynorm.stages.splitting.build_splits \
+  --input-jsonl data/assignment_dataset/all_examples.jsonl \
+  --output-dir data/splits_full
+```
+
+4. Train (examples):
+
+```bash
+sbatch slurm/train/train_exp10_voice_tokens.slurm
+sbatch slurm/train/train_exp11_voice_tokens_eff16.slurm
+sbatch slurm/train/train_exp12_voice_tokens_eff4.slurm
+```
+
+5. Inference (examples):
+
+```bash
+sbatch slurm/infer/infer_exp10_voice_tokens.slurm
+sbatch slurm/infer/infer_exp11_voice_tokens.slurm
+sbatch slurm/infer/infer_exp12_voice_tokens.slurm
+```
+
+6. Extract detokenized `.ly` outputs:
+
+```bash
+python scripts/extract_detokenized.py \
+  --input-dir data/inference/outputs \
+  --output-dir data/inference/samples
+```
+
+7. Evaluate generated samples:
+
+```bash
+python scripts/eval_extracted_ly.py data/inference/samples \
+  --out data/inference/sample_eval/eval.jsonl \
+  --summary data/inference/sample_eval/summary.json \
+  --midi-dir data/inference/sample_eval/midi
+```
+
+### Expected artifacts
+
+- Trained adapters/checkpoints under `runs/.../final` (training scripts)
+- Inference logs under `logs/` (SLURM `%j` job-id naming)
+- Extracted LilyPond samples under `data/inference/samples/exp*/sample_*.ly`
+- Evaluation outputs:
+  - `data/inference/sample_eval/eval.jsonl`
+  - `data/inference/sample_eval/summary.json`
+  - `data/inference/sample_eval/midi/` (grouped by experiment where available)
+
+### Determinism notes
+
+- Inference scripts set deterministic seeds per sample (`1234 + i`).
+- Generation is still stochastic (`do_sample=True`), so outputs can vary across runs/hardware.
+- Small metric fluctuations are expected; compare trends across matched settings, not exact text identity.
+
 ## Project structure
 
 ```
