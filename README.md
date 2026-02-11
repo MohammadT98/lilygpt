@@ -6,7 +6,7 @@ Pipeline for normalizing LilyPond music notation and preparing training datasets
 
 This tool processes raw LilyPond source files through a multi-stage normalization pipeline, producing clean, structurally consistent training data:
 
-1. **File resolution** - Merges `\include` directives, splits multi-movement scores
+1. **File resolution** - Resolves `\include` directives, splits multi-forma scores
 2. **Preprocessing** - Removes comments, normalizes whitespace
 3. **Syntax normalization** - Expands music functions/transposes, unfolds repeats, normalizes tuplets
 4. **Forma handling** - Prepends structure and inlines `\forma`
@@ -44,7 +44,7 @@ python -m lilynorm.stages.dataset.build_assignment_dataset
 
 Build train/val/test splits:
 ```bash
-python src/lilynorm/stages/splitting/build_splits.py \
+python -m lilynorm.stages.splitting.build_splits \
   --input-jsonl data/assignment_dataset/all_examples.jsonl \
   --output-dir data/splits_full
 ```
@@ -198,7 +198,7 @@ src/lilynorm/
     normalization/        - Text normalization stages
       file_resolver.py    - Resolve includes, split on \forma
       preprocess.py       - Remove comments, clean whitespace
-      normalize_syntax.py - Expand relative/transpose/repeat
+      normalize_syntax.py - Resolve transpose, unfold repeats, normalize tuplets
       forma.py            - Prepend structure and inline \forma
       engrave_strip.py    - Strip engraving directives
       postprocessing.py   - Fix malformed patterns
@@ -209,7 +209,7 @@ src/lilynorm/
     dataset/              - Dataset loading for training
       training_dataset.py - Full-sequence dataset
       build_assignment_dataset.py - Build full assignment dataset
-    splitting/            - Train/val split
+    splitting/            - Train/val/test split
       build_splits.py
     training/             - LoRA fine-tuning
       train_lora.py       - LoRA training
