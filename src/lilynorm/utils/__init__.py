@@ -1,1 +1,3 @@
-from .options import NormOptions  # convenience re-export
+"""Public utility exports."""
+
+from .options import NormOptions
