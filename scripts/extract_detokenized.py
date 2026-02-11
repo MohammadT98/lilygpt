@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
+"""Extract detokenized LilyPond samples from inference log files."""
+
 import argparse
 import re
 from pathlib import Path
+
 
 def extract_detokenized_outputs(content: str) -> list[str]:
     """Extract all Detokenized Output sections from file content."""
     outputs = []
 
-    # Pattern to match "Detokenized Output N:" followed by separator and content
-    # Content ends at the next separator line (60 '=' characters)
     pattern = r'Detokenized Output \d+:\n={60,}\n(.*?)(?=\n={60,}\n|$)'
 
     matches = re.findall(pattern, content, re.DOTALL)
 
     for match in matches:
-        # Clean up the content - strip trailing whitespace
         cleaned = match.strip()
         if cleaned:
             outputs.append(cleaned)
@@ -35,20 +35,13 @@ def process_file(input_path: Path, output_dir: Path) -> int:
     """Process a single inference output file and extract all detokenized outputs."""
     print(f"Processing: {input_path.name}")
 
-    # Read the file content
     content = input_path.read_text(encoding='utf-8', errors='replace')
-
-    # Extract experiment name
     exp_name = extract_experiment_name(input_path.name)
-
-    # Create output directory for this experiment
     exp_output_dir = output_dir / exp_name
     exp_output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Extract all detokenized outputs
     outputs = extract_detokenized_outputs(content)
 
-    # Save each output as a .ly file
     for i, output in enumerate(outputs, start=1):
         output_file = exp_output_dir / f"sample_{i:03d}.ly"
         output_file.write_text(output, encoding='utf-8')
@@ -76,13 +69,11 @@ def main():
 
     args = parser.parse_args()
 
-    # Find all inference output files
     input_dir = args.input_dir
     if not input_dir.exists():
         print(f"Error: Input directory not found: {input_dir}")
         return 1
 
-    # Look for exp*-infer-*.out files
     input_files = list(input_dir.glob("exp*-infer-*.out"))
 
     if not input_files:
@@ -93,10 +84,8 @@ def main():
     print(f"Output directory: {args.output_dir}")
     print()
 
-    # Create output directory
     args.output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Process each file
     total_samples = 0
     for input_file in sorted(input_files):
         count = process_file(input_file, args.output_dir)
