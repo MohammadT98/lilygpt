@@ -82,15 +82,13 @@ def _remove_block_commands(text: str) -> str:
             if not match:
                 break
 
-            # Find matching closing brace
             brace_start = match.end() - 1
             brace_end = grab_balanced(text, brace_start, "{", "}")
 
             if brace_end != -1:
-                # Remove entire \\command{...} block
                 text = text[:match.start()] + text[brace_end + 1:]
             else:
-                # Malformed - just remove the command
+                # malformed block, just strip the command
                 text = text[:match.start()] + text[match.end():]
                 break
 
@@ -110,10 +108,7 @@ def _remove_non_whitelisted_commands(text: str) -> tuple[str, int]:
         count += 1
         return ''
 
-    # First remove block commands (commands with braces)
     text = _remove_block_commands(text)
-
-    # Then remove other non-whitelisted commands
     return re.sub(r'\\([a-zA-Z]+)\b', replace, text), count
 
 
@@ -542,8 +537,7 @@ try:
     from lilynorm.utils.options import NormOptions
 except Exception:
     class NormOptions:  # type: ignore[override]
-        """Fallback options when lilynorm.utils.options is unavailable."""
-        keep_engraving: bool = True  # default: keep engravings
+        keep_engraving: bool = True
 
 
 def run(text: str, opts: NormOptions) -> str:
