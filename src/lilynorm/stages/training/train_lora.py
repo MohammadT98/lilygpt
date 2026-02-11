@@ -337,7 +337,7 @@ def main() -> int:
     trainer.save_model(str(final_dir))
     tokenizer.save_pretrained(str(final_dir))
 
-    print("[train_lora] ✅ training complete!")
+    print("[train_lora] training complete!")
     return 0
 
 
