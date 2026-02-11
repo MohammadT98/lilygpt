@@ -38,8 +38,8 @@ mkdir -p "$TMPDIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" \
 source "$HOME/lilygpt/.venv/bin/activate"
 
 # Usage:
-# sbatch slurm/eval_exp_test.slurm --export=LORA_PATH=runs/lora_exp10_voice_tokens/final
-# Defaults to exp10 if LORA_PATH is not provided.
+# sbatch slurm/test/eval_exp10_test.slurm --export=LORA_PATH=runs/lora_exp10_voice_tokens/final
+# If LORA_PATH is not provided, exp10 is used by default.
 LORA_PATH="${LORA_PATH:-runs/lora_exp10_voice_tokens/final}"
 DATA_PATH="${DATA_PATH:-data/splits_full/test.jsonl}"
 
