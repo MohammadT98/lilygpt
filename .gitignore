@@ -37,6 +37,7 @@ ENV/
 # Project-specific
 data/*
 !data/.gitkeep
+!data/README.md
 logs/
 cluster_logs/
 backup_runs/
