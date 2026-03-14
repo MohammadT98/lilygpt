@@ -1010,10 +1010,10 @@ def _compute_contour_analysis(sequential_pitches: List[int]) -> Dict[str, Any]:
 
     arch_shapes = 0
     downward_arches = 0
-    for i in range(len(contour_patterns) - 1):
-        if contour_patterns[i] == "UD":
+    for pattern in contour_patterns:
+        if pattern == "UD":
             arch_shapes += 1
-        elif contour_patterns[i] == "DU":
+        elif pattern == "DU":
             downward_arches += 1
 
     contour_diversity = len(pattern_counts) / max(1, len(contour_patterns))
