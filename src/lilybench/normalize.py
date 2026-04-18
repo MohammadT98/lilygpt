@@ -5,8 +5,8 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from lilynorm.stages import normalization
-from lilynorm.utils.options import NormOptions
+from lilybench.stages import normalization
+from lilybench.utils.options import NormOptions
 
 
 def _split_inline_assignments(text: str) -> str:
@@ -45,8 +45,8 @@ def normalize_file(
     stats: dict[str, int] | None = None,
 ) -> list[str]:
     """Normalize a LilyPond source into cleaned training-ready blocks."""
-    from lilynorm.stages.normalization import forma
-    from lilynorm.stages.normalization.postprocessing import (
+    from lilybench.stages.normalization import forma
+    from lilybench.stages.normalization.postprocessing import (
         apply_postprocessing_fixes,
         remove_empty_variable_assignments,
     )

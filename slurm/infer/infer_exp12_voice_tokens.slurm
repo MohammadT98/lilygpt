@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=lilygpt-exp12-infer
+#SBATCH --job-name=lilybench-exp12-infer
 #SBATCH --partition=allgroups
 #SBATCH --qos=allgroups_qos
 #SBATCH --ntasks=1
@@ -39,10 +39,9 @@ copy_logs() {
 }
 trap copy_logs EXIT
 
-source "$HOME/lilygpt/.venv/bin/activate"
+source "$HOME/lilybench/.venv/bin/activate"
 
 python - <<'PY'
-import re
 import random
 import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
@@ -67,7 +66,6 @@ base = AutoModelForCausalLM.from_pretrained(
     torch_dtype=torch.bfloat16,
     low_cpu_mem_usage=True,
 )
-base.resize_token_embeddings(len(tokenizer))
 
 print("Loading LoRA weights from exp12...")
 model = PeftModel.from_pretrained(base, LORA_PATH, local_files_only=True)
@@ -103,31 +101,6 @@ def _generate_once(seed: int):
     raw_text = tokenizer.decode(out[0], skip_special_tokens=False)
     return raw_text.split("<|return|>", 1)[0].rstrip()
 
-def _clean_payload(payload: str) -> str:
-    return payload.strip().lstrip("\\")
-
-def _detokenize(text: str) -> str:
-    def _repl_key(match: re.Match) -> str:
-        payload = _clean_payload(match.group(1))
-        if "_" in payload:
-            key, mode = payload.split("_", 1)
-            return f"\\key {key} \\{mode}\n"
-        return f"\\key {payload}\n"
-
-    def _repl_time(match: re.Match) -> str:
-        return f"\\time {_clean_payload(match.group(1))}\n"
-
-    def _repl_tempo(match: re.Match) -> str:
-        return f"\\tempo {_clean_payload(match.group(1))}\n"
-
-    text = re.sub(r"<KEY:([^>]+)>[ \t]*\r?\n?", _repl_key, text)
-    text = re.sub(r"<TIME:([^>]+)>[ \t]*\r?\n?", _repl_time, text)
-    text = re.sub(r"<TEMPO:([^>]+)>[ \t]*\r?\n?", _repl_tempo, text)
-    text = text.replace("<VOICE>", "")
-    text = re.sub(r"(\\key[^\n]*\n)\n+", r"\1", text)
-    text = re.sub(r"(\\time[^\n]*\n)\n+", r"\1", text)
-    text = re.sub(r"(\\tempo[^\n]*\n)\n+", r"\1", text)
-    return text.strip()
 
 def _wrap_score(text: str) -> str:
     body = text.rstrip()
@@ -156,7 +129,7 @@ for i in range(NUM_SAMPLES):
     print(raw_text)
     print("=" * 60)
 
-    clean_text = _detokenize(raw_text)
+    clean_text = raw_text.strip()
     final_text = _wrap_score(clean_text)
 
     print("\n" + "=" * 60)

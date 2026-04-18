@@ -10,13 +10,10 @@ import torch
 from peft import LoraConfig, TaskType, get_peft_model
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
 
-from lilynorm.stages.dataset.training_dataset import (
+from lilybench.models import get_spec, list_model_ids
+from lilybench.stages.dataset.training_dataset import (
     LilyStandardDataset,
     collate_standard_batch,
-)
-from lilynorm.stages.tokenization.special_tokens import (
-    apply_special_tokens,
-    build_special_tokens,
 )
 
 BANNER_LINE = "=" * 80
@@ -25,7 +22,7 @@ BANNER_LINE = "=" * 80
 def build_arg_parser() -> argparse.ArgumentParser:
     """Build the CLI parser for LoRA training."""
     parser = argparse.ArgumentParser(
-        description="Train GPT-OSS-20B on LilyPond data with LoRA (STANDARD approach - no masking)."
+        description="Train a causal LM on LilyPond data with LoRA (STANDARD approach - no masking)."
     )
     parser.add_argument(
         "--train",
@@ -38,9 +35,21 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Path to val.jsonl split.",
     )
     parser.add_argument(
+        "--model-id",
+        default=None,
+        choices=list_model_ids(),
+        help=(
+            "Short id from the lilybench model registry "
+            f"({', '.join(list_model_ids())}). When set, overrides --model-name."
+        ),
+    )
+    parser.add_argument(
         "--model-name",
         default="openai/gpt-oss-20b",
-        help="HuggingFace model name (default: openai/gpt-oss-20b).",
+        help=(
+            "HuggingFace model name. Used when --model-id is not provided, "
+            "or as an explicit override (default: openai/gpt-oss-20b)."
+        ),
     )
     parser.add_argument(
         "--output-dir",
@@ -81,11 +90,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--mask-input",
         action="store_true",
         help="Mask input tokens so loss is only on the output/completion.",
-    )
-    parser.add_argument(
-        "--no-structural-tokens",
-        action="store_true",
-        help="Disable structural token injection for key/time/tempo/voice.",
     )
     parser.add_argument(
         "--lora-r",
@@ -191,25 +195,18 @@ def main() -> int:
 
     _print_training_banner(args.mask_input)
 
-    print(f"[train_lora] loading tokenizer: {args.model_name}")
-    tokenizer = AutoTokenizer.from_pretrained(args.model_name, use_fast=True)
+    spec = get_spec(args.model_id) if args.model_id else None
+    model_name = spec.hf_id if spec else args.model_name
+    trust_remote_code = spec.trust_remote_code if spec else True
+    if spec is not None:
+        print(f"[train_lora] model registry: id={spec.model_id} hf_id={spec.hf_id} family={spec.family}")
+
+    print(f"[train_lora] loading tokenizer: {model_name}")
+    tokenizer = AutoTokenizer.from_pretrained(
+        model_name, use_fast=True, trust_remote_code=trust_remote_code
+    )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-
-    use_structural_tokens = not args.no_structural_tokens
-    special_tokens_added = 0
-    trainable_token_ids: list[int] = []
-    if use_structural_tokens:
-        special_tokens_added = apply_special_tokens(tokenizer)
-        added_vocab = tokenizer.get_added_vocab()
-        trainable_tokens = [t for t in build_special_tokens() if t in added_vocab]
-        trainable_token_ids = [added_vocab[t] for t in trainable_tokens]
-        if special_tokens_added:
-            print(f"[train_lora] added {special_tokens_added} special tokens: {trainable_tokens}")
-        elif trainable_tokens:
-            print(f"[train_lora] using existing special tokens: {trainable_tokens}")
-        if trainable_token_ids:
-            print(f"[train_lora] special token ids: {trainable_token_ids}")
 
     pad_token_id = tokenizer.pad_token_id
     print(f"[train_lora] pad_token_id: {pad_token_id}")
@@ -223,69 +220,39 @@ def main() -> int:
         tokenizer=tokenizer,
         max_length=args.max_length,
         mask_input=args.mask_input,
-        use_structural_tokens=use_structural_tokens,
     )
     val_dataset = LilyStandardDataset(
         val_path,
         tokenizer=tokenizer,
         max_length=args.max_length,
         mask_input=args.mask_input,
-        use_structural_tokens=use_structural_tokens,
     )
 
     print(f"[train_lora] train samples: {len(train_dataset)}")
     print(f"[train_lora] val samples:   {len(val_dataset)}")
 
-    print(f"[train_lora] loading model: {args.model_name}")
+    print(f"[train_lora] loading model: {model_name}")
     model = AutoModelForCausalLM.from_pretrained(
-        args.model_name,
+        model_name,
         torch_dtype=_torch_dtype(args.fp16, args.bf16),
         device_map="auto",
-        trust_remote_code=True,
+        trust_remote_code=trust_remote_code,
     )
-    if special_tokens_added:
-        model.resize_token_embeddings(len(tokenizer))
-        print(f"[train_lora] resized token embeddings to {len(tokenizer)}")
 
+    lora_targets = spec.lora_target_modules if spec else "all-linear"
     print(
         "[train_lora] applying LoRA "
-        f"(r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout})"
+        f"(r={args.lora_r}, alpha={args.lora_alpha}, dropout={args.lora_dropout}, targets={lora_targets})"
     )
     lora_config = LoraConfig(
         task_type=TaskType.CAUSAL_LM,
         r=args.lora_r,
         lora_alpha=args.lora_alpha,
         lora_dropout=args.lora_dropout,
-        target_modules="all-linear",  # Apply to all linear layers.
+        target_modules=lora_targets,
         bias="none",
     )
     model = get_peft_model(model, lora_config)
-
-    def _mask_embedding_grads(embedding, token_ids: list[int], label: str) -> None:
-        if embedding is None or not token_ids:
-            return
-        weight = embedding.weight
-        weight.requires_grad = True
-        keep_ids = torch.tensor(sorted(set(token_ids)), dtype=torch.long)
-
-        def _hook(grad):
-            if grad is None:
-                return None
-            ids = keep_ids.to(grad.device)
-            kept = grad.index_select(0, ids)
-            grad.zero_()
-            grad.index_copy_(0, ids, kept)
-            return grad
-
-        weight.register_hook(_hook)
-        print(f"[train_lora] training {len(keep_ids)} token rows in {label} embeddings")
-
-    if trainable_token_ids:
-        input_emb = model.get_input_embeddings()
-        output_emb = model.get_output_embeddings()
-        _mask_embedding_grads(input_emb, trainable_token_ids, "input")
-        if output_emb is not None and output_emb is not input_emb and output_emb.weight is not input_emb.weight:
-            _mask_embedding_grads(output_emb, trainable_token_ids, "output")
 
     model.print_trainable_parameters()
 

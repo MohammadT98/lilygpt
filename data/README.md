@@ -24,9 +24,9 @@ data/
 2. Run the pipeline (see root README for details):
 
 ```bash
-python -m lilynorm.cli --input data/raw --normalized-out data/normalized_dataset
-python -m lilynorm.stages.dataset.build_assignment_dataset
-python -m lilynorm.stages.splitting.build_splits \
+python -m lilybench.cli --input data/raw --normalized-out data/normalized_dataset
+python -m lilybench.stages.dataset.build_assignment_dataset
+python -m lilybench.stages.splitting.build_splits \
   --input-jsonl data/assignment_dataset/all_examples.jsonl \
   --output-dir data/splits_full
 ```

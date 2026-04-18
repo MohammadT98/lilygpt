@@ -534,7 +534,7 @@ def _remove_engraving_only_top_level(text: str) -> tuple[str, int]:
 
 
 try:
-    from lilynorm.utils.options import NormOptions
+    from lilybench.utils.options import NormOptions
 except Exception:
     class NormOptions:  # type: ignore[override]
         keep_engraving: bool = True

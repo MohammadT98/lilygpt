@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=lilygpt-exp10-voice-tokens
+#SBATCH --job-name=lilybench-exp10-voice-tokens
 #SBATCH --partition=allgroups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
@@ -42,7 +42,7 @@ RUN_SCRATCH_DIR="$SCRATCH/runs/$RUN_NAME"
 RUN_HOME_DIR="$SLURM_SUBMIT_DIR/runs/$RUN_NAME"
 mkdir -p "$RUN_SCRATCH_DIR"
 
-source "$HOME/lilygpt/.venv/bin/activate"
+source "$HOME/lilybench/.venv/bin/activate"
 
 echo "=== Storage Info ==="
 echo "SCRATCH: $SCRATCH"
@@ -86,7 +86,7 @@ echo "=== Dataset ==="
 echo "Train/Val splits: data/splits_full"
 echo ""
 
-python -m lilynorm.stages.training.train_lora \
+python -m lilybench.stages.training.train_lora \
     --train "data/splits_full/train.jsonl" \
     --val "data/splits_full/val.jsonl" \
     --output-dir "$RUN_SCRATCH_DIR" \

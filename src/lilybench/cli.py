@@ -12,8 +12,8 @@ _src_dir = _repo_root / "src"
 if _src_dir.exists():
     sys.path.insert(0, str(_src_dir))
 
-from lilynorm.normalize import normalize_file
-from lilynorm.utils.options import NormOptions
+from lilybench.normalize import normalize_file
+from lilybench.utils.options import NormOptions
 
 DEFAULT_NORMALIZED_OUT = "data/normalized_dataset"
 LOG_DIR = Path("data/logs")

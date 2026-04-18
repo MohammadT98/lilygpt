@@ -12,7 +12,7 @@ src_dir = repo_root / "src"
 if src_dir.exists():
     sys.path.insert(0, str(src_dir))
 
-from lilynorm.stages.normalization import file_resolver
+from lilybench.stages.normalization import file_resolver
 
 # Same blacklist as process_dataset.py.
 NAME_BLACKLIST = (

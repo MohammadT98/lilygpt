@@ -18,7 +18,7 @@ echo ========================================
 echo STEP 1: Normalize Raw Files
 echo ========================================
 echo.
-uv run python -m lilynorm.cli --input "%INPUT_DIR%" --normalized-out "%NORMALIZED_DIR%"
+uv run python -m lilybench.cli --input "%INPUT_DIR%" --normalized-out "%NORMALIZED_DIR%"
 if errorlevel 1 (
     echo ERROR: Normalization failed.
     set "EXIT_CODE=1"
@@ -30,7 +30,7 @@ echo ========================================
 echo STEP 2: Build Full Assignment Dataset
 echo ========================================
 echo.
-uv run python -m lilynorm.stages.dataset.build_assignment_dataset
+uv run python -m lilybench.stages.dataset.build_assignment_dataset
 if errorlevel 1 (
     echo ERROR: Full assignment dataset preparation failed.
     set "EXIT_CODE=1"
@@ -42,7 +42,7 @@ echo ========================================
 echo STEP 3: Split Train/Val/Test
 echo ========================================
 echo.
-uv run python src/lilynorm/stages/splitting/build_splits.py --input-jsonl "%FULL_DATASET_DIR%/all_examples.jsonl" --output-dir "%SPLIT_DIR%"
+uv run python src/lilybench/stages/splitting/build_splits.py --input-jsonl "%FULL_DATASET_DIR%/all_examples.jsonl" --output-dir "%SPLIT_DIR%"
 if errorlevel 1 (
     echo ERROR: Splitting failed.
     set "EXIT_CODE=1"

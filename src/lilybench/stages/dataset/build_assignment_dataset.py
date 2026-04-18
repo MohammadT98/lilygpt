@@ -127,7 +127,7 @@ def main() -> None:
     print(f"Wrote {len(all_examples)} examples to {output_file}")
     print()
     print("Next step: Run build_splits.py to create train/val/test splits")
-    print("  python src/lilynorm/stages/splitting/build_splits.py \\")
+    print("  python src/lilybench/stages/splitting/build_splits.py \\")
     print(f"    --input-jsonl {output_file} \\")
     print("    --output-dir data/splits_full")
     print()

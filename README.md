@@ -1,4 +1,4 @@
-# lilygpt
+# lilybench
 
 Pipeline for normalizing LilyPond music notation and preparing training datasets for large language model fine-tuning.
 
@@ -17,7 +17,7 @@ This tool processes raw LilyPond source files through a multi-stage normalizatio
 ## Installation
 
 ```bash
-cd lilygpt
+cd lilybench
 pip install -e .
 ```
 
@@ -30,7 +30,7 @@ pip install -e ".[train]"
 
 Normalize LilyPond files:
 ```bash
-python -m lilynorm.cli \
+python -m lilybench.cli \
   --input data/raw \
   --normalized-out data/normalized_dataset
 ```
@@ -39,12 +39,12 @@ Note: Some normalization steps call the LilyPond binary. If it is not on PATH, s
 
 Generate full assignment dataset:
 ```bash
-python -m lilynorm.stages.dataset.build_assignment_dataset
+python -m lilybench.stages.dataset.build_assignment_dataset
 ```
 
 Build train/val/test splits:
 ```bash
-python -m lilynorm.stages.splitting.build_splits \
+python -m lilybench.stages.splitting.build_splits \
   --input-jsonl data/assignment_dataset/all_examples.jsonl \
   --output-dir data/splits_full
 ```
@@ -59,7 +59,8 @@ Convenience scripts for Windows (in `bin/`):
 
 LoRA training:
 ```bash
-python -m lilynorm.stages.training.train_lora \
+python -m lilybench.stages.training.train_lora \
+  --model-id gpt-oss \
   --train data/splits_full/train.jsonl \
   --val data/splits_full/val.jsonl \
   --output-dir runs/experiment \
@@ -71,6 +72,42 @@ python -m lilynorm.stages.training.train_lora \
 (Effective batch size = 1 × 32 = 32)
 
 SLURM job templates in `slurm/`.
+
+### Multi-model LoRA
+
+Model selection is driven by a registry at `src/lilybench/models/registry.py`.
+Known ids: `gpt-oss`, `phi4`, `qwen-coder`, `deepseek-coder`, `codestral`.
+The registry resolves the HuggingFace id, chat-template kind, dtype, LoRA
+target modules, and whether the tokenizer should accept the LilyPond
+structural tokens `<KEY:...>`, `<TIME:...>`, `<TEMPO:...>`, `<VOICE>` (only
+`gpt-oss` does by default; other models fall back to inline text).
+
+Train any registered model by passing `--model-id`:
+```bash
+python -m lilybench.stages.training.train_lora \
+  --model-id phi4 \
+  --train data/splits_full/train.jsonl \
+  --val data/splits_full/val.jsonl \
+  --output-dir runs/phi4_lora \
+  --bf16
+```
+
+SLURM wrappers for the full matrix live in
+`slurm/train/train_multimodel.slurm` and
+`slurm/infer/infer_multimodel.slurm`; both are env-var driven:
+```bash
+MODEL_ID=qwen-coder \
+TRAIN_JSONL=data/splits_full/train.jsonl \
+VAL_JSONL=data/splits_full/val.jsonl \
+OUTPUT_DIR=runs/qwen_coder_lora \
+sbatch slurm/train/train_multimodel.slurm
+
+MODEL_ID=qwen-coder REGIME=zero NUM_SAMPLES=100 \
+  sbatch slurm/infer/infer_multimodel.slurm
+```
+
+> Codestral-22B is a **gated** model on HuggingFace. Accept the license and
+> export `HF_TOKEN` (or run `huggingface-cli login`) before the first load.
 
 ## Post-Inference
 
@@ -100,6 +137,39 @@ Outputs:
 
 Note: This evaluation uses the LilyPond binary for rendering (if available) and `music21` for MIDI analysis.
 
+### Fréchet Music Distance (FMD)
+
+LilyBench reports FMD as a primary distributional quality metric, with
+LilyBERT as the symbolic-music embedder applied directly to LilyPond source.
+Report FMD against two reference sets:
+
+- **in-domain:** held-out test split (`data/splits_full/test.jsonl`)
+- **out-of-domain:** Mutopia LilyPond corpus
+
+```bash
+pip install -e ".[eval]"
+
+# In-domain reference
+python scripts/eval_fmd.py \
+  --generations-dir data/inference/samples/phi4_zero \
+  --reference-kind test \
+  --reference-path data/splits_full/test.jsonl \
+  --embedder-checkpoint /path/to/lilybert \
+  --out data/inference/sample_eval/fmd_phi4_zero_test.json
+
+# Out-of-domain reference
+python scripts/eval_fmd.py \
+  --generations-dir data/inference/samples/phi4_zero \
+  --reference-kind mutopia \
+  --reference-path data/mutopia_ly \
+  --embedder-checkpoint /path/to/lilybert \
+  --out data/inference/sample_eval/fmd_phi4_zero_mutopia.json
+```
+
+LilyBERT checkpoint: https://github.com/CSCPadova/lilybert (CodeBERT-based,
+125M params, MLM-pretrained on LilyPond). FMD is computed as in Retkowski et
+al. 2024; a self-vs-self FMD on the reference set should be ≈ 0.
+
 ## Reproducibility
 
 ### Environment
@@ -120,7 +190,7 @@ pip install -e ".[train]"
 1. Normalize raw LilyPond files:
 
 ```bash
-python -m lilynorm.cli \
+python -m lilybench.cli \
   --input data/raw \
   --normalized-out data/normalized_dataset
 ```
@@ -128,13 +198,13 @@ python -m lilynorm.cli \
 2. Build assignment dataset:
 
 ```bash
-python -m lilynorm.stages.dataset.build_assignment_dataset
+python -m lilybench.stages.dataset.build_assignment_dataset
 ```
 
 3. Build train/val/test splits:
 
 ```bash
-python -m lilynorm.stages.splitting.build_splits \
+python -m lilybench.stages.splitting.build_splits \
   --input-jsonl data/assignment_dataset/all_examples.jsonl \
   --output-dir data/splits_full
 ```
@@ -191,7 +261,7 @@ python scripts/eval_extracted_ly.py data/inference/samples \
 ## Project structure
 
 ```
-src/lilynorm/
+src/lilybench/
   cli.py                  - Command-line interface
   normalize.py            - Pipeline orchestration
   stages/
@@ -204,8 +274,6 @@ src/lilynorm/
       postprocessing.py   - Fix malformed patterns
       utils/              - Normalization helpers
         brackets.py       - Balanced bracket parsing
-    tokenization/         - Tokenizer utilities
-      special_tokens.py   - LilyPond special tokens
     dataset/              - Dataset loading for training
       training_dataset.py - Full-sequence dataset
       build_assignment_dataset.py - Build full assignment dataset

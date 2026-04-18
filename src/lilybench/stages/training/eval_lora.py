@@ -10,8 +10,8 @@ import torch
 from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
 
-from lilynorm.stages.dataset.training_dataset import LilyStandardDataset, collate_standard_batch
-from lilynorm.stages.tokenization.special_tokens import apply_special_tokens, build_special_tokens
+from lilybench.models import get_spec, list_model_ids
+from lilybench.stages.dataset.training_dataset import LilyStandardDataset, collate_standard_batch
 
 BANNER_LINE = "=" * 80
 
@@ -19,6 +19,15 @@ BANNER_LINE = "=" * 80
 def build_arg_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Evaluate a LoRA adapter on a dataset split.")
     parser.add_argument("--data", required=True, help="Path to JSONL split (e.g., test.jsonl).")
+    parser.add_argument(
+        "--model-id",
+        default=None,
+        choices=list_model_ids(),
+        help=(
+            "Short id from the lilybench model registry "
+            f"({', '.join(list_model_ids())}). When set, overrides --model-name."
+        ),
+    )
     parser.add_argument(
         "--model-name",
         default="openai/gpt-oss-20b",
@@ -45,11 +54,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         "--mask-input",
         action="store_true",
         help="Mask input tokens (loss only on completion).",
-    )
-    parser.add_argument(
-        "--no-structural-tokens",
-        action="store_true",
-        help="Disable structural token injection.",
     )
     parser.add_argument(
         "--bf16",
@@ -89,14 +93,16 @@ def main() -> int:
     print("EVALUATION: LoRA adapter")
     print(BANNER_LINE)
 
+    spec = get_spec(args.model_id) if args.model_id else None
+    model_name = spec.hf_id if spec else args.model_name
+    trust_remote_code = spec.trust_remote_code if spec else True
+    if spec is not None:
+        print(f"[eval_lora] model registry: id={spec.model_id} hf_id={spec.hf_id} family={spec.family}")
+
     print(f"[eval_lora] loading tokenizer from: {lora_path}")
     tokenizer = AutoTokenizer.from_pretrained(lora_path, use_fast=True, local_files_only=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
-
-    use_structural_tokens = not args.no_structural_tokens
-    if use_structural_tokens:
-        apply_special_tokens(tokenizer)
 
     pad_token_id = tokenizer.pad_token_id
 
@@ -106,20 +112,16 @@ def main() -> int:
         tokenizer=tokenizer,
         max_length=args.max_length,
         mask_input=args.mask_input,
-        use_structural_tokens=use_structural_tokens,
     )
     print(f"[eval_lora] samples: {len(dataset)}")
 
-    print(f"[eval_lora] loading base model: {args.model_name}")
+    print(f"[eval_lora] loading base model: {model_name}")
     model = AutoModelForCausalLM.from_pretrained(
-        args.model_name,
+        model_name,
         torch_dtype=_torch_dtype(args.fp16, args.bf16),
         device_map="auto",
-        trust_remote_code=True,
+        trust_remote_code=trust_remote_code,
     )
-
-    # Make sure embeddings match tokenizer (special tokens)
-    model.resize_token_embeddings(len(tokenizer))
 
     print(f"[eval_lora] loading LoRA adapter: {lora_path}")
     model = PeftModel.from_pretrained(model, str(lora_path), local_files_only=True)

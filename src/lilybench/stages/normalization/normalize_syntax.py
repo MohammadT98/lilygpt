@@ -625,7 +625,7 @@ def process_string(
 
 
 try:
-    from lilynorm.utils.options import NormOptions
+    from lilybench.utils.options import NormOptions
 except Exception:
     class NormOptions:  # type: ignore[override]
         keep_engraving: bool = False

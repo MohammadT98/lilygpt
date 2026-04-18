@@ -3,13 +3,14 @@ requires = ["setuptools>=65"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "lilygpt"
+name = "lilybench"
 version = "0.1.0"
 description = "LilyPond normalization and GPT fine-tuning pipeline for music score analysis"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
+    {name = "Matteo Spanio", email = "spanio@dei.unipd.it"},
     {name = "Mohammad Torabi", email = "mohamad.torabi76@gmail.com"},
 ]
 keywords = ["lilypond", "music", "nlp", "gpt", "fine-tuning", "lora"]
@@ -37,9 +38,15 @@ train = [
     "accelerate>=0.20",
     "tensorboard>=2.13",
 ]
+eval = [
+    "transformers>=4.40",
+    "torch>=2.0",
+    "scipy>=1.10",
+    "numpy>=1.24",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]  
 
 [project.scripts]
-lilygpt = "lilynorm.cli:main" 
+lilybench = "lilybench.cli:main" 

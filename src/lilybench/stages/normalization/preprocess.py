@@ -190,7 +190,7 @@ def clean_text(
     return text, stats
 
 try:
-    from lilynorm.utils.options import NormOptions
+    from lilybench.utils.options import NormOptions
 except Exception:
     class NormOptions:
         strip_comments: bool = True

@@ -9,11 +9,6 @@ import torch
 from torch.utils.data import Dataset
 from transformers import PreTrainedTokenizer
 
-from lilynorm.stages.tokenization.special_tokens import (
-    add_structural_tokens,
-    add_voice_label,
-)
-
 
 @dataclass
 class StandardSample:
@@ -37,13 +32,11 @@ class LilyStandardDataset(Dataset):
         tokenizer: PreTrainedTokenizer,
         max_length: int = 2048,
         mask_input: bool = False,
-        use_structural_tokens: bool = True,
     ):
         self.path = Path(jsonl_path)
         self.tokenizer = tokenizer
         self.max_length = max_length
         self.mask_input = mask_input
-        self.use_structural_tokens = use_structural_tokens
 
         if not self.path.exists():
             raise FileNotFoundError(f"Dataset file not found: {self.path}")
@@ -78,7 +71,6 @@ class LilyStandardDataset(Dataset):
         input_text = obj.get("input", "")
         output_text = obj.get("output", "")
 
-        input_text, output_text = self._apply_tokens(input_text, output_text, var_name)
         full_text = input_text + output_text
 
         if self.mask_input and input_text and output_text:
@@ -101,27 +93,6 @@ class LilyStandardDataset(Dataset):
             labels=labels,
             attention_mask=attention_mask,
         )
-
-    def _apply_tokens(
-        self,
-        input_text: str,
-        output_text: str,
-        var_name: str,
-    ) -> tuple[str, str]:
-        if not self.use_structural_tokens:
-            return input_text, output_text
-
-        if input_text:
-            input_text = add_voice_label(input_text, var_name)
-        elif output_text:
-            output_text = add_voice_label(output_text, var_name)
-
-        if input_text:
-            input_text = add_structural_tokens(input_text)
-        if output_text:
-            output_text = add_structural_tokens(output_text)
-
-        return input_text, output_text
 
     def _encode_masked(self, input_text: str, output_text: str) -> tuple[List[int], List[int]]:
         input_ids_prefix = self.tokenizer.encode(

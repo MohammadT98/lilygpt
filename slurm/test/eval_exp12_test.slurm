@@ -1,5 +1,5 @@
 #!/bin/bash
-#SBATCH --job-name=lilygpt-eval-exp12-test
+#SBATCH --job-name=lilybench-eval-exp12-test
 #SBATCH --partition=allgroups
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
@@ -35,12 +35,12 @@ export MKL_NUM_THREADS="$SLURM_CPUS_PER_TASK"
 mkdir -p "$TMPDIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" \
          "$HF_HOME" "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE"
 
-source "$HOME/lilygpt/.venv/bin/activate"
+source "$HOME/lilybench/.venv/bin/activate"
 
 LORA_PATH="${LORA_PATH:-runs/lora_exp12_voice_tokens_eff4/final}"
 DATA_PATH="${DATA_PATH:-data/splits_full/test.jsonl}"
 
-python -m lilynorm.stages.training.eval_lora \
+python -m lilybench.stages.training.eval_lora \
     --data "$DATA_PATH" \
     --lora-path "$LORA_PATH" \
     --model-name "openai/gpt-oss-20b" \
