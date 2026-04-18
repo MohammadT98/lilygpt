@@ -1,7 +1,15 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse
+"""Evaluate generated LilyPond files: text checks + MIDI music21 analysis.
+
+Hydra entry point. Run with ``python -m lilybench.evaluate.text_midi`` and
+override config values on the command line, e.g.::
+
+    python -m lilybench.evaluate.text_midi input_dir=data/inference/outputs \\
+        out=data/eval/eval.jsonl summary=data/eval/summary.json
+"""
+
 import hashlib
 import json
 import math
@@ -15,7 +23,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
+import hydra
 import music21 as _m21
+from omegaconf import DictConfig, ListConfig, OmegaConf
 
 
 # ---------- Constants ----------
@@ -1348,10 +1358,12 @@ def _iter_ly_files(root: Path) -> List[Path]:
     return sorted(p for p in root.rglob("*.ly") if p.is_file())
 
 
-def _parse_allowed_forbidden(raw: Optional[str]) -> Optional[set[str]]:
-    if not raw:
+def _parse_allowed_forbidden(raw: Any) -> Optional[set[str]]:
+    if raw is None:
         return None
-    return {s.strip() for s in raw.split(",") if s.strip()}
+    if isinstance(raw, (list, tuple, ListConfig)):
+        return {str(s).strip() for s in raw if str(s).strip()}
+    return {s.strip() for s in str(raw).split(",") if s.strip()}
 
 
 def _mean(values: List[float]) -> Optional[float]:
@@ -1438,33 +1450,17 @@ def _group_key(input_dir: Path, ly_path: Path) -> str:
 # ---------- Main ----------
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(
-        description="Evaluate LilyPond files under a directory (Lily text + MIDI music21), Italian-aware, no bar checks.",
-    )
-    parser.add_argument("input_dir", nargs="?", default="data/inference/samples")
-    parser.add_argument("--out", default="data/inference/sample_eval/eval.jsonl")
-    parser.add_argument("--summary", default="data/inference/sample_eval/summary.json")
-    parser.add_argument("--midi-dir", default="data/inference/sample_eval/midi")
-    parser.add_argument("--expected-notation", default="relative")
-    parser.add_argument("--require-lowercase", action="store_true", default=True)
-    parser.add_argument("--no-require-lowercase", action="store_false", dest="require_lowercase")
-    parser.add_argument("--disallow-accidentals", action="store_true")
-    parser.add_argument(
-        "--allowed-forbidden",
-        help="Comma-separated list of forbidden constructs to allow (e.g. rests,score,tuplets).",
-        default=None,
-    )
-    parser.add_argument("--force-midi", action="store_true")
-    args = parser.parse_args()
+@hydra.main(config_path="../../configs", config_name="evaluate/text_midi", version_base=None)
+def main(cfg: DictConfig) -> int:
+    print(OmegaConf.to_yaml(cfg))
 
-    input_dir = Path(args.input_dir)
-    out_path = Path(args.out)
-    summary_path = Path(args.summary)
-    midi_dir = Path(args.midi_dir)
+    input_dir = Path(cfg.input_dir)
+    out_path = Path(cfg.out)
+    summary_path = Path(cfg.summary)
+    midi_dir = Path(cfg.midi_dir)
 
-    allow_accidentals = not args.disallow_accidentals
-    allowed_forbidden = _parse_allowed_forbidden(args.allowed_forbidden)
+    allow_accidentals = bool(cfg.allow_accidentals)
+    allowed_forbidden = _parse_allowed_forbidden(cfg.get("allowed_forbidden"))
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1482,8 +1478,8 @@ def main() -> int:
 
         lily_eval = eval_lily_text(
             ly_path,
-            expected_notation=args.expected_notation,
-            require_lowercase=args.require_lowercase,
+            expected_notation=cfg.expected_notation,
+            require_lowercase=bool(cfg.require_lowercase),
             allow_accidentals=allow_accidentals,
             allowed_forbidden=allowed_forbidden,
             lilypond_bin=lilypond_bin,
@@ -1494,7 +1490,7 @@ def main() -> int:
         midi_render = lily_to_midi(
             ly_path,
             midi_dir=midi_out_dir,
-            force=args.force_midi,
+            force=bool(cfg.force_midi),
         )
 
         if midi_render.get("ok"):
@@ -1550,4 +1546,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

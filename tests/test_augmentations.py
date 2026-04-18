@@ -6,13 +6,13 @@ import random
 
 import pytest
 
-from lilybench.stages.dataset.augmentations import (
+from lilybench.preprocess.augmentations import (
     check_brace_balance,
     drop_unused_prelude,
     inline_variables,
     shuffle_prelude,
 )
-from lilybench.stages.dataset.prelude import identify_prelude
+from lilybench.preprocess.prelude import identify_prelude
 
 
 class TestCheckBraceBalance:

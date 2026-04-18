@@ -6,7 +6,7 @@ import json
 import random
 from pathlib import Path
 
-from lilybench.stages.dataset.metadata_header import (
+from lilybench.preprocess.metadata_header import (
     METADATA_MARKER_END,
     METADATA_MARKER_START,
     load_metadata,

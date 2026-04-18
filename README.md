@@ -44,19 +44,20 @@ lilybench build-splits \
 
 ## Training
 
-LoRA training (see `lilybench/models/registry.py` for known model ids):
+LoRA training is driven by Hydra (see `lilybench/models/registry.py` for known
+model ids, `configs/train.yaml` for tunables):
 
 ```bash
-python -m lilybench.stages.training.train_lora \
-  --model-id phi4 \
-  --train data/splits_full/train.jsonl \
-  --val data/splits_full/val.jsonl \
-  --output-dir runs/phi4_lora \
-  --epochs 3 \
-  --batch-size 1 \
-  --gradient-accumulation-steps 32 \
-  --learning-rate 5e-5 \
-  --bf16
+python -m lilybench.train \
+  model=phi4 \
+  data.train=data/splits_full/train.jsonl \
+  data.val=data/splits_full/val.jsonl \
+  output_dir=runs/phi4_lora \
+  epochs=3 batch_size=1 gradient_accumulation_steps=32 \
+  learning_rate=5e-5 bf16=true
+
+# Multi-run sweep to SLURM via submitit
+python -m lilybench.train --multirun model=phi4,qwen-coder hydra/launcher=slurm_train
 ```
 
 Known model ids: `gpt-oss`, `phi4`, `qwen-coder`, `deepseek-coder`, `codestral`.
@@ -81,25 +82,43 @@ MODEL_ID=qwen-coder REGIME=zero NUM_SAMPLES=100 \
 > Codestral-22B is a **gated** model on HuggingFace. Accept the license and
 > export `HF_TOKEN` (or run `huggingface-cli login`) before the first load.
 
-## Post-Inference
+## Inference
 
-Extract generated LilyPond samples from SLURM inference logs:
+Generation is a Hydra entry point; regime picks zero/few/lora:
 
 ```bash
-python scripts/extract_detokenized.py \
-  --input-dir data/inference/outputs \
-  --output-dir data/inference/samples
+python -m lilybench.infer model=phi4 regime=zero num_samples=100
+python -m lilybench.infer model=phi4 regime=lora regime.path=runs/phi4_lora/final
+python -m lilybench.infer model=phi4 regime=few regime.fewshot_file=configs/fewshot/phi4.txt
+
+# Multi-run sweep to SLURM
+python -m lilybench.infer --multirun model=phi4,qwen-coder regime=zero,lora \
+  hydra/launcher=slurm_infer
 ```
+
+Samples are written to `${output_dir}/samples/sample_####.ly`. If you still need
+to parse older SLURM log files, `lilybench/evaluate/extract_detokenized.py`
+remains available as an argparse helper.
 
 ## Evaluation
 
-Text and MIDI analysis:
+Three Hydra entry points. Text and MIDI analysis:
 
 ```bash
-python scripts/eval_extracted_ly.py data/inference/samples \
-  --out data/inference/sample_eval/eval.jsonl \
-  --summary data/inference/sample_eval/summary.json \
-  --midi-dir data/inference/sample_eval/midi
+python -m lilybench.evaluate.text_midi \
+  input_dir=data/inference/samples \
+  out=data/inference/sample_eval/eval.jsonl \
+  summary=data/inference/sample_eval/summary.json \
+  midi_dir=data/inference/sample_eval/midi
+```
+
+Held-out loss (requires a trained LoRA adapter):
+
+```bash
+python -m lilybench.evaluate.loss \
+  model=phi4 \
+  lora_path=runs/phi4_lora/final \
+  data=data/splits_full/test.jsonl
 ```
 
 ### Fréchet Music Distance (FMD)
@@ -114,12 +133,12 @@ Report FMD against two reference sets:
 ```bash
 pip install -e ".[eval]"
 
-python scripts/eval_fmd.py \
-  --generations-dir data/inference/samples/phi4_zero \
-  --reference-kind test \
-  --reference-path data/splits_full/test.jsonl \
-  --embedder-checkpoint /path/to/lilybert \
-  --out data/inference/sample_eval/fmd_phi4_zero_test.json
+python -m lilybench.evaluate.fmd \
+  generations_dir=data/inference/samples/phi4_zero \
+  reference_kind=test \
+  reference_path=data/splits_full/test.jsonl \
+  embedder_checkpoint=/path/to/lilybert \
+  out=data/inference/sample_eval/fmd_phi4_zero_test.json
 ```
 
 LilyBERT checkpoint: https://github.com/CSCPadova/lilybert. FMD is computed
@@ -144,10 +163,9 @@ are in `tests/conftest.py`.
 
 1. Build the full-file dataset: `lilybench build-dataset …`
 2. Split: `lilybench build-splits …`
-3. Train: `MODEL_ID=… TRAIN_JSONL=… VAL_JSONL=… OUTPUT_DIR=… sbatch slurm/train/train_multimodel.slurm`
-4. Infer: `MODEL_ID=… REGIME={zero,few,lora} [LORA_PATH=…] sbatch slurm/infer/infer_multimodel.slurm`
-5. Extract detokenized `.ly`: `python scripts/extract_detokenized.py …`
-6. Evaluate: `python scripts/eval_extracted_ly.py …` and `python scripts/eval_fmd.py …`
+3. Train: `python -m lilybench.train model=… data.train=… data.val=… output_dir=…` (or `sbatch slurm/train/train_multimodel.slurm` with the legacy env-var contract)
+4. Infer: `python -m lilybench.infer model=… regime={zero,few,lora} [regime.path=…]`
+5. Evaluate: `python -m lilybench.evaluate.text_midi …` / `python -m lilybench.evaluate.loss …` / `python -m lilybench.evaluate.fmd …`
 
 ### Expected artifacts
 
@@ -166,28 +184,30 @@ are in `tests/conftest.py`.
 
 ```
 lilybench/
-  cli.py                          - CLI (build-dataset, build-splits)
+  cli.py                          - argparse CLI (build-dataset, build-splits)
+  train.py                        - Hydra entry point: LoRA training
+  infer.py                        - Hydra entry point: inference (zero/few/lora)
   models/registry.py              - Model registry (HF id, dtype, chat template, LoRA targets)
-  stages/
-    dataset/
-      build_fullfile_dataset.py   - Full-file JSONL builder
-      prelude.py                  - Prelude boundary detection
-      augmentations.py            - shuffle / drop / inline + brace-balance gate
-      metadata_header.py          - Metadata resolution and %% === METADATA === block
-      training_dataset.py         - Tokenizing dataset loader with char-range loss masking
-    splitting/build_splits.py     - Train/val/test split by base work
-    training/
-      train_lora.py               - LoRA training
-      eval_lora.py                - LoRA evaluation
+  preprocess/
+    build_dataset.py              - Full-file JSONL builder
+    build_splits.py               - Train/val/test split by base work
+    prelude.py                    - Prelude boundary detection
+    augmentations.py              - shuffle / drop / inline + brace-balance gate
+    metadata_header.py            - Metadata resolution and %% === METADATA === block
+  data/
+    training_dataset.py           - Tokenizing dataset loader with char-range loss masking
+  evaluate/
+    loss.py                       - Hydra entry point: held-out loss of a LoRA adapter
+    text_midi.py                  - Hydra entry point: text + MIDI analysis
+    fmd.py                        - Hydra entry point: Fréchet Music Distance
+    extract_detokenized.py        - argparse helper: extract .ly files from log files
+configs/                          - Hydra config tree (train, infer, evaluate, model, regime, launcher)
 scripts/
-  extract_detokenized.py          - Extract .ly files from inference outputs
-  eval_extracted_ly.py            - Text + MIDI evaluation
-  eval_fmd.py                     - Fréchet Music Distance
   translate_preprocessed_to_nederlands.py - one-shot corpus fixer (notelog §8.1)
 tests/                            - pytest suite
 slurm/
-  train/                          - Training job templates
-  infer/                          - Inference job templates
+  train/                          - Training job templates (thin Hydra wrappers)
+  infer/                          - Inference job templates (thin Hydra wrappers)
 ```
 
 ## Data structure

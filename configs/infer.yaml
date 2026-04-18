@@ -1,0 +1,30 @@
+defaults:
+  - _self_
+  - model: phi4
+  - regime: zero
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${output_dir}
+  sweep:
+    dir: ${output_dir}
+    subdir: ${hydra.job.override_dirname}
+
+output_dir: data/inference/outputs
+
+num_samples: 100
+temperature: 0.7
+top_p: 0.9
+max_new_tokens: 3000
+seed_base: 1234
+
+prompt_file: null
+lilypond_version: "2.24.4"
+lilypond_language: italiano
+
+default_prompt: |-
+  Write a short LilyPond fragment, four bars long, in A minor, 4/4.
+  Use Italian note names (do re mi fa sol la si) and lowercase relative
+  notation. Output only the LilyPond code; do not add prose.

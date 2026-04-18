@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from lilybench.stages.dataset.build_fullfile_dataset import (
+from lilybench.preprocess.build_dataset import (
     VARIANTS,
     _body_segments,
     _file_seed,

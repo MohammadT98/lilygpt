@@ -69,16 +69,16 @@ mkdir -p "$TMPDIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" \
 echo "[slurm] MODEL_ID=$MODEL_ID EFF_BATCH=$EFF_BATCH EPOCHS=$EPOCHS LR=$LR"
 echo "[slurm] OUTPUT_DIR=$OUTPUT_DIR"
 
-python -m lilybench.stages.training.train_lora \
-  --model-id "$MODEL_ID" \
-  --train "$TRAIN_JSONL" \
-  --val "$VAL_JSONL" \
-  --output-dir "$OUTPUT_DIR" \
-  --batch-size 1 \
-  --gradient-accumulation-steps "$EFF_BATCH" \
-  --learning-rate "$LR" \
-  --epochs "$EPOCHS" \
-  --lora-r "$LORA_R" \
-  --lora-alpha "$LORA_ALPHA" \
-  --max-length "$MAX_LENGTH" \
-  --bf16
+python -m lilybench.train \
+  "model=$MODEL_ID" \
+  "data.train=$TRAIN_JSONL" \
+  "data.val=$VAL_JSONL" \
+  "output_dir=$OUTPUT_DIR" \
+  "batch_size=1" \
+  "gradient_accumulation_steps=$EFF_BATCH" \
+  "learning_rate=$LR" \
+  "epochs=$EPOCHS" \
+  "lora.r=$LORA_R" \
+  "lora.alpha=$LORA_ALPHA" \
+  "max_length=$MAX_LENGTH" \
+  "bf16=true"

@@ -65,182 +65,28 @@ export HF_DATASETS_CACHE="$HF_HOME/datasets"
 mkdir -p "$TMPDIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" \
          "$HF_HOME" "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE"
 
-python - <<'PY'
-import os
-import random
-import sys
-import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+OUTPUT_DIR="${OUTPUT_DIR:-data/inference/outputs/${MODEL_ID}_${REGIME}}"
 
-from lilybench.models import get_spec
-
-MODEL_ID = os.environ["MODEL_ID"]
-REGIME = os.environ["REGIME"]
-LORA_PATH = os.environ.get("LORA_PATH") or None
-FEWSHOT_FILE = os.environ.get("FEWSHOT_FILE") or None
-PROMPT_FILE = os.environ.get("PROMPT_FILE") or None
-NUM_SAMPLES = int(os.environ.get("NUM_SAMPLES", "100"))
-TEMPERATURE = float(os.environ.get("TEMPERATURE", "0.7"))
-TOP_P = float(os.environ.get("TOP_P", "0.9"))
-MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", "3000"))
-
-LILYPOND_VERSION = "2.24.4"
-LILYPOND_LANGUAGE = "italiano"
-
-spec = get_spec(MODEL_ID)
-print("=" * 60)
-print(f"Multi-model inference  model={spec.model_id} hf={spec.hf_id} regime={REGIME}")
-print("=" * 60)
-
-if REGIME not in {"zero", "few", "lora"}:
-    print(f"[infer] unknown regime: {REGIME}", file=sys.stderr)
-    sys.exit(2)
-if REGIME == "lora" and not LORA_PATH:
-    print("[infer] REGIME=lora requires LORA_PATH", file=sys.stderr)
-    sys.exit(2)
-if REGIME == "few" and not FEWSHOT_FILE:
-    print("[infer] REGIME=few requires FEWSHOT_FILE", file=sys.stderr)
-    sys.exit(2)
-
-DEFAULT_PROMPT = (
-    "Write a short LilyPond fragment, four bars long, in A minor, 4/4. "
-    "Use Italian note names (do re mi fa sol la si) and lowercase relative "
-    "notation. Output only the LilyPond code; do not add prose."
-)
-if PROMPT_FILE:
-    with open(PROMPT_FILE, "r", encoding="utf-8") as fh:
-        user_prompt_text = fh.read().strip()
-else:
-    user_prompt_text = DEFAULT_PROMPT
-
-fewshot_text = ""
-if REGIME == "few":
-    with open(FEWSHOT_FILE, "r", encoding="utf-8") as fh:
-        fewshot_text = fh.read().strip()
-
-# --- tokenizer / model load ---
-if REGIME == "lora":
-    tokenizer_src = LORA_PATH
-    tokenizer = AutoTokenizer.from_pretrained(
-        tokenizer_src, use_fast=True, local_files_only=True
-    )
-else:
-    tokenizer = AutoTokenizer.from_pretrained(
-        spec.hf_id, use_fast=True, trust_remote_code=spec.trust_remote_code
-    )
-if tokenizer.pad_token is None:
-    tokenizer.pad_token = tokenizer.eos_token
-
-print(f"[infer] loading base model: {spec.hf_id}")
-dtype = {"bf16": torch.bfloat16, "fp16": torch.float16, "fp32": torch.float32}[spec.dtype]
-base = AutoModelForCausalLM.from_pretrained(
-    spec.hf_id,
-    device_map="auto",
-    torch_dtype=dtype,
-    low_cpu_mem_usage=True,
-    trust_remote_code=spec.trust_remote_code,
+INFER_OVERRIDES=(
+  "model=$MODEL_ID"
+  "regime=$REGIME"
+  "num_samples=$NUM_SAMPLES"
+  "temperature=$TEMPERATURE"
+  "top_p=$TOP_P"
+  "max_new_tokens=$MAX_NEW_TOKENS"
+  "output_dir=$OUTPUT_DIR"
 )
 
-if REGIME == "lora":
-    from peft import PeftModel
-    print(f"[infer] loading LoRA adapter: {LORA_PATH}")
-    model = PeftModel.from_pretrained(base, LORA_PATH, local_files_only=True)
-else:
-    model = base
-model.eval()
+if [ "$REGIME" = "lora" ]; then
+  : "${LORA_PATH:?REGIME=lora requires LORA_PATH}"
+  INFER_OVERRIDES+=("regime.path=$LORA_PATH")
+fi
+if [ "$REGIME" = "few" ]; then
+  : "${FEWSHOT_FILE:?REGIME=few requires FEWSHOT_FILE}"
+  INFER_OVERRIDES+=("regime.fewshot_file=$FEWSHOT_FILE")
+fi
+if [ -n "$PROMPT_FILE" ]; then
+  INFER_OVERRIDES+=("prompt_file=$PROMPT_FILE")
+fi
 
-
-# --- prompt assembly ---
-def _build_prompt() -> str:
-    """Build the model-ready prompt string for the current regime.
-
-    For zero/few-shot, use the tokenizer's chat template when available.
-    For lora, reuse the continuation-style seed used by the original pipeline.
-    """
-    if REGIME == "lora":
-        return "\\relative do'' {\n"
-
-    system = (
-        "You are a LilyPond assistant. Output only valid LilyPond code, "
-        "no prose, no markdown."
-    )
-    user = user_prompt_text
-    if REGIME == "few":
-        user = f"{fewshot_text}\n\n{user_prompt_text}"
-
-    messages = [
-        {"role": "system", "content": system},
-        {"role": "user", "content": user},
-    ]
-    # Rely on the model's built-in chat template when present.
-    if getattr(tokenizer, "chat_template", None):
-        return tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
-        )
-    # Fallback: plain concatenation.
-    return f"{system}\n\n{user}\n"
-
-
-prompt = _build_prompt()
-print(f"\n[infer] prompt preview (first 200 chars): {prompt[:200]!r}")
-
-device = next(model.parameters()).device
-
-
-def _generate_once(seed: int) -> str:
-    random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-
-    inputs = tokenizer(prompt, return_tensors="pt")
-    inputs = {k: v.to(device) for k, v in inputs.items()}
-
-    with torch.no_grad():
-        out = model.generate(
-            **inputs,
-            max_new_tokens=MAX_NEW_TOKENS,
-            do_sample=True,
-            temperature=TEMPERATURE,
-            top_p=TOP_P,
-            no_repeat_ngram_size=3,
-            eos_token_id=tokenizer.eos_token_id,
-            pad_token_id=tokenizer.eos_token_id,
-        )
-    raw_text = tokenizer.decode(out[0], skip_special_tokens=False)
-    # Strip any model-specific end marker (e.g. <|return|> for gpt-oss).
-    marker = spec.generation_end_marker
-    if marker and marker in raw_text:
-        raw_text = raw_text.split(marker, 1)[0]
-    return raw_text.rstrip()
-
-
-def _wrap_score(text: str) -> str:
-    body = text.rstrip()
-    if "\\score" in body:
-        return body
-    header_lines = []
-    if "\\version" not in body:
-        header_lines.append(f'\\version "{LILYPOND_VERSION}"')
-    if "\\language" not in body:
-        header_lines.append(f'\\language "{LILYPOND_LANGUAGE}"')
-    header = ("\n".join(header_lines) + "\n") if header_lines else ""
-    return header + "\\score {\n" + body + "\n\\layout {}\n\\midi {}\n}\n"
-
-
-for i in range(NUM_SAMPLES):
-    print(f"\n[infer] sample {i + 1}/{NUM_SAMPLES}")
-    raw_text = _generate_once(seed=1234 + i)
-    print("=" * 60)
-    print(f"Raw Output {i + 1}:")
-    print("=" * 60)
-    print(raw_text)
-    print("=" * 60)
-
-    final_text = _wrap_score(raw_text.strip())
-    print("=" * 60)
-    print(f"Detokenized Output {i + 1}:")
-    print("=" * 60)
-    print(final_text)
-    print("=" * 60)
-PY
+python -m lilybench.infer "${INFER_OVERRIDES[@]}"

@@ -1,0 +1,39 @@
+defaults:
+  - _self_
+  - model: phi4
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${output_dir}
+  sweep:
+    dir: ${output_dir}
+    subdir: ${hydra.job.override_dirname}
+
+data:
+  train: data/splits_full/train.jsonl
+  val: data/splits_full/val.jsonl
+
+output_dir: data/fine_tuning/checkpoints
+
+batch_size: 1
+gradient_accumulation_steps: 32
+learning_rate: 5e-5
+epochs: 3
+max_length: 1024
+
+lora:
+  r: 8
+  alpha: 32
+  dropout: 0.1
+
+bf16: true
+fp16: false
+
+save_steps: 500
+eval_steps: 500
+logging_steps: 10
+warmup_steps: 100
+
+resume_from_checkpoint: null

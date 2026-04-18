@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from lilybench.stages.dataset.prelude import (
+from lilybench.preprocess.prelude import (
     find_version_language_header,
     identify_prelude,
     iter_toplevel_assignments,

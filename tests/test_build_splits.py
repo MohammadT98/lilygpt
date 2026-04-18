@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from lilybench.stages.splitting.build_splits import (
+from lilybench.preprocess.build_splits import (
     Sample,
     _get_base_work,
     _load_from_jsonl,

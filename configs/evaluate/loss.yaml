@@ -1,0 +1,24 @@
+# @package _global_
+defaults:
+  - _self_
+  - /model@model: phi4
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${output_dir}
+  sweep:
+    dir: ${output_dir}
+    subdir: ${hydra.job.override_dirname}
+
+data: data/splits_full/test.jsonl
+lora_path: ???
+
+output_dir: data/inference/loss_eval
+
+batch_size: 1
+max_length: 2048
+
+bf16: true
+fp16: false

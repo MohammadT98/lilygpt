@@ -1,23 +1,27 @@
 from __future__ import annotations
 
-"""CLI entry point for LilyPond dataset building.
+"""CLI entry point for LilyPond dataset preprocessing.
 
 Subcommands:
 
 * ``build-dataset`` — reads ``data/bmdataset/preprocessed/`` and writes the
   full-file JSONL used for LoRA training.
 * ``build-splits`` — deterministic train/val/test split of that JSONL.
+
+Training, inference, and evaluation use Hydra entry points instead
+(``python -m lilybench.train``, ``python -m lilybench.infer``,
+``python -m lilybench.evaluate.{loss,text_midi,fmd}``).
 """
 
 import argparse
 from pathlib import Path
 
-from lilybench.stages.dataset import build_fullfile_dataset
-from lilybench.stages.splitting import build_splits
+from lilybench.preprocess import build_dataset as build_dataset_mod
+from lilybench.preprocess import build_splits as build_splits_mod
 
 
 def _add_build_dataset_subparser(subparsers: argparse._SubParsersAction) -> None:
-    p = build_fullfile_dataset.build_arg_parser()
+    p = build_dataset_mod.build_arg_parser()
     p.prog = "lilybench build-dataset"
     sub = subparsers.add_parser(
         "build-dataset",
@@ -30,7 +34,7 @@ def _add_build_dataset_subparser(subparsers: argparse._SubParsersAction) -> None
 
 
 def _add_build_splits_subparser(subparsers: argparse._SubParsersAction) -> None:
-    p = build_splits.build_arg_parser()
+    p = build_splits_mod.build_arg_parser()
     p.prog = "lilybench build-splits"
     sub = subparsers.add_parser(
         "build-splits",
@@ -51,7 +55,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
 
 
 def _run_build_dataset(args: argparse.Namespace) -> int:
-    build_fullfile_dataset.build_dataset(
+    build_dataset_mod.build_dataset(
         input_dir=Path(args.input_dir),
         metadata_path=Path(args.metadata),
         output_path=Path(args.output),
@@ -72,16 +76,16 @@ def _run_build_splits(args: argparse.Namespace) -> int:
             f"[build_splits] invalid ratios: train={args.train_ratio}, val={args.val_ratio}"
         )
         return 2
-    samples = build_splits._load_from_jsonl(input_jsonl)
-    train, val, test = build_splits._train_val_test_split(
+    samples = build_splits_mod._load_from_jsonl(input_jsonl)
+    train, val, test = build_splits_mod._train_val_test_split(
         samples, args.train_ratio, args.val_ratio, args.seed
     )
-    build_splits._write_jsonl(train, output_dir / "train.jsonl")
-    build_splits._write_jsonl(val, output_dir / "val.jsonl")
-    build_splits._write_jsonl(test, output_dir / "test.jsonl")
-    build_splits._print_stats("train", train)
-    build_splits._print_stats("val", val)
-    build_splits._print_stats("test", test)
+    build_splits_mod._write_jsonl(train, output_dir / "train.jsonl")
+    build_splits_mod._write_jsonl(val, output_dir / "val.jsonl")
+    build_splits_mod._write_jsonl(test, output_dir / "test.jsonl")
+    build_splits_mod._print_stats("train", train)
+    build_splits_mod._print_stats("val", val)
+    build_splits_mod._print_stats("test", test)
     return 0
 
 

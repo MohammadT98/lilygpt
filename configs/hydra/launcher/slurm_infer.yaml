@@ -1,0 +1,14 @@
+# @package hydra.launcher
+defaults:
+  - submitit_slurm
+
+timeout_min: 120
+partition: allgroups
+qos: allgroups_qos
+gres: "gpu:a40:2"
+cpus_per_task: 8
+tasks_per_node: 1
+mem_gb: 64
+nodes: 1
+name: lilybench-infer
+stderr_to_stdout: false

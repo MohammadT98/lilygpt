@@ -1,0 +1,24 @@
+# @package _global_
+defaults:
+  - _self_
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${output_dir}
+  sweep:
+    dir: ${output_dir}
+    subdir: ${hydra.job.override_dirname}
+
+input_dir: data/inference/samples
+out: data/inference/sample_eval/eval.jsonl
+summary: data/inference/sample_eval/summary.json
+midi_dir: data/inference/sample_eval/midi
+output_dir: data/inference/sample_eval
+
+expected_notation: relative
+require_lowercase: true
+allow_accidentals: true
+allowed_forbidden: null
+force_midi: false
