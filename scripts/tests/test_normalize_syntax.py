@@ -137,7 +137,7 @@ def main():
     print()
     print(f"[preprocess] line_removed={stats['line_removed']} block_removed={stats['block_removed']}")
     print(f"[normalize] rel:{stats['rel']} vars:{stats['vars']} transpose_ok:{stats['transpose_ok']} repeat:{stats['repeat']} tuplets:{stats['tuplets']} drums:{stats['drums']} lily_fail:{stats['lily_fail']}")
-    
+
     return 0
 
 

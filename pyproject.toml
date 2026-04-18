@@ -46,7 +46,7 @@ eval = [
 ]
 
 [tool.setuptools.packages.find]
-where = ["src"]  
+where = ["src"]
 
 [project.scripts]
-lilybench = "lilybench.cli:main" 
+lilybench = "lilybench.cli:main"
