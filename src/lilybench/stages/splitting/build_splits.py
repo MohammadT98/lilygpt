@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Dict, Any
 
-DEFAULT_INPUT_JSONL = "data/assignment_dataset/all_examples.jsonl"
+DEFAULT_INPUT_JSONL = "data/fullfile_dataset/all_examples.jsonl"
 DEFAULT_OUTPUT_DIR = "data/splits_full"
 DEFAULT_TRAIN_RATIO = 0.8
 DEFAULT_VAL_RATIO = 0.1

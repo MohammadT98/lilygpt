@@ -1,100 +1,70 @@
 # lilybench
 
-Pipeline for normalizing LilyPond music notation and preparing training datasets for large language model fine-tuning.
+LilyPond code-generation benchmark: dataset builder, LoRA fine-tuning, and evaluation.
 
 ## Overview
 
-This tool processes raw LilyPond source files through a multi-stage normalization pipeline, producing clean, structurally consistent training data:
+`lilybench` turns the `data/bmdataset/preprocessed/` LilyPond corpus into a full-file
+training dataset with anti-memorization augmentations and a structured metadata
+header, trains LoRA adapters over several code/general LLMs, and evaluates the
+generated `.ly` samples with text checks, MIDI analysis, and Fréchet Music Distance.
 
-1. **File resolution** - Resolves `\include` directives, splits multi-forma scores
-2. **Preprocessing** - Removes comments, normalizes whitespace
-3. **Syntax normalization** - Expands music functions/transposes, unfolds repeats, normalizes tuplets
-4. **Forma handling** - Prepends structure and inlines `\forma`
-5. **Stripping** - Removes engraving directives (layout, dynamics, articulations)
-6. **Postprocessing** - Fixes malformed syntax patterns
-7. **Dataset generation** - Builds datasets and creates train/val/test splits
+The design rationale — dataset source, chunking policy, augmentations, metadata
+conditioning, loss masking, schema — lives in [notelog.md](notelog.md).
 
 ## Installation
 
 ```bash
-cd lilybench
-pip install -e .
+uv sync --all-groups          # runtime + train + eval + dev (pytest)
+# or, without uv:
+pip install -e ".[train,eval]"
 ```
 
-For training:
-```bash
-pip install -e ".[train]"
-```
+Evaluation shells out to the LilyPond binary. If `lilypond` isn't on `PATH`, set
+`LILYPOND_BIN` to its full path.
 
 ## Usage
 
-Normalize LilyPond files:
-```bash
-python -m lilybench.cli \
-  --input data/raw \
-  --normalized-out data/normalized_dataset
-```
-Note: Some normalization steps call the LilyPond binary. If it is not on PATH, set
-`LILYPOND_BIN` to its full path (e.g., `C:\lilypond-2.24.4-mingw-x86_64\lilypond-2.24.4\bin\lilypond.exe`).
+Build the full-file training JSONL:
 
-Generate full assignment dataset:
 ```bash
-python -m lilybench.stages.dataset.build_assignment_dataset
+lilybench build-dataset \
+  --input-dir data/bmdataset/preprocessed \
+  --metadata data/bmdataset/metadata.json \
+  --output data/fullfile_dataset/all_examples.jsonl
 ```
 
-Build train/val/test splits:
+Split into train/val/test by source work:
+
 ```bash
-python -m lilybench.stages.splitting.build_splits \
-  --input-jsonl data/assignment_dataset/all_examples.jsonl \
+lilybench build-splits \
+  --input-jsonl data/fullfile_dataset/all_examples.jsonl \
   --output-dir data/splits_full
 ```
 
-## Batch scripts
-
-Convenience scripts for Windows (in `bin/`):
-
-- `run_full_pipeline.bat` - End-to-end pipeline
-
 ## Training
 
-LoRA training:
-```bash
-python -m lilybench.stages.training.train_lora \
-  --model-id gpt-oss \
-  --train data/splits_full/train.jsonl \
-  --val data/splits_full/val.jsonl \
-  --output-dir runs/experiment \
-  --epochs 3 \
-  --batch-size 1 \
-  --gradient-accumulation-steps 32 \
-  --learning-rate 5e-5
-```
-(Effective batch size = 1 × 32 = 32)
+LoRA training (see `src/lilybench/models/registry.py` for known model ids):
 
-SLURM job templates in `slurm/`.
-
-### Multi-model LoRA
-
-Model selection is driven by a registry at `src/lilybench/models/registry.py`.
-Known ids: `gpt-oss`, `phi4`, `qwen-coder`, `deepseek-coder`, `codestral`.
-The registry resolves the HuggingFace id, chat-template kind, dtype, LoRA
-target modules, and whether the tokenizer should accept the LilyPond
-structural tokens `<KEY:...>`, `<TIME:...>`, `<TEMPO:...>`, `<VOICE>` (only
-`gpt-oss` does by default; other models fall back to inline text).
-
-Train any registered model by passing `--model-id`:
 ```bash
 python -m lilybench.stages.training.train_lora \
   --model-id phi4 \
   --train data/splits_full/train.jsonl \
   --val data/splits_full/val.jsonl \
   --output-dir runs/phi4_lora \
+  --epochs 3 \
+  --batch-size 1 \
+  --gradient-accumulation-steps 32 \
+  --learning-rate 5e-5 \
   --bf16
 ```
 
-SLURM wrappers for the full matrix live in
-`slurm/train/train_multimodel.slurm` and
-`slurm/infer/infer_multimodel.slurm`; both are env-var driven:
+Known model ids: `gpt-oss`, `phi4`, `qwen-coder`, `deepseek-coder`, `codestral`.
+Only `gpt-oss` uses the structural tokens `<KEY:…>` / `<TIME:…>` / `<TEMPO:…>` /
+`<VOICE>` by default; other models fall back to inline text.
+
+SLURM templates in `slurm/train/` and `slurm/infer/` are env-var driven:
+
 ```bash
 MODEL_ID=qwen-coder \
 TRAIN_JSONL=data/splits_full/train.jsonl \
@@ -111,31 +81,24 @@ MODEL_ID=qwen-coder REGIME=zero NUM_SAMPLES=100 \
 
 ## Post-Inference
 
-Extract generated LilyPond samples from inference output files:
+Extract generated LilyPond samples from SLURM inference logs:
+
 ```bash
 python scripts/extract_detokenized.py \
   --input-dir data/inference/outputs \
   --output-dir data/inference/samples
 ```
 
-This extracts all "Detokenized Output" sections and saves them as `.ly` files organized by experiment.
-
 ## Evaluation
 
-Evaluate extracted LilyPond files (text checks + MIDI analysis):
+Text and MIDI analysis:
+
 ```bash
 python scripts/eval_extracted_ly.py data/inference/samples \
   --out data/inference/sample_eval/eval.jsonl \
   --summary data/inference/sample_eval/summary.json \
   --midi-dir data/inference/sample_eval/midi
 ```
-
-Outputs:
-- `data/inference/sample_eval/eval.jsonl` — per-sample metrics
-- `data/inference/sample_eval/summary.json` — aggregate summary
-- `data/inference/sample_eval/midi/` — rendered MIDI files (when LilyPond is available)
-
-Note: This evaluation uses the LilyPond binary for rendering (if available) and `music21` for MIDI analysis.
 
 ### Fréchet Music Distance (FMD)
 
@@ -149,173 +112,96 @@ Report FMD against two reference sets:
 ```bash
 pip install -e ".[eval]"
 
-# In-domain reference
 python scripts/eval_fmd.py \
   --generations-dir data/inference/samples/phi4_zero \
   --reference-kind test \
   --reference-path data/splits_full/test.jsonl \
   --embedder-checkpoint /path/to/lilybert \
   --out data/inference/sample_eval/fmd_phi4_zero_test.json
-
-# Out-of-domain reference
-python scripts/eval_fmd.py \
-  --generations-dir data/inference/samples/phi4_zero \
-  --reference-kind mutopia \
-  --reference-path data/mutopia_ly \
-  --embedder-checkpoint /path/to/lilybert \
-  --out data/inference/sample_eval/fmd_phi4_zero_mutopia.json
 ```
 
-LilyBERT checkpoint: https://github.com/CSCPadova/lilybert (CodeBERT-based,
-125M params, MLM-pretrained on LilyPond). FMD is computed as in Retkowski et
-al. 2024; a self-vs-self FMD on the reference set should be ≈ 0.
+LilyBERT checkpoint: https://github.com/CSCPadova/lilybert. FMD is computed
+as in Retkowski et al. 2024; a self-vs-self FMD on the reference set is ≈ 0.
+
+## Development
+
+Tests are written in pytest (with pytest-xdist for parallel runs):
+
+```bash
+uv run pytest                  # sequential
+uv run pytest -n auto          # parallel across CPU cores
+uv run pytest -k augmentations # filter by substring
+```
+
+Pytest config is in `[tool.pytest.ini_options]` in `pyproject.toml`; fixtures
+are in `tests/conftest.py`.
 
 ## Reproducibility
 
-### Environment
-
-- Python `>=3.10` (see `pyproject.toml`)
-- Core deps: `pandas`, `music21`
-- Training deps: `transformers`, `torch`, `peft`, `accelerate`, `tensorboard`
-- External tools: LilyPond (for compile/render checks), `music21` (MIDI analysis)
-
-Install:
-
-```bash
-pip install -e ".[train]"
-```
-
 ### Run order (end-to-end)
 
-1. Normalize raw LilyPond files:
-
-```bash
-python -m lilybench.cli \
-  --input data/raw \
-  --normalized-out data/normalized_dataset
-```
-
-2. Build assignment dataset:
-
-```bash
-python -m lilybench.stages.dataset.build_assignment_dataset
-```
-
-3. Build train/val/test splits:
-
-```bash
-python -m lilybench.stages.splitting.build_splits \
-  --input-jsonl data/assignment_dataset/all_examples.jsonl \
-  --output-dir data/splits_full
-```
-
-4. Train (examples):
-
-```bash
-sbatch slurm/train/train_exp10_voice_tokens.slurm
-sbatch slurm/train/train_exp11_voice_tokens_eff16.slurm
-sbatch slurm/train/train_exp12_voice_tokens_eff4.slurm
-```
-
-5. Inference (examples):
-
-```bash
-sbatch slurm/infer/infer_exp10_voice_tokens.slurm
-sbatch slurm/infer/infer_exp11_voice_tokens.slurm
-sbatch slurm/infer/infer_exp12_voice_tokens.slurm
-```
-
-6. Extract detokenized `.ly` outputs:
-
-```bash
-python scripts/extract_detokenized.py \
-  --input-dir data/inference/outputs \
-  --output-dir data/inference/samples
-```
-
-7. Evaluate generated samples:
-
-```bash
-python scripts/eval_extracted_ly.py data/inference/samples \
-  --out data/inference/sample_eval/eval.jsonl \
-  --summary data/inference/sample_eval/summary.json \
-  --midi-dir data/inference/sample_eval/midi
-```
+1. Build the full-file dataset: `lilybench build-dataset …`
+2. Split: `lilybench build-splits …`
+3. Train: `sbatch slurm/train/train_exp10_voice_tokens.slurm` (or the multi-model wrapper)
+4. Infer: `sbatch slurm/infer/infer_exp10_voice_tokens.slurm`
+5. Extract detokenized `.ly`: `python scripts/extract_detokenized.py …`
+6. Evaluate: `python scripts/eval_extracted_ly.py …` and `python scripts/eval_fmd.py …`
 
 ### Expected artifacts
 
-- Trained adapters/checkpoints under `runs/.../final` (training scripts)
+- Trained adapters/checkpoints under `runs/.../final`
 - Inference logs under `logs/` (SLURM `%j` job-id naming)
 - Extracted LilyPond samples under `data/inference/samples/exp*/sample_*.ly`
-- Evaluation outputs:
-  - `data/inference/sample_eval/eval.jsonl`
-  - `data/inference/sample_eval/summary.json`
-  - `data/inference/sample_eval/midi/` (grouped by experiment where available)
+- Evaluation outputs under `data/inference/sample_eval/`
 
 ### Determinism notes
 
+- Dataset build is deterministic: seeds are `file_seed ^ variant.seed_salt` where `file_seed` is a hash of the filename stem.
 - Inference scripts set deterministic seeds per sample (`1234 + i`).
-- Generation is still stochastic (`do_sample=True`), so outputs can vary across runs/hardware.
-- Small metric fluctuations are expected; compare trends across matched settings, not exact text identity.
+- Generation is still stochastic (`do_sample=True`), so outputs can vary across runs/hardware. Compare trends across matched settings, not exact text identity.
 
 ## Project structure
 
 ```
 src/lilybench/
-  cli.py                  - Command-line interface
-  normalize.py            - Pipeline orchestration
+  cli.py                          - CLI (build-dataset, build-splits)
+  models/registry.py              - Model registry (HF id, dtype, chat template, LoRA targets)
   stages/
-    normalization/        - Text normalization stages
-      file_resolver.py    - Resolve includes, split on \forma
-      preprocess.py       - Remove comments, clean whitespace
-      normalize_syntax.py - Resolve transpose, unfold repeats, normalize tuplets
-      forma.py            - Prepend structure and inline \forma
-      engrave_strip.py    - Strip engraving directives
-      postprocessing.py   - Fix malformed patterns
-      utils/              - Normalization helpers
-        brackets.py       - Balanced bracket parsing
-    dataset/              - Dataset loading for training
-      training_dataset.py - Full-sequence dataset
-      build_assignment_dataset.py - Build full assignment dataset
-    splitting/            - Train/val/test split
-      build_splits.py
-    training/             - LoRA fine-tuning
-      train_lora.py       - LoRA training
-      eval_lora.py        - LoRA evaluation
-  utils/
-    options.py            - Configuration
+    dataset/
+      build_fullfile_dataset.py   - Full-file JSONL builder
+      prelude.py                  - Prelude boundary detection
+      augmentations.py            - shuffle / drop / inline + brace-balance gate
+      metadata_header.py          - Metadata resolution and %% === METADATA === block
+      training_dataset.py         - Tokenizing dataset loader with char-range loss masking
+    splitting/build_splits.py     - Train/val/test split by base work
+    training/
+      train_lora.py               - LoRA training
+      eval_lora.py                - LoRA evaluation
 scripts/
-  extract_detokenized.py  - Extract .ly files from inference outputs
-  eval_extracted_ly.py    - Evaluate extracted LilyPond files
-  tests/                  - Unit tests
-    test_file_resolver.py
-    test_normalize_syntax.py
-    test_preprocess.py
-bin/
-  run_full_pipeline.bat   - End-to-end pipeline
-  tests/                  - Test batch scripts
+  extract_detokenized.py          - Extract .ly files from inference outputs
+  eval_extracted_ly.py            - Text + MIDI evaluation
+  eval_fmd.py                     - Fréchet Music Distance
+  translate_preprocessed_to_nederlands.py - one-shot corpus fixer (notelog §8.1)
+tests/                            - pytest suite
 slurm/
-  train/                  - Training job templates
-  infer/                  - Inference job templates
-  test/                   - Test set evaluation job templates
+  train/                          - Training job templates
+  infer/                          - Inference job templates
+  test/                           - Test-set evaluation job templates
 ```
 
 ## Data structure
 
 ```
 data/
-  raw/                    - Raw input LilyPond files
-  normalized_dataset/     - Normalized output
-  assignment_dataset/     - Built assignment dataset
-  splits_full/            - Train/val/test splits
-  logs/                   - Processing logs
+  bmdataset/
+    preprocessed/                 - Input .ly files (include-resolved, nederlands-pitched)
+    metadata.json                 - Per-piece metadata (composer, period, form, instruments)
+  fullfile_dataset/               - Built JSONL (all_examples.jsonl)
+  splits_full/                    - train.jsonl / val.jsonl / test.jsonl
   inference/
-    outputs/              - Raw SLURM inference .out files
-    samples/              - Extracted .ly files
-    sample_eval/          - Evaluation results
-      eval.jsonl          - Per-sample metrics
-      summary.json        - Aggregate summary
-      midi/               - Rendered MIDI files
+    outputs/                      - Raw SLURM inference .out files
+    samples/                      - Extracted .ly files
+    sample_eval/                  - eval.jsonl, summary.json, midi/
 ```
 
 ## License

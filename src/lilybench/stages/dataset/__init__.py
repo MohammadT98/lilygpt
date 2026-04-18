@@ -1,9 +1,6 @@
-"""Dataset preparation and loading utilities."""
+"""Dataset preparation and loading utilities.
 
-from .training_dataset import LilyStandardDataset, StandardSample, collate_standard_batch
-
-__all__ = [
-    "LilyStandardDataset",
-    "StandardSample",
-    "collate_standard_batch",
-]
+Submodules are imported explicitly by consumers — keeping this ``__init__``
+free of eager imports means modules that don't need ``torch`` (e.g. the
+dataset builder) can be used without the training extras installed.
+"""

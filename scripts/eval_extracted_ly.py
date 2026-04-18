@@ -15,11 +15,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
-# Optional import: used only for music21-based fallback compile check
-try:
-    import music21 as _m21
-except Exception:
-    _m21 = None
+import music21 as _m21
 
 
 # ---------- Constants ----------
@@ -819,7 +815,7 @@ def eval_lily_text(
                 compile_error = str(exc)[:300]
                 compile_via = "lilypond"
 
-    if compiles is None and _m21 is not None:
+    if compiles is None:
         try:
             src = (
                 text

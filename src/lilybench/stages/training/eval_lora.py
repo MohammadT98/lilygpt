@@ -51,11 +51,6 @@ def build_arg_parser() -> argparse.ArgumentParser:
         help="Maximum sequence length (default: 2048).",
     )
     parser.add_argument(
-        "--mask-input",
-        action="store_true",
-        help="Mask input tokens (loss only on completion).",
-    )
-    parser.add_argument(
         "--bf16",
         action="store_true",
         help="Use bfloat16 dtype for base model.",
@@ -111,7 +106,6 @@ def main() -> int:
         data_path,
         tokenizer=tokenizer,
         max_length=args.max_length,
-        mask_input=args.mask_input,
     )
     print(f"[eval_lora] samples: {len(dataset)}")
 
