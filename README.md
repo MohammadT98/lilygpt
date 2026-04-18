@@ -44,7 +44,7 @@ lilybench build-splits \
 
 ## Training
 
-LoRA training (see `src/lilybench/models/registry.py` for known model ids):
+LoRA training (see `lilybench/models/registry.py` for known model ids):
 
 ```bash
 python -m lilybench.stages.training.train_lora \
@@ -60,8 +60,10 @@ python -m lilybench.stages.training.train_lora \
 ```
 
 Known model ids: `gpt-oss`, `phi4`, `qwen-coder`, `deepseek-coder`, `codestral`.
-Only `gpt-oss` uses the structural tokens `<KEY:…>` / `<TIME:…>` / `<TEMPO:…>` /
-`<VOICE>` by default; other models fall back to inline text.
+All models are trained and evaluated on raw LilyPond text only — no special
+structural tokens are added to any tokenizer vocabulary. Key/time/tempo/voice
+information is expressed via the native LilyPond directives (`\key`, `\time`,
+`\tempo`, `\new Voice …`).
 
 SLURM templates in `slurm/train/` and `slurm/infer/` are env-var driven:
 
@@ -142,8 +144,8 @@ are in `tests/conftest.py`.
 
 1. Build the full-file dataset: `lilybench build-dataset …`
 2. Split: `lilybench build-splits …`
-3. Train: `sbatch slurm/train/train_exp10_voice_tokens.slurm` (or the multi-model wrapper)
-4. Infer: `sbatch slurm/infer/infer_exp10_voice_tokens.slurm`
+3. Train: `MODEL_ID=… TRAIN_JSONL=… VAL_JSONL=… OUTPUT_DIR=… sbatch slurm/train/train_multimodel.slurm`
+4. Infer: `MODEL_ID=… REGIME={zero,few,lora} [LORA_PATH=…] sbatch slurm/infer/infer_multimodel.slurm`
 5. Extract detokenized `.ly`: `python scripts/extract_detokenized.py …`
 6. Evaluate: `python scripts/eval_extracted_ly.py …` and `python scripts/eval_fmd.py …`
 
@@ -163,7 +165,7 @@ are in `tests/conftest.py`.
 ## Project structure
 
 ```
-src/lilybench/
+lilybench/
   cli.py                          - CLI (build-dataset, build-splits)
   models/registry.py              - Model registry (HF id, dtype, chat template, LoRA targets)
   stages/
@@ -186,7 +188,6 @@ tests/                            - pytest suite
 slurm/
   train/                          - Training job templates
   infer/                          - Inference job templates
-  test/                           - Test-set evaluation job templates
 ```
 
 ## Data structure

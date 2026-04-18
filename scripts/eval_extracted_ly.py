@@ -1302,17 +1302,8 @@ def eval_midi(
     midi_path = Path(midi_path)
     start_time = time.perf_counter()
 
-    try:
-        import music21  # lazy import for clearer error reporting
-        tooling = {"music21_version": getattr(music21, "__version__", None)}
-    except Exception as exc:
-        return {
-            "ok": False,
-            "seconds": 0.0,
-            "metrics": None,
-            "error": _truncate_err(f"music21 import failed: {exc}"),
-            "tooling": {"music21_version": None},
-        }
+    import music21
+    tooling = {"music21_version": getattr(music21, "__version__", None)}
 
     if not midi_path.exists():
         return {
