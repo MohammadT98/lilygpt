@@ -27,6 +27,8 @@ import hydra
 import music21 as _m21
 from omegaconf import DictConfig, ListConfig, OmegaConf
 
+from lilybench.evaluate.muspy_metrics import compute_muspy_metrics
+
 
 # ---------- Constants ----------
 
@@ -1313,7 +1315,11 @@ def eval_midi(
     start_time = time.perf_counter()
 
     import music21
-    tooling = {"music21_version": getattr(music21, "__version__", None)}
+    import muspy
+    tooling = {
+        "music21_version": getattr(music21, "__version__", None),
+        "muspy_version": getattr(muspy, "__version__", None),
+    }
 
     if not midi_path.exists():
         return {
@@ -1332,6 +1338,7 @@ def eval_midi(
             range_bounds=range_bounds,
             in_key_threshold=in_key_threshold,
         )
+        metrics.update(compute_muspy_metrics(midi_path))
         elapsed = time.perf_counter() - start_time
         return {
             "ok": True,
@@ -1434,6 +1441,18 @@ def _build_summary(records: List[Dict[str, Any]]) -> Dict[str, Any]:
         "ascending_tendency_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "ascending_tendency"])),
         "descending_tendency_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "descending_tendency"])),
         "ends_on_tonic_rate": _rate(_collect_bool(records, ["midi_eval", "metrics", "ends_on_tonic"])),
+        "muspy_pitch_range_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_pitch_range"])),
+        "muspy_n_pitches_used_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_n_pitches_used"])),
+        "muspy_n_pitch_classes_used_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_n_pitch_classes_used"])),
+        "muspy_pitch_entropy_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_pitch_entropy"])),
+        "muspy_pitch_class_entropy_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_pitch_class_entropy"])),
+        "muspy_scale_consistency_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_scale_consistency"])),
+        "muspy_pitch_in_scale_rate_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_pitch_in_scale_rate"])),
+        "muspy_polyphony_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_polyphony"])),
+        "muspy_polyphony_rate_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_polyphony_rate"])),
+        "muspy_empty_beat_rate_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_empty_beat_rate"])),
+        "muspy_empty_measure_rate_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_empty_measure_rate"])),
+        "muspy_groove_consistency_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_groove_consistency"])),
     }
     return {k: v for k, v in summary.items() if v is not None}
 
