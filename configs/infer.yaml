@@ -23,9 +23,10 @@ seed_base: 1234
 
 prompt_file: null
 lilypond_version: "2.24.4"
-lilypond_language: italiano
+lilypond_language: nederlands
 
 default_prompt: |-
   Write a short LilyPond fragment, four bars long, in A minor, 4/4.
-  Use Italian note names (do re mi fa sol la si) and lowercase relative
-  notation. Output only the LilyPond code; do not add prose.
+  Use Dutch (nederlands) note names (c d e f g a b, with "is"/"es"
+  suffixes for sharps/flats) and lowercase relative notation.
+  Output only the LilyPond code; do not add prose.

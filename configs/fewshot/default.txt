@@ -1,0 +1,25 @@
+Here are two examples of short LilyPond fragments that match the requested style.
+Each example is a complete, compilable fragment: four bars long, in A minor,
+4/4, Dutch (nederlands) note names (c d e f g a b, with "is"/"es" suffixes
+for sharps/flats), lowercase relative notation. Output only the LilyPond code,
+no prose.
+
+Example 1:
+\version "2.24.4"
+\language "nederlands"
+
+\relative {
+  \key a \minor
+  \time 4/4
+  a4 b c d | e2 d4 c | b4 a b c | a1 |
+}
+
+Example 2:
+\version "2.24.4"
+\language "nederlands"
+
+\relative {
+  \key a \minor
+  \time 4/4
+  a4 c e c | d4. e8 f4 e | d4 c b a | gis4 a2. |
+}

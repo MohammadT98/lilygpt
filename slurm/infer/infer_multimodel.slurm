@@ -4,7 +4,7 @@
 #SBATCH --qos=allgroups_qos
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --gres=gpu:a40:2
+#SBATCH --gres=gpu:l40s:1
 #SBATCH --mem=64G
 #SBATCH --time=02:00:00
 #SBATCH --output=logs/infer-%x-%j.out

@@ -5,7 +5,7 @@ defaults:
 timeout_min: 120
 partition: allgroups
 qos: allgroups_qos
-gres: "gpu:a40:2"
+gres: "gpu:l40s:1"
 cpus_per_task: 8
 tasks_per_node: 1
 mem_gb: 64
