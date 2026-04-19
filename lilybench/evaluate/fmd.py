@@ -35,6 +35,8 @@ from omegaconf import DictConfig, OmegaConf
 from scipy import linalg
 from transformers import AutoModel, AutoTokenizer
 
+from lilybench.hf_cache import apply_hf_env
+
 
 def _load_generations(path: Path, min_chars: int) -> list[str]:
     docs: list[str] = []
@@ -107,6 +109,7 @@ def _fmd(x: np.ndarray, y: np.ndarray, eps: float = 1e-6) -> float:
 
 @hydra.main(config_path="../../configs", config_name="evaluate/fmd", version_base=None)
 def main(cfg: DictConfig) -> int:
+    apply_hf_env(cfg.get("hf"))
     print(OmegaConf.to_yaml(cfg))
 
     gen_dir = Path(cfg.generations_dir).expanduser().resolve()

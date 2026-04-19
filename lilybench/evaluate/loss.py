@@ -19,6 +19,7 @@ from peft import PeftModel
 from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
 
 from lilybench.data.training_dataset import LilyStandardDataset, collate_standard_batch
+from lilybench.hf_cache import apply_hf_env
 from lilybench.models import get_spec
 
 BANNER_LINE = "=" * 80
@@ -38,6 +39,8 @@ def _resolve_path(path: str) -> Path:
 
 @hydra.main(config_path="../../configs", config_name="evaluate/loss", version_base=None)
 def main(cfg: DictConfig) -> int:
+    apply_hf_env(cfg.get("hf"))
+
     data_path = _resolve_path(cfg.data)
     lora_path = _resolve_path(cfg.lora_path)
 

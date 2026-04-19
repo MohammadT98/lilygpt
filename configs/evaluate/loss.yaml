@@ -2,6 +2,7 @@
 defaults:
   - _self_
   - /model@model: phi4
+  - /hf
 
 hydra:
   job:

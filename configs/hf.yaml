@@ -1,0 +1,8 @@
+# @package _global_
+hf:
+  home: null
+  hub_cache: null
+  transformers_cache: null
+  datasets_cache: null
+  token: null
+  offline: false

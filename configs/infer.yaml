@@ -2,6 +2,7 @@ defaults:
   - _self_
   - model: phi4
   - regime: zero
+  - hf
 
 hydra:
   job:

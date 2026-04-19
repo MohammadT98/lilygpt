@@ -13,6 +13,7 @@ Submit sweeps to SLURM via the submitit launcher::
         hydra/launcher=slurm_train
 """
 
+import os
 import sys
 from pathlib import Path
 
@@ -26,6 +27,7 @@ from lilybench.data.training_dataset import (
     LilyStandardDataset,
     collate_standard_batch,
 )
+from lilybench.hf_cache import apply_hf_env
 from lilybench.models import get_spec
 
 BANNER_LINE = "=" * 80
@@ -45,6 +47,8 @@ def _resolve_path(path: str) -> Path:
 
 @hydra.main(config_path="../configs", config_name="train", version_base=None)
 def main(cfg: DictConfig) -> int:
+    apply_hf_env(cfg.get("hf"))
+
     train_path = _resolve_path(cfg.data.train)
     val_path = _resolve_path(cfg.data.val)
     output_dir = _resolve_path(cfg.output_dir)
@@ -61,6 +65,26 @@ def main(cfg: DictConfig) -> int:
     print(BANNER_LINE)
     print(OmegaConf.to_yaml(cfg))
     print(BANNER_LINE)
+
+    wandb_cfg = cfg.get("wandb") or {}
+    if wandb_cfg.get("project"):
+        os.environ["WANDB_PROJECT"] = str(wandb_cfg.project)
+    if wandb_cfg.get("entity"):
+        os.environ["WANDB_ENTITY"] = str(wandb_cfg.entity)
+    if wandb_cfg.get("mode"):
+        os.environ["WANDB_MODE"] = str(wandb_cfg.mode)
+    wandb_enabled = str(wandb_cfg.get("mode") or "online").lower() != "disabled"
+    wandb_run_name = wandb_cfg.get("run_name")
+
+    tb_cfg = cfg.get("tensorboard") or {}
+    tb_enabled = bool(tb_cfg.get("enabled", True))
+    tb_log_dir = str(tb_cfg.get("log_dir") or (output_dir / "logs"))
+
+    report_to = []
+    if tb_enabled:
+        report_to.append("tensorboard")
+    if wandb_enabled:
+        report_to.append("wandb")
 
     spec = get_spec(cfg.model.id)
     print(f"[train] model registry: id={spec.model_id} hf_id={spec.hf_id} family={spec.family}")
@@ -135,8 +159,9 @@ def main(cfg: DictConfig) -> int:
         bf16=cfg.bf16,
         dataloader_num_workers=0,
         remove_unused_columns=False,
-        report_to=["tensorboard"],
-        logging_dir=str(output_dir / "logs"),
+        report_to=report_to,
+        run_name=wandb_run_name,
+        logging_dir=tb_log_dir,
         ddp_find_unused_parameters=False,
     )
 

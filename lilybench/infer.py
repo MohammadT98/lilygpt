@@ -24,6 +24,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
+from lilybench.hf_cache import apply_hf_env
 from lilybench.models import get_spec
 
 BANNER_LINE = "=" * 80
@@ -85,6 +86,8 @@ def _wrap_score(text: str, *, version: str, language: str) -> str:
 
 @hydra.main(config_path="../configs", config_name="infer", version_base=None)
 def main(cfg: DictConfig) -> int:
+    apply_hf_env(cfg.get("hf"))
+
     regime = str(cfg.regime.name)
     if regime not in {"zero", "few", "lora"}:
         print(f"[infer] unknown regime: {regime}", file=sys.stderr)
