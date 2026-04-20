@@ -24,6 +24,16 @@ class StandardSample:
     def __getitem__(self, key: str) -> Any:
         return getattr(self, key)
 
+    def as_dict(self) -> Dict[str, Any]:
+        return {
+            "id": self.id,
+            "source_file": self.source_file,
+            "full_text": self.full_text,
+            "input_ids": self.input_ids,
+            "labels": self.labels,
+            "attention_mask": self.attention_mask,
+        }
+
 
 class LilyStandardDataset(Dataset):
     """Dataset that loads the full-file JSONL schema and tokenizes for training.
@@ -178,16 +188,16 @@ class LilyStandardDataset(Dataset):
     def __len__(self) -> int:
         return len(self.samples)
 
-    def __getitem__(self, idx: int) -> StandardSample:
-        return self.samples[idx]
+    def __getitem__(self, idx: int) -> Dict[str, Any]:
+        return self.samples[idx].as_dict()
 
 
 def collate_standard_batch(
-    batch: List[StandardSample],
+    batch: List[Dict[str, Any]],
     pad_token_id: int,
 ) -> Dict[str, torch.Tensor]:
-    """Pad and collate a batch of StandardSample objects."""
-    max_len = max(len(sample.input_ids) for sample in batch)
+    """Pad and collate a batch of tokenized samples (dict items)."""
+    max_len = max(len(sample["input_ids"]) for sample in batch)
     batch_size = len(batch)
 
     input_ids = torch.full(
@@ -203,10 +213,10 @@ def collate_standard_batch(
     )
 
     for i, sample in enumerate(batch):
-        seq_len = len(sample.input_ids)
-        input_ids[i, :seq_len] = torch.tensor(sample.input_ids, dtype=torch.long)
-        attention_mask[i, :seq_len] = torch.tensor(sample.attention_mask, dtype=torch.long)
-        labels[i, :seq_len] = torch.tensor(sample.labels, dtype=torch.long)
+        seq_len = len(sample["input_ids"])
+        input_ids[i, :seq_len] = torch.tensor(sample["input_ids"], dtype=torch.long)
+        attention_mask[i, :seq_len] = torch.tensor(sample["attention_mask"], dtype=torch.long)
+        labels[i, :seq_len] = torch.tensor(sample["labels"], dtype=torch.long)
 
     return {
         "input_ids": input_ids,
