@@ -22,6 +22,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
+    AutoConfig,
     AutoModelForCausalLM,
     AutoTokenizer,
     BitsAndBytesConfig,
@@ -123,25 +124,37 @@ def main(cfg: DictConfig) -> int:
     compute_dtype = _torch_dtype(cfg.fp16, cfg.bf16)
     use_qlora = bool(cfg.get("qlora", True))
 
-    print(f"[train] loading model: {spec.hf_id} (qlora={use_qlora}, local_rank={local_rank})")
+    # If the checkpoint is already quantized on the Hub (e.g. gpt-oss MXFP4),
+    # transformers refuses to stack a BitsAndBytesConfig on top. Load with the
+    # native quantization instead — the model is still k-bit so prepare_for_kbit
+    # + LoRA still apply.
+    hub_config = AutoConfig.from_pretrained(
+        spec.hf_id, trust_remote_code=spec.trust_remote_code
+    )
+    native_quantized = getattr(hub_config, "quantization_config", None) is not None
+
+    print(
+        f"[train] loading model: {spec.hf_id} "
+        f"(qlora={use_qlora}, native_quantized={native_quantized}, local_rank={local_rank})"
+    )
     model_kwargs = {
         "trust_remote_code": spec.trust_remote_code,
         "device_map": {"": local_rank},
     }
-    if use_qlora:
+    if use_qlora and not native_quantized:
         model_kwargs["quantization_config"] = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_compute_dtype=compute_dtype,
             bnb_4bit_use_double_quant=True,
         )
-    else:
+    elif not native_quantized:
         model_kwargs["torch_dtype"] = compute_dtype
 
     model = AutoModelForCausalLM.from_pretrained(spec.hf_id, **model_kwargs)
 
     gc_enabled = bool(cfg.get("gradient_checkpointing", True))
-    if use_qlora:
+    if use_qlora or native_quantized:
         # Disable gc here so we can enable it once with use_reentrant=False below
         # (avoids double-enable + reentrant mismatch with Trainer).
         model = prepare_model_for_kbit_training(
