@@ -14,7 +14,7 @@
 # with device_map='cpu' so the weights materialize on disk.
 #
 # Required env vars:
-#   HF_ID          full HF repo id (e.g. microsoft/phi-4, CSCPadova/lilybert)
+#   HF_ID          full HF repo id (e.g. microsoft/phi-4, csc-unipd/lilybert)
 #   MODE           llm | embedder     (embedder uses AutoModel; llm uses AutoModelForCausalLM)
 # Optional:
 #   TRUST_REMOTE_CODE   0 | 1  default 0

@@ -7,7 +7,7 @@ and N(mu_y, Sigma_y) and compute
 
     FMD = ||mu_x - mu_y||^2 + Tr(Sigma_x + Sigma_y - 2 * sqrtm(Sigma_x * Sigma_y))
 
-This script uses LilyBERT (CSCPadova/lilybert) as the symbolic-music embedding
+This script uses LilyBERT (csc-unipd/lilybert) as the symbolic-music embedding
 model, applied directly to LilyPond source text (no MIDI round-trip). Report
 FMD against two reference sets per the LilyBench protocol:
   - in-domain  : held-out test split (test.jsonl 'output' fields)

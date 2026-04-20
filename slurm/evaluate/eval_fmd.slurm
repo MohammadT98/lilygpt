@@ -15,7 +15,7 @@
 #   GENERATIONS_DIR        directory of sample_*.ly from a single infer run
 #   REFERENCE_KIND         test | mutopia
 #   REFERENCE_PATH         test.jsonl (for kind=test) or mutopia manifest json (kind=mutopia)
-#   EMBEDDER_CHECKPOINT    e.g. CSCPadova/lilybert
+#   EMBEDDER_CHECKPOINT    e.g. csc-unipd/lilybert
 #   FMD_OUT                output json path (e.g. .../fmd_test.json)
 # Optional:
 #   REFERENCE_EMBEDDINGS_PATH   precomputed .npz of reference embeddings (skip re-embed)

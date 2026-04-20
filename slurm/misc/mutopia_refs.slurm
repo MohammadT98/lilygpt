@@ -43,7 +43,7 @@ if [ -f "$SLURM_SUBMIT_DIR/HF_API" ]; then
   export HF_TOKEN="$(tr -d '[:space:]' < "$SLURM_SUBMIT_DIR/HF_API")"
 fi
 
-export EMBEDDER="${EMBEDDER:-CSCPadova/lilybert}"
+export EMBEDDER="${EMBEDDER:-csc-unipd/lilybert}"
 export EMBED_LAYER="${EMBED_LAYER:-6}"
 export REFS_DIR="/nfsd/voce/machine_learning/experiments/lilybench/fmd_refs"
 export TEST_JSONL="${TEST_JSONL:-/nfsd/voce/machine_learning/experiments/lilybench/data/splits_full/test.jsonl}"
@@ -61,7 +61,7 @@ import torch
 from transformers import AutoTokenizer, AutoModel
 from lilybench.evaluate.fmd import _load_reference, _embed_corpus
 
-embedder = os.environ.get("EMBEDDER", "CSCPadova/lilybert")
+embedder = os.environ.get("EMBEDDER", "csc-unipd/lilybert")
 layer = int(os.environ.get("EMBED_LAYER", "6"))
 refs_dir = Path(os.environ["REFS_DIR"])
 device = "cuda" if torch.cuda.is_available() else "cpu"
