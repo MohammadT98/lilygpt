@@ -76,6 +76,9 @@ for kind, path_env, out_name in [
 ]:
     src = Path(os.environ[path_env])
     out = refs_dir / out_name
+    if out.exists():
+        print(f"[refs] skipping {kind}: {out} already exists")
+        continue
     if not src.exists():
         print(f"[refs] skipping {kind}: {src} not found")
         continue

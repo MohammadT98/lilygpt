@@ -66,7 +66,10 @@ def _load_reference(kind: str, path: Path, min_chars: int) -> list[str]:
         entries = manifest.values() if isinstance(manifest, dict) else manifest
         docs = []
         for entry in entries:
-            rel = entry.get("path") if isinstance(entry, dict) else entry
+            if isinstance(entry, dict):
+                rel = entry.get("localPath") or entry.get("path") or entry.get("lyFile")
+            else:
+                rel = entry
             if not rel:
                 continue
             p = (root / rel).resolve()
