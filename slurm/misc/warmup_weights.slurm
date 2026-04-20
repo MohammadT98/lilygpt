@@ -58,13 +58,18 @@ echo "[slurm] HF_HOME=$HF_HOME"
 
 python - <<PY
 import os
-from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM, PreTrainedTokenizerFast
+from huggingface_hub import snapshot_download
+from transformers import AutoTokenizer, AutoModel, PreTrainedTokenizerFast
 hf_id = os.environ["HF_ID"]
 mode = os.environ["MODE"]
 trust = os.environ.get("TRUST_REMOTE_CODE", "0") == "1"
 if mode == "llm":
+    # Prime the HF cache without loading weights to CPU RAM. Full
+    # AutoModelForCausalLM.from_pretrained needs 2-4x the model size in RAM,
+    # which OOMs on 20B+ models in a 32G warmup job and is wasted work.
+    print(f"[warmup] snapshot_download {hf_id}")
+    snapshot_download(repo_id=hf_id)
     tok = AutoTokenizer.from_pretrained(hf_id, trust_remote_code=trust)
-    mdl = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype="auto", low_cpu_mem_usage=True, trust_remote_code=trust)
 elif mode == "embedder":
     tok = PreTrainedTokenizerFast.from_pretrained(hf_id)
     mdl = AutoModel.from_pretrained(hf_id, trust_remote_code=trust)
