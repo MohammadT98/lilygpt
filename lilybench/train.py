@@ -142,9 +142,17 @@ def main(cfg: DictConfig) -> int:
 
     gc_enabled = bool(cfg.get("gradient_checkpointing", True))
     if use_qlora:
+        # Disable gc here so we can enable it once with use_reentrant=False below
+        # (avoids double-enable + reentrant mismatch with Trainer).
         model = prepare_model_for_kbit_training(
-            model, use_gradient_checkpointing=gc_enabled
+            model, use_gradient_checkpointing=False
         )
+    if gc_enabled:
+        model.gradient_checkpointing_enable(
+            gradient_checkpointing_kwargs={"use_reentrant": False}
+        )
+        if hasattr(model, "enable_input_require_grads"):
+            model.enable_input_require_grads()
 
     print(
         f"[train] applying LoRA "
@@ -185,8 +193,6 @@ def main(cfg: DictConfig) -> int:
         load_best_model_at_end=False,
         fp16=cfg.fp16,
         bf16=cfg.bf16,
-        gradient_checkpointing=gc_enabled,
-        gradient_checkpointing_kwargs={"use_reentrant": False},
         dataloader_num_workers=int(cfg.get("dataloader_num_workers", 8)),
         dataloader_pin_memory=True,
         group_by_length=bool(cfg.get("group_by_length", True)),

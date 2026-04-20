@@ -78,6 +78,9 @@ NPROC="${NPROC:-2}"
 MASTER_PORT="${MASTER_PORT:-$(shuf -i 20000-29999 -n 1)}"
 export MASTER_PORT
 
+# Reduce fragmentation-driven OOM on QLoRA (activations reallocate each step).
+export PYTORCH_CUDA_ALLOC_CONF="expandable_segments:True"
+
 # DDP requires per-device batch semantics: EFF_BATCH = MICRO_BATCH * NPROC * GRAD_ACCUM.
 if (( EFF_BATCH % (MICRO_BATCH * NPROC) != 0 )); then
   echo "[slurm] ERROR: EFF_BATCH=$EFF_BATCH must be divisible by MICRO_BATCH*NPROC=$((MICRO_BATCH*NPROC))" >&2
