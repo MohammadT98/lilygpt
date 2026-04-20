@@ -20,8 +20,14 @@ from pathlib import Path
 import hydra
 import torch
 from omegaconf import DictConfig, OmegaConf
-from peft import LoraConfig, TaskType, get_peft_model
-from transformers import AutoModelForCausalLM, AutoTokenizer, Trainer, TrainingArguments
+from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    Trainer,
+    TrainingArguments,
+)
 
 from lilybench.data.training_dataset import (
     LilyStandardDataset,
@@ -113,13 +119,32 @@ def main(cfg: DictConfig) -> int:
     print(f"[train] train samples: {len(train_dataset)}")
     print(f"[train] val samples:   {len(val_dataset)}")
 
-    print(f"[train] loading model: {spec.hf_id}")
-    model = AutoModelForCausalLM.from_pretrained(
-        spec.hf_id,
-        torch_dtype=_torch_dtype(cfg.fp16, cfg.bf16),
-        device_map="auto",
-        trust_remote_code=spec.trust_remote_code,
-    )
+    local_rank = int(os.environ.get("LOCAL_RANK", "0"))
+    compute_dtype = _torch_dtype(cfg.fp16, cfg.bf16)
+    use_qlora = bool(cfg.get("qlora", True))
+
+    print(f"[train] loading model: {spec.hf_id} (qlora={use_qlora}, local_rank={local_rank})")
+    model_kwargs = {
+        "trust_remote_code": spec.trust_remote_code,
+        "device_map": {"": local_rank},
+    }
+    if use_qlora:
+        model_kwargs["quantization_config"] = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=compute_dtype,
+            bnb_4bit_use_double_quant=True,
+        )
+    else:
+        model_kwargs["torch_dtype"] = compute_dtype
+
+    model = AutoModelForCausalLM.from_pretrained(spec.hf_id, **model_kwargs)
+
+    gc_enabled = bool(cfg.get("gradient_checkpointing", True))
+    if use_qlora:
+        model = prepare_model_for_kbit_training(
+            model, use_gradient_checkpointing=gc_enabled
+        )
 
     print(
         f"[train] applying LoRA "
@@ -160,9 +185,11 @@ def main(cfg: DictConfig) -> int:
         load_best_model_at_end=False,
         fp16=cfg.fp16,
         bf16=cfg.bf16,
-        gradient_checkpointing=bool(cfg.get("gradient_checkpointing", True)),
+        gradient_checkpointing=gc_enabled,
         gradient_checkpointing_kwargs={"use_reentrant": False},
-        dataloader_num_workers=0,
+        dataloader_num_workers=int(cfg.get("dataloader_num_workers", 8)),
+        dataloader_pin_memory=True,
+        group_by_length=bool(cfg.get("group_by_length", True)),
         remove_unused_columns=False,
         report_to=report_to,
         run_name=wandb_run_name,

@@ -51,6 +51,7 @@ train = [
     "accelerate>=0.20",
     "tensorboard>=2.13",
     "wandb>=0.26.0",
+    "bitsandbytes>=0.43",
 ]
 eval = [
     "scipy>=1.10",

@@ -21,9 +21,12 @@ output_dir: data/fine_tuning/checkpoints
 batch_size: 1
 gradient_accumulation_steps: 32
 learning_rate: 5e-5
-epochs: 3
+epochs: 1
 max_length: 1024
 gradient_checkpointing: true
+qlora: true
+group_by_length: true
+dataloader_num_workers: 8
 
 lora:
   r: 8

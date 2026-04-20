@@ -21,6 +21,9 @@ class StandardSample:
     labels: List[int]
     attention_mask: List[int]
 
+    def __getitem__(self, key: str) -> Any:
+        return getattr(self, key)
+
 
 class LilyStandardDataset(Dataset):
     """Dataset that loads the full-file JSONL schema and tokenizes for training.

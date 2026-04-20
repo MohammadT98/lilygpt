@@ -18,8 +18,10 @@
 #   OUTPUT_DIR     output directory for the run (adapters saved to $OUTPUT_DIR/final)
 # Optional:
 #   MICRO_BATCH    per-device micro-batch size (default: 1)
-#   EFF_BATCH      effective batch size (default: 16); grad-accum = EFF_BATCH / MICRO_BATCH
-#   EPOCHS         default 3
+#   EFF_BATCH      effective batch size (default: 16); grad_accum = EFF_BATCH / (MICRO_BATCH * NPROC)
+#   NPROC          DDP processes per node (default: 2, one per GPU)
+#   MASTER_PORT    torchrun rendezvous port (default: random in 20000-29999)
+#   EPOCHS         default 1
 #   LR             default 5e-5
 #   LORA_R         default 8
 #   LORA_ALPHA     default 32
@@ -41,12 +43,7 @@ set -euo pipefail
 
 MICRO_BATCH="${MICRO_BATCH:-1}"
 EFF_BATCH="${EFF_BATCH:-16}"
-if (( EFF_BATCH % MICRO_BATCH != 0 )); then
-  echo "[slurm] ERROR: EFF_BATCH=$EFF_BATCH must be divisible by MICRO_BATCH=$MICRO_BATCH" >&2
-  exit 2
-fi
-GRAD_ACCUM=$(( EFF_BATCH / MICRO_BATCH ))
-EPOCHS="${EPOCHS:-3}"
+EPOCHS="${EPOCHS:-1}"
 LR="${LR:-5e-5}"
 LORA_R="${LORA_R:-8}"
 LORA_ALPHA="${LORA_ALPHA:-32}"
@@ -77,10 +74,23 @@ if [ -f "$SLURM_SUBMIT_DIR/HF_API" ]; then
   export HF_TOKEN="$(tr -d '[:space:]' < "$SLURM_SUBMIT_DIR/HF_API")"
 fi
 
-echo "[slurm] MODEL_ID=$MODEL_ID MICRO_BATCH=$MICRO_BATCH EFF_BATCH=$EFF_BATCH GRAD_ACCUM=$GRAD_ACCUM EPOCHS=$EPOCHS LR=$LR"
-echo "[slurm] OUTPUT_DIR=$OUTPUT_DIR"
+NPROC="${NPROC:-2}"
+MASTER_PORT="${MASTER_PORT:-$(shuf -i 20000-29999 -n 1)}"
+export MASTER_PORT
 
-python -m lilybench.train \
+# DDP requires per-device batch semantics: EFF_BATCH = MICRO_BATCH * NPROC * GRAD_ACCUM.
+if (( EFF_BATCH % (MICRO_BATCH * NPROC) != 0 )); then
+  echo "[slurm] ERROR: EFF_BATCH=$EFF_BATCH must be divisible by MICRO_BATCH*NPROC=$((MICRO_BATCH*NPROC))" >&2
+  exit 2
+fi
+GRAD_ACCUM=$(( EFF_BATCH / (MICRO_BATCH * NPROC) ))
+
+echo "[slurm] MODEL_ID=$MODEL_ID MICRO_BATCH=$MICRO_BATCH NPROC=$NPROC EFF_BATCH=$EFF_BATCH GRAD_ACCUM=$GRAD_ACCUM EPOCHS=$EPOCHS LR=$LR"
+echo "[slurm] MASTER_PORT=$MASTER_PORT OUTPUT_DIR=$OUTPUT_DIR"
+
+torchrun --standalone --nnodes=1 --nproc_per_node="$NPROC" \
+  --master_port="$MASTER_PORT" \
+  -m lilybench.train \
   "model=$MODEL_ID" \
   "data.train=$TRAIN_JSONL" \
   "data.val=$VAL_JSONL" \
