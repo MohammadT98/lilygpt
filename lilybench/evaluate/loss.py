@@ -9,6 +9,7 @@ override config values on the command line, e.g.::
         data=data/splits_full/test.jsonl
 """
 
+import json
 import sys
 from pathlib import Path
 
@@ -60,14 +61,37 @@ def main(cfg: DictConfig) -> int:
     spec = get_spec(cfg.model.id)
     print(f"[eval_loss] model registry: id={spec.model_id} hf_id={spec.hf_id} family={spec.family}")
 
-    print(f"[eval_loss] loading tokenizer from: {lora_path}")
-    tokenizer = AutoTokenizer.from_pretrained(lora_path, use_fast=True, local_files_only=True)
+    adapter_config_path = lora_path / "adapter_config.json"
+    if not adapter_config_path.exists():
+        print(
+            f"[eval_loss] missing adapter_config.json at {adapter_config_path}",
+            file=sys.stderr,
+        )
+        return 2
+    adapter_cfg = json.loads(adapter_config_path.read_text(encoding="utf-8"))
+    adapter_base = adapter_cfg.get("base_model_name_or_path", "")
+    if adapter_base and adapter_base != spec.hf_id:
+        print(
+            f"[eval_loss] adapter/base mismatch: adapter was trained on '{adapter_base}' "
+            f"but cfg.model.id={spec.model_id!r} maps to '{spec.hf_id}'. Refusing to eval.",
+            file=sys.stderr,
+        )
+        return 2
+
+    print(f"[eval_loss] loading tokenizer from registry: {spec.hf_id}")
+    tokenizer = AutoTokenizer.from_pretrained(
+        spec.hf_id, use_fast=True, trust_remote_code=spec.trust_remote_code
+    )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
     pad_token_id = tokenizer.pad_token_id
 
     print("[eval_loss] loading dataset...")
+    print(
+        "[eval_loss] loss computed on body tokens only "
+        "(metadata+prelude char ranges masked to -100, matching training)"
+    )
     dataset = LilyStandardDataset(
         data_path,
         tokenizer=tokenizer,
@@ -110,6 +134,26 @@ def main(cfg: DictConfig) -> int:
     print("[eval_loss] metrics:")
     for k, v in metrics.items():
         print(f"  {k}: {v}")
+
+    out = cfg.get("out")
+    if out:
+        out_path = _resolve_path(out)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            json.dumps(
+                {
+                    "model_id": spec.model_id,
+                    "hf_id": spec.hf_id,
+                    "lora_path": str(lora_path),
+                    "data": str(data_path),
+                    "n_samples": len(dataset),
+                    "metrics": {k: (float(v) if isinstance(v, (int, float)) else v) for k, v in metrics.items()},
+                },
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
+        print(f"[eval_loss] wrote {out_path}")
 
     return 0
 

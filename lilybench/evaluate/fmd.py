@@ -56,11 +56,25 @@ def _load_reference(kind: str, path: Path, min_chars: int) -> list[str]:
                 if not line:
                     continue
                 rec = json.loads(line)
-                input_part = rec.get("input", "")
-                output_part = rec.get("output", "")
-                doc = f"{input_part}\n{output_part}".strip()
+                doc = rec.get("full_text", "").strip()
                 if len(doc) >= min_chars:
                     docs.append(doc)
+        return docs
+    if kind == "mutopia":
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        root = path.parent
+        entries = manifest.values() if isinstance(manifest, dict) else manifest
+        docs = []
+        for entry in entries:
+            rel = entry.get("path") if isinstance(entry, dict) else entry
+            if not rel:
+                continue
+            p = (root / rel).resolve()
+            if not p.exists():
+                continue
+            txt = p.read_text(encoding="utf-8", errors="ignore").strip()
+            if len(txt) >= min_chars:
+                docs.append(txt)
         return docs
     return _load_generations(path, min_chars)
 
@@ -73,7 +87,9 @@ def _embed_corpus(
     device: str,
     batch_size: int,
     max_length: int,
+    embed_layer: int | None,
 ) -> np.ndarray:
+    want_hidden = embed_layer is not None
     embeddings: list[np.ndarray] = []
     for i in range(0, len(docs), batch_size):
         batch = docs[i : i + batch_size]
@@ -84,8 +100,11 @@ def _embed_corpus(
             max_length=max_length,
             return_tensors="pt",
         ).to(device)
-        out = model(**enc)
-        cls = out.last_hidden_state[:, 0, :]
+        out = model(**enc, output_hidden_states=want_hidden)
+        if want_hidden:
+            cls = out.hidden_states[embed_layer][:, 0, :]
+        else:
+            cls = out.last_hidden_state[:, 0, :]
         embeddings.append(cls.detach().float().cpu().numpy())
     return np.concatenate(embeddings, axis=0)
 
@@ -124,25 +143,64 @@ def main(cfg: DictConfig) -> int:
         return 2
 
     device = cfg.device if torch.cuda.is_available() or cfg.device == "cpu" else "cpu"
+    embed_layer = cfg.get("embed_layer")
+    if embed_layer is not None:
+        embed_layer = int(embed_layer)
+    ref_cache = cfg.get("reference_embeddings_path")
+    ref_cache_path = Path(ref_cache).expanduser().resolve() if ref_cache else None
 
     gens = _load_generations(gen_dir, cfg.min_chars)
-    refs = _load_reference(cfg.reference_kind, ref_path, cfg.min_chars)
-    if len(gens) < 2 or len(refs) < 2:
+
+    refs: list[str] | None = None
+    y: np.ndarray | None = None
+    n_reference: int | None = None
+
+    if ref_cache_path is not None and ref_cache_path.exists():
+        print(f"[fmd] loading cached reference embeddings: {ref_cache_path}")
+        with np.load(ref_cache_path) as npz:
+            y = npz["embeddings"]
+            n_reference = int(npz["n"]) if "n" in npz else int(y.shape[0])
+    else:
+        refs = _load_reference(cfg.reference_kind, ref_path, cfg.min_chars)
+        n_reference = len(refs)
+
+    if len(gens) < 2 or (n_reference is not None and n_reference < 2):
         print(
-            f"[fmd] need >=2 docs in each set (got {len(gens)} generations, {len(refs)} reference)",
+            f"[fmd] need >=2 docs in each set (got {len(gens)} generations, {n_reference} reference)",
             file=sys.stderr,
         )
         return 2
 
-    print(f"[fmd] generations: {len(gens)}  reference({cfg.reference_kind}): {len(refs)}")
+    print(
+        f"[fmd] generations: {len(gens)}  reference({cfg.reference_kind}): {n_reference}  "
+        f"embed_layer={embed_layer if embed_layer is not None else 'final'}"
+    )
     print(f"[fmd] loading embedder: {cfg.embedder_checkpoint}")
     tokenizer = AutoTokenizer.from_pretrained(cfg.embedder_checkpoint, use_fast=True)
     model = AutoModel.from_pretrained(cfg.embedder_checkpoint).to(device).eval()
 
     print("[fmd] embedding generations...")
-    x = _embed_corpus(gens, tokenizer, model, device, cfg.batch_size, cfg.max_length)
-    print("[fmd] embedding reference...")
-    y = _embed_corpus(refs, tokenizer, model, device, cfg.batch_size, cfg.max_length)
+    x = _embed_corpus(
+        gens, tokenizer, model, device, cfg.batch_size, cfg.max_length, embed_layer
+    )
+
+    if y is None:
+        assert refs is not None
+        print("[fmd] embedding reference...")
+        y = _embed_corpus(
+            refs, tokenizer, model, device, cfg.batch_size, cfg.max_length, embed_layer
+        )
+        if ref_cache_path is not None:
+            ref_cache_path.parent.mkdir(parents=True, exist_ok=True)
+            np.savez(
+                ref_cache_path,
+                embeddings=y,
+                n=np.asarray(len(refs), dtype=np.int64),
+                embed_layer=np.asarray(
+                    -1 if embed_layer is None else embed_layer, dtype=np.int64
+                ),
+            )
+            print(f"[fmd] cached reference embeddings to {ref_cache_path}")
 
     value = _fmd(x, y)
     print(f"[fmd] FMD = {value:.4f}")
@@ -155,9 +213,11 @@ def main(cfg: DictConfig) -> int:
                 "generations_dir": str(gen_dir),
                 "reference_kind": cfg.reference_kind,
                 "reference_path": str(ref_path),
+                "reference_embeddings_path": str(ref_cache_path) if ref_cache_path else None,
                 "n_generations": len(gens),
-                "n_reference": len(refs),
+                "n_reference": int(n_reference),
                 "embedder": cfg.embedder_checkpoint,
+                "embed_layer": embed_layer,
                 "max_length": cfg.max_length,
             },
             indent=2,

@@ -20,5 +20,4 @@ output_dir: data/inference/sample_eval
 expected_notation: relative
 require_lowercase: true
 allow_accidentals: true
-allowed_forbidden: null
 force_midi: false

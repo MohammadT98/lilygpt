@@ -15,9 +15,11 @@ Submit sweeps to SLURM via the submitit launcher::
         hydra/launcher=slurm_infer
 """
 
+import json
 import random
 import sys
 from pathlib import Path
+from typing import Any
 
 import hydra
 import torch
@@ -29,6 +31,8 @@ from lilybench.models import get_spec
 
 BANNER_LINE = "=" * 80
 _DTYPE_MAP = {"bf16": torch.bfloat16, "fp16": torch.float16, "fp32": torch.float32}
+
+_METADATA_FIELDS = ("composer", "period", "musical_form", "ensemble", "part")
 
 
 def _resolve_path(path: str) -> Path:
@@ -42,46 +46,113 @@ def _load_prompt(cfg: DictConfig) -> str:
     return str(cfg.default_prompt).strip()
 
 
+def _load_prompt_bank(path: Path) -> list[dict[str, Any]]:
+    """Load a JSONL prompt bank. Each record must carry at minimum
+    ``user_prompt`` (for zero/few) and/or ``metadata`` (for lora)."""
+    records: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as fh:
+        for line in fh:
+            line = line.strip()
+            if not line:
+                continue
+            records.append(json.loads(line))
+    return records
+
+
+def _render_metadata_block(metadata: dict[str, Any] | None) -> str:
+    """Render a ``%% === METADATA ===`` block matching the training format.
+
+    ``ensemble`` is normalised to a comma-separated string when supplied as a
+    list (training uses the comma-joined form, see
+    ``lilybench/preprocess/metadata_header.py``). Fields with ``None``/empty
+    values are omitted so the block matches a field-dropout variant.
+    """
+    lines = ["%% === METADATA ==="]
+    if metadata:
+        for key in _METADATA_FIELDS:
+            val = metadata.get(key)
+            if val is None or val == "":
+                continue
+            if isinstance(val, (list, tuple)):
+                if not val:
+                    continue
+                val = ", ".join(str(v) for v in val)
+            lines.append(f"%% {key}: {val}")
+    lines.append("%% === END METADATA ===")
+    return "\n".join(lines) + "\n"
+
+
+def _build_lora_preamble(
+    *, version: str, language: str, metadata: dict[str, Any] | None = None
+) -> str:
+    """Raw preamble mimicking the training distribution: metadata block, then
+    \\version and \\language. The LoRA was trained to continue such text, so
+    inference must present the same surface form. When ``metadata`` is None the
+    block is empty (back-compat with the single-prompt default)."""
+    return (
+        _render_metadata_block(metadata)
+        + f'\\version "{version}"\n'
+        + f'\\language "{language}"\n'
+    )
+
+
 def _build_prompt(
     *,
     regime: str,
     user_prompt_text: str,
     fewshot_text: str,
     tokenizer,
+    lilypond_version: str,
+    lilypond_language: str,
+    model_id: str,
+    metadata: dict[str, Any] | None = None,
 ) -> str:
     if regime == "lora":
-        return "\\relative do'' {\n"
+        return _build_lora_preamble(
+            version=lilypond_version, language=lilypond_language, metadata=metadata
+        )
 
     system = (
         "You are a LilyPond assistant. Output only valid LilyPond code, "
         "no prose, no markdown."
     )
     user = user_prompt_text
+    if metadata:
+        user = _render_metadata_block(metadata) + user
     if regime == "few":
-        user = f"{fewshot_text}\n\n{user_prompt_text}"
+        user = f"{fewshot_text}\n\n{user}"
 
     messages = [
         {"role": "system", "content": system},
         {"role": "user", "content": user},
     ]
-    if getattr(tokenizer, "chat_template", None):
-        return tokenizer.apply_chat_template(
-            messages, tokenize=False, add_generation_prompt=True
+    if not getattr(tokenizer, "chat_template", None):
+        raise RuntimeError(
+            f"tokenizer for model '{model_id}' has no chat_template but regime='{regime}' "
+            "requires one. Either provide a chat_template or switch regime=lora."
         )
-    return f"{system}\n\n{user}\n"
+    return tokenizer.apply_chat_template(
+        messages, tokenize=False, add_generation_prompt=True
+    )
 
 
 def _wrap_score(text: str, *, version: str, language: str) -> str:
+    """Prepend minimal \\version / \\language headers when missing.
+
+    Leaves the body untouched: if the model generated a partial fragment, a
+    broken trailing statement, or a complete \\score block, the result is
+    preserved verbatim. Wrapping partial output in \\score { ... } can both
+    mask broken LilyPond and silently change what the output means, so we
+    stop doing that here.
+    """
     body = text.rstrip()
-    if "\\score" in body:
-        return body
-    header_lines = []
+    header_lines: list[str] = []
     if "\\version" not in body:
         header_lines.append(f'\\version "{version}"')
     if "\\language" not in body:
         header_lines.append(f'\\language "{language}"')
     header = ("\n".join(header_lines) + "\n") if header_lines else ""
-    return header + "\\score {\n" + body + "\n\\layout {}\n\\midi {}\n}\n"
+    return header + body + "\n"
 
 
 @hydra.main(config_path="../configs", config_name="infer", version_base=None)
@@ -127,6 +198,15 @@ def main(cfg: DictConfig) -> int:
     if regime == "few":
         fewshot_text = fewshot_file.read_text(encoding="utf-8").strip()
 
+    prompts_file = cfg.get("prompts_file")
+    prompt_bank: list[dict[str, Any]] = []
+    if prompts_file:
+        prompt_bank = _load_prompt_bank(_resolve_path(prompts_file))
+        if not prompt_bank:
+            print(f"[infer] prompts_file is empty: {prompts_file}", file=sys.stderr)
+            return 2
+        print(f"[infer] loaded prompt bank with {len(prompt_bank)} records from {prompts_file}")
+
     if regime == "lora":
         tokenizer = AutoTokenizer.from_pretrained(
             str(lora_path), use_fast=True, local_files_only=True
@@ -157,26 +237,50 @@ def main(cfg: DictConfig) -> int:
         model = base
     model.eval()
 
-    prompt = _build_prompt(
-        regime=regime,
-        user_prompt_text=user_prompt_text,
-        fewshot_text=fewshot_text,
-        tokenizer=tokenizer,
-    )
-    print(f"\n[infer] prompt preview (first 200 chars): {prompt[:200]!r}")
+    version = str(cfg.lilypond_version)
+    language = str(cfg.lilypond_language)
 
     device = next(model.parameters()).device
     seed_base = int(cfg.seed_base)
-    num_samples = int(cfg.num_samples)
     max_new_tokens = int(cfg.max_new_tokens)
     temperature = float(cfg.temperature)
     top_p = float(cfg.top_p)
-    version = str(cfg.lilypond_version)
-    language = str(cfg.lilypond_language)
+
+    if prompt_bank:
+        num_samples = len(prompt_bank)
+    else:
+        num_samples = int(cfg.num_samples)
+        preview_prompt = _build_prompt(
+            regime=regime,
+            user_prompt_text=user_prompt_text,
+            fewshot_text=fewshot_text,
+            tokenizer=tokenizer,
+            lilypond_version=version,
+            lilypond_language=language,
+            model_id=spec.model_id,
+        )
+        print(f"\n[infer] prompt preview (first 200 chars): {preview_prompt[:200]!r}")
 
     for i in range(num_samples):
         seed = seed_base + i
         print(f"\n[infer] sample {i + 1}/{num_samples} (seed={seed})")
+
+        if prompt_bank:
+            record = prompt_bank[i]
+            record_metadata = record.get("metadata")
+            record_user = record.get("user_prompt", user_prompt_text)
+            prompt = _build_prompt(
+                regime=regime,
+                user_prompt_text=record_user,
+                fewshot_text=fewshot_text,
+                tokenizer=tokenizer,
+                lilypond_version=version,
+                lilypond_language=language,
+                model_id=spec.model_id,
+                metadata=record_metadata,
+            )
+        else:
+            prompt = preview_prompt
 
         random.seed(seed)
         torch.manual_seed(seed)
@@ -185,6 +289,7 @@ def main(cfg: DictConfig) -> int:
 
         inputs = tokenizer(prompt, return_tensors="pt")
         inputs = {k: v.to(device) for k, v in inputs.items()}
+        prompt_len = inputs["input_ids"].shape[1]
 
         with torch.no_grad():
             out = model.generate(
@@ -193,15 +298,17 @@ def main(cfg: DictConfig) -> int:
                 do_sample=True,
                 temperature=temperature,
                 top_p=top_p,
-                no_repeat_ngram_size=3,
                 eos_token_id=tokenizer.eos_token_id,
                 pad_token_id=tokenizer.eos_token_id,
             )
-        raw_text = tokenizer.decode(out[0], skip_special_tokens=False)
+        generated_ids = out[0][prompt_len:]
+        raw_text = tokenizer.decode(generated_ids, skip_special_tokens=True)
         marker = spec.generation_end_marker
         if marker and marker in raw_text:
             raw_text = raw_text.split(marker, 1)[0]
         raw_text = raw_text.rstrip()
+        if regime == "lora":
+            raw_text = f"{prompt}{raw_text}"
 
         final_text = _wrap_score(raw_text.strip(), version=version, language=language)
 

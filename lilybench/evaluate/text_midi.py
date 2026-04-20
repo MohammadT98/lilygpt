@@ -25,7 +25,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import hydra
 import music21 as _m21
-from omegaconf import DictConfig, ListConfig, OmegaConf
+from omegaconf import DictConfig, OmegaConf
 
 from lilybench.evaluate.muspy_metrics import compute_muspy_metrics
 
@@ -97,20 +97,6 @@ NOTE_RE = re.compile(
 UPPERCASE_NOTE_IN_BODY_RE = re.compile(
     r"\b(?:[A-G]|DO|RE|MI|FA|SOL|LA|SI)(?:isis|eses|is|es|dd|d|bb|b)?[',]*\d?(?:\.*)?"
 )
-
-FORBIDDEN_PATTERNS = {
-    "rests": re.compile(r"(?<!\\)\br(?:\d+(?:\.*)?)?\b"),
-    "chords": re.compile(r"<\s*(?:[a-g]|do|re|mi|fa|sol|la|si)"),
-    "voices": re.compile(r"<<|\\\\|>>"),
-    "repeat": re.compile(r"\\repeat\b"),
-    "tuplet": re.compile(r"\\tuplet\b"),
-    "ties": re.compile(r"~"),
-    "grace": re.compile(r"\\grace\b|\\acciaccatura\b|\\appoggiatura\b"),
-    "skips": re.compile(r"\bs(?:\d+(?:\.*)?)?\b"),
-    "score": re.compile(r"\\score\b"),
-    "layout": re.compile(r"\\layout\b"),
-}
-
 
 # ---------- Utils ----------
 
@@ -674,7 +660,6 @@ def evaluate_lilypond_text(
     expected_notation: str = "relative",
     require_lowercase: bool = True,
     allow_accidentals: bool = True,
-    allowed_forbidden: Optional[set[str]] = None,
 ) -> Dict[str, Any]:
     stripped = strip_comments(lily_text)
     body = extract_music_body(lily_text)
@@ -700,15 +685,6 @@ def evaluate_lilypond_text(
     if require_lowercase:
         lowercase_ok = not bool(UPPERCASE_NOTE_IN_BODY_RE.search(body))
 
-    allowed_forbidden = set(allowed_forbidden or [])
-    forb_hits = {}
-    for name, pattern in FORBIDDEN_PATTERNS.items():
-        if name in allowed_forbidden:
-            continue
-        target = body if name not in {"score", "layout"} else stripped
-        forb_hits[name] = bool(pattern.search(target))
-    no_forbidden = not any(forb_hits.values())
-
     tokens = tokenize_notes(body)
 
     accidentals_present = any(
@@ -722,7 +698,6 @@ def evaluate_lilypond_text(
         "notation_ok": notation_ok,
         "relative_ok": relative_ok if notation_mode == "relative" else True,
         "lowercase_ok": lowercase_ok,
-        "no_forbidden": no_forbidden,
         "accidentals_ok": accidentals_ok,
     }
     adherence = (
@@ -739,8 +714,6 @@ def evaluate_lilypond_text(
         "relative_anchor_any": bool(has_rel_anchor),
         "notation_ok": bool(notation_ok),
         "lowercase_ok": bool(lowercase_ok),
-        "no_forbidden": bool(no_forbidden),
-        "forbidden_hits": forb_hits,
         "accidentals_present": bool(accidentals_present),
         "accidentals_ok": bool(accidentals_ok),
         "adherence_text": float(adherence),
@@ -749,7 +722,6 @@ def evaluate_lilypond_text(
             "expected_notation": expected_notation,
             "require_lowercase": require_lowercase,
             "allow_accidentals": allow_accidentals,
-            "allowed_forbidden": sorted(allowed_forbidden) if allowed_forbidden else None,
         },
     }
 
@@ -760,7 +732,6 @@ def eval_lily_text(
     expected_notation: str,
     require_lowercase: bool,
     allow_accidentals: bool,
-    allowed_forbidden: Optional[set[str]],
     lilypond_bin: Optional[str | Path],
 ) -> Dict[str, Any]:
     start = time.perf_counter()
@@ -771,7 +742,6 @@ def eval_lily_text(
         expected_notation=expected_notation,
         require_lowercase=require_lowercase,
         allow_accidentals=allow_accidentals,
-        allowed_forbidden=allowed_forbidden,
     )
 
     compiles: Optional[bool] = None
@@ -1365,14 +1335,6 @@ def _iter_ly_files(root: Path) -> List[Path]:
     return sorted(p for p in root.rglob("*.ly") if p.is_file())
 
 
-def _parse_allowed_forbidden(raw: Any) -> Optional[set[str]]:
-    if raw is None:
-        return None
-    if isinstance(raw, (list, tuple, ListConfig)):
-        return {str(s).strip() for s in raw if str(s).strip()}
-    return {s.strip() for s in str(raw).split(",") if s.strip()}
-
-
 def _mean(values: List[float]) -> Optional[float]:
     return sum(values) / len(values) if values else None
 
@@ -1479,7 +1441,6 @@ def main(cfg: DictConfig) -> int:
     midi_dir = Path(cfg.midi_dir)
 
     allow_accidentals = bool(cfg.allow_accidentals)
-    allowed_forbidden = _parse_allowed_forbidden(cfg.get("allowed_forbidden"))
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
@@ -1500,7 +1461,6 @@ def main(cfg: DictConfig) -> int:
             expected_notation=cfg.expected_notation,
             require_lowercase=bool(cfg.require_lowercase),
             allow_accidentals=allow_accidentals,
-            allowed_forbidden=allowed_forbidden,
             lilypond_bin=lilypond_bin,
         )
 

@@ -21,7 +21,9 @@
 # Optional:
 #   PROMPT_FILE    path to a prompt text file (user instruction). If absent, a default
 #                  monophonic prompt is used.
-#   NUM_SAMPLES    default 100
+#   PROMPTS_FILE   path to a JSONL prompt bank (one record per sample, each with
+#                  optional {metadata, user_prompt}). Overrides NUM_SAMPLES.
+#   NUM_SAMPLES    default 100 (ignored when PROMPTS_FILE is set)
 #   TEMPERATURE    default 0.7
 #   TOP_P          default 0.9
 #   MAX_NEW_TOKENS default 3000
@@ -39,6 +41,7 @@ export MODEL_ID REGIME
 export LORA_PATH="${LORA_PATH:-}"
 export FEWSHOT_FILE="${FEWSHOT_FILE:-}"
 export PROMPT_FILE="${PROMPT_FILE:-}"
+export PROMPTS_FILE="${PROMPTS_FILE:-}"
 export NUM_SAMPLES="${NUM_SAMPLES:-100}"
 export TEMPERATURE="${TEMPERATURE:-0.7}"
 export TOP_P="${TOP_P:-0.9}"
@@ -87,6 +90,9 @@ if [ "$REGIME" = "few" ]; then
 fi
 if [ -n "$PROMPT_FILE" ]; then
   INFER_OVERRIDES+=("prompt_file=$PROMPT_FILE")
+fi
+if [ -n "$PROMPTS_FILE" ]; then
+  INFER_OVERRIDES+=("prompts_file=$PROMPTS_FILE")
 fi
 
 python -m lilybench.infer "${INFER_OVERRIDES[@]}"

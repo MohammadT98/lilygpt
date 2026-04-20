@@ -17,6 +17,7 @@ data: data/splits_full/test.jsonl
 lora_path: ???
 
 output_dir: data/inference/loss_eval
+out: ${output_dir}/loss.json
 
 batch_size: 1
 max_length: 2048
