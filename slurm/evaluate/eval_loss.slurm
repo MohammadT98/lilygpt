@@ -31,7 +31,7 @@ MAX_LENGTH="${MAX_LENGTH:-2048}"
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
 
-source "$HOME/lilybench/.venv/bin/activate"
+source "$SLURM_SUBMIT_DIR/.venv/bin/activate"
 
 SCRATCH_ROOT="${TMPDIR:-/tmp}"
 SCRATCH="$SCRATCH_ROOT/$USER-$SLURM_JOB_ID"

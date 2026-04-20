@@ -50,7 +50,7 @@ export MAX_NEW_TOKENS="${MAX_NEW_TOKENS:-3000}"
 cd "$SLURM_SUBMIT_DIR"
 mkdir -p logs
 
-source "$HOME/lilybench/.venv/bin/activate"
+source "$SLURM_SUBMIT_DIR/.venv/bin/activate"
 
 SCRATCH_ROOT="${TMPDIR:-/tmp}"
 SCRATCH="$SCRATCH_ROOT/$USER-$SLURM_JOB_ID"
@@ -60,13 +60,17 @@ export TMPDIR="$SCRATCH/tmp"
 export TORCH_HOME="$SCRATCH/torch"
 export TRITON_CACHE_DIR="$SCRATCH/triton"
 
-export HF_HOME="$SCRATCH/huggingface"
+export HF_HOME="/nfsd/voce/machine_learning/experiments/lilybench/huggingface_cache"
 export HUGGINGFACE_HUB_CACHE="$HF_HOME/hub"
 export TRANSFORMERS_CACHE="$HF_HOME/transformers"
 export HF_DATASETS_CACHE="$HF_HOME/datasets"
 
 mkdir -p "$TMPDIR" "$TORCH_HOME" "$TRITON_CACHE_DIR" \
          "$HF_HOME" "$HUGGINGFACE_HUB_CACHE" "$TRANSFORMERS_CACHE" "$HF_DATASETS_CACHE"
+
+if [ -f "$SLURM_SUBMIT_DIR/HF_API" ]; then
+  export HF_TOKEN="$(tr -d '[:space:]' < "$SLURM_SUBMIT_DIR/HF_API")"
+fi
 
 OUTPUT_DIR="${OUTPUT_DIR:-data/inference/outputs/${MODEL_ID}_${REGIME}}"
 
