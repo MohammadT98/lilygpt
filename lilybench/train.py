@@ -135,6 +135,8 @@ def main(cfg: DictConfig) -> int:
         bias="none",
     )
     model = get_peft_model(model, lora_config)
+    if getattr(model, "config", None) is not None:
+        model.config.use_cache = False
     model.print_trainable_parameters()
 
     def collate_fn(batch):
@@ -158,6 +160,8 @@ def main(cfg: DictConfig) -> int:
         load_best_model_at_end=False,
         fp16=cfg.fp16,
         bf16=cfg.bf16,
+        gradient_checkpointing=bool(cfg.get("gradient_checkpointing", True)),
+        gradient_checkpointing_kwargs={"use_reentrant": False},
         dataloader_num_workers=0,
         remove_unused_columns=False,
         report_to=report_to,

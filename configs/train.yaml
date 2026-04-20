@@ -23,6 +23,7 @@ gradient_accumulation_steps: 32
 learning_rate: 5e-5
 epochs: 3
 max_length: 1024
+gradient_checkpointing: true
 
 lora:
   r: 8

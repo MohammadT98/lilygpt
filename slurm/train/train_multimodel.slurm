@@ -17,7 +17,8 @@
 #   VAL_JSONL      path to val.jsonl
 #   OUTPUT_DIR     output directory for the run (adapters saved to $OUTPUT_DIR/final)
 # Optional:
-#   EFF_BATCH      effective batch size (default: 16) via gradient accumulation
+#   MICRO_BATCH    per-device micro-batch size (default: 1)
+#   EFF_BATCH      effective batch size (default: 16); grad-accum = EFF_BATCH / MICRO_BATCH
 #   EPOCHS         default 3
 #   LR             default 5e-5
 #   LORA_R         default 8
@@ -38,7 +39,13 @@ set -euo pipefail
 : "${VAL_JSONL:?VAL_JSONL is required}"
 : "${OUTPUT_DIR:?OUTPUT_DIR is required}"
 
+MICRO_BATCH="${MICRO_BATCH:-1}"
 EFF_BATCH="${EFF_BATCH:-16}"
+if (( EFF_BATCH % MICRO_BATCH != 0 )); then
+  echo "[slurm] ERROR: EFF_BATCH=$EFF_BATCH must be divisible by MICRO_BATCH=$MICRO_BATCH" >&2
+  exit 2
+fi
+GRAD_ACCUM=$(( EFF_BATCH / MICRO_BATCH ))
 EPOCHS="${EPOCHS:-3}"
 LR="${LR:-5e-5}"
 LORA_R="${LORA_R:-8}"
@@ -70,7 +77,7 @@ if [ -f "$SLURM_SUBMIT_DIR/HF_API" ]; then
   export HF_TOKEN="$(tr -d '[:space:]' < "$SLURM_SUBMIT_DIR/HF_API")"
 fi
 
-echo "[slurm] MODEL_ID=$MODEL_ID EFF_BATCH=$EFF_BATCH EPOCHS=$EPOCHS LR=$LR"
+echo "[slurm] MODEL_ID=$MODEL_ID MICRO_BATCH=$MICRO_BATCH EFF_BATCH=$EFF_BATCH GRAD_ACCUM=$GRAD_ACCUM EPOCHS=$EPOCHS LR=$LR"
 echo "[slurm] OUTPUT_DIR=$OUTPUT_DIR"
 
 python -m lilybench.train \
@@ -78,8 +85,8 @@ python -m lilybench.train \
   "data.train=$TRAIN_JSONL" \
   "data.val=$VAL_JSONL" \
   "output_dir=$OUTPUT_DIR" \
-  "batch_size=1" \
-  "gradient_accumulation_steps=$EFF_BATCH" \
+  "batch_size=$MICRO_BATCH" \
+  "gradient_accumulation_steps=$GRAD_ACCUM" \
   "learning_rate=$LR" \
   "epochs=$EPOCHS" \
   "lora.r=$LORA_R" \
