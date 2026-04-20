@@ -58,7 +58,7 @@ import json, os
 from pathlib import Path
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModel
+from transformers import AutoModel, PreTrainedTokenizerFast
 from lilybench.evaluate.fmd import _load_reference, _embed_corpus
 
 embedder = os.environ.get("EMBEDDER", "csc-unipd/lilybert")
@@ -67,7 +67,7 @@ refs_dir = Path(os.environ["REFS_DIR"])
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
 print(f"[refs] loading embedder {embedder} on {device}")
-tok = AutoTokenizer.from_pretrained(embedder, use_fast=True)
+tok = PreTrainedTokenizerFast.from_pretrained(embedder)
 mdl = AutoModel.from_pretrained(embedder).to(device).eval()
 
 for kind, path_env, out_name in [

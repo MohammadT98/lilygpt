@@ -33,7 +33,7 @@ import numpy as np
 import torch
 from omegaconf import DictConfig, OmegaConf
 from scipy import linalg
-from transformers import AutoModel, AutoTokenizer
+from transformers import AutoModel, PreTrainedTokenizerFast
 
 from lilybench.hf_cache import apply_hf_env
 
@@ -176,7 +176,7 @@ def main(cfg: DictConfig) -> int:
         f"embed_layer={embed_layer if embed_layer is not None else 'final'}"
     )
     print(f"[fmd] loading embedder: {cfg.embedder_checkpoint}")
-    tokenizer = AutoTokenizer.from_pretrained(cfg.embedder_checkpoint, use_fast=True)
+    tokenizer = PreTrainedTokenizerFast.from_pretrained(cfg.embedder_checkpoint)
     model = AutoModel.from_pretrained(cfg.embedder_checkpoint).to(device).eval()
 
     print("[fmd] embedding generations...")

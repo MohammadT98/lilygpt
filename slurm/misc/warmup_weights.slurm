@@ -58,14 +58,15 @@ echo "[slurm] HF_HOME=$HF_HOME"
 
 python - <<PY
 import os
-from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM, PreTrainedTokenizerFast
 hf_id = os.environ["HF_ID"]
 mode = os.environ["MODE"]
 trust = os.environ.get("TRUST_REMOTE_CODE", "0") == "1"
-tok = AutoTokenizer.from_pretrained(hf_id, trust_remote_code=trust)
 if mode == "llm":
+    tok = AutoTokenizer.from_pretrained(hf_id, trust_remote_code=trust)
     mdl = AutoModelForCausalLM.from_pretrained(hf_id, torch_dtype="auto", low_cpu_mem_usage=True, trust_remote_code=trust)
 elif mode == "embedder":
+    tok = PreTrainedTokenizerFast.from_pretrained(hf_id)
     mdl = AutoModel.from_pretrained(hf_id, trust_remote_code=trust)
 else:
     raise SystemExit(f"unknown MODE={mode}")
