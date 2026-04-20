@@ -17,6 +17,7 @@ Submit sweeps to SLURM via the submitit launcher::
 
 import json
 import random
+import re
 import sys
 from pathlib import Path
 from typing import Any
@@ -134,6 +135,28 @@ def _build_prompt(
     return tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True
     )
+
+
+_FENCE_RE = re.compile(r"```(?:[a-zA-Z0-9_+-]*)\s*\n(.*?)\n```", re.DOTALL)
+_OPEN_FENCE_RE = re.compile(r"^\s*```[a-zA-Z0-9_+-]*\s*\n", re.MULTILINE)
+
+
+def _strip_markdown_fences(text: str) -> str:
+    """Extract LilyPond from a ``` ... ``` fenced block when present.
+
+    Chat-templated zero/few regimes often wrap output in ```lilypond\n...\n```
+    despite the system prompt forbidding markdown. Keep the inner content so
+    evaluators see raw LilyPond (brace balance, LilyBERT tokenization, MIDI
+    conversion). Unterminated fences — from a hit token cap — drop just the
+    opening line.
+    """
+    m = _FENCE_RE.search(text)
+    if m:
+        return m.group(1).strip()
+    stripped = _OPEN_FENCE_RE.sub("", text, count=1)
+    if stripped != text:
+        return stripped.strip()
+    return text
 
 
 def _wrap_score(text: str, *, version: str, language: str) -> str:
@@ -307,10 +330,11 @@ def main(cfg: DictConfig) -> int:
         if marker and marker in raw_text:
             raw_text = raw_text.split(marker, 1)[0]
         raw_text = raw_text.rstrip()
+        cleaned_text = _strip_markdown_fences(raw_text)
         if regime == "lora":
-            raw_text = f"{prompt}{raw_text}"
+            cleaned_text = f"{prompt}{cleaned_text}"
 
-        final_text = _wrap_score(raw_text.strip(), version=version, language=language)
+        final_text = _wrap_score(cleaned_text.strip(), version=version, language=language)
 
         raw_path = samples_dir / f"raw_{i:04d}.txt"
         ly_path = samples_dir / f"sample_{i:04d}.ly"
