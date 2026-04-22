@@ -154,12 +154,21 @@ def main(cfg: DictConfig) -> int:
     model = AutoModelForCausalLM.from_pretrained(spec.hf_id, **model_kwargs)
 
     gc_enabled = bool(cfg.get("gradient_checkpointing", True))
-    if use_qlora or native_quantized:
+    if use_qlora and not native_quantized:
         # Disable gc here so we can enable it once with use_reentrant=False below
         # (avoids double-enable + reentrant mismatch with Trainer).
         model = prepare_model_for_kbit_training(
             model, use_gradient_checkpointing=False
         )
+    elif native_quantized:
+        # MXFP4 / natively-quantized checkpoints: prepare_model_for_kbit_training
+        # upcasts non-quantized params to fp32 which OOMs on 20B+ models. LoRA
+        # only needs gradient flow through the frozen quant weights — do just
+        # that minimum.
+        for param in model.parameters():
+            param.requires_grad = False
+        if hasattr(model, "enable_input_require_grads"):
+            model.enable_input_require_grads()
     if gc_enabled:
         model.gradient_checkpointing_enable(
             gradient_checkpointing_kwargs={"use_reentrant": False}
