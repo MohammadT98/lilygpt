@@ -14,7 +14,7 @@ class ModelSpec:
     model_id: str
     hf_id: str
     dtype: str  # "bf16" | "fp16" | "fp32"
-    chat_template_kind: str  # "openai-harmony" | "chatml" | "phi" | "mistral" | "deepseek"
+    chat_template_kind: str  # "openai-harmony" | "chatml" | "phi" | "mistral" | "deepseek" | "gemma"
     max_seq_len: int
     lora_target_modules: str | tuple[str, ...]
     trust_remote_code: bool = False
@@ -71,6 +71,16 @@ MODEL_REGISTRY: dict[str, ModelSpec] = {
         max_seq_len=2048,
         lora_target_modules="all-linear",
         family="code",
+        gated=True,
+    ),
+    "gemma": ModelSpec(
+        model_id="gemma",
+        hf_id="google/gemma-2-27b",
+        dtype="bf16",
+        chat_template_kind="gemma",
+        max_seq_len=2048,
+        lora_target_modules="all-linear",
+        family="general",
         gated=True,
     ),
 }
