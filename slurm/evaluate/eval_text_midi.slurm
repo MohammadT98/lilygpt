@@ -61,7 +61,7 @@ for VAR in $(env | awk -F= '/^REFERENCE_AGGREGATE_PATH_/ {print $1}'); do
   PAIRS="$PAIRS$LABEL: $VAL, "
 done
 if [ -n "$PAIRS" ]; then
-  EXTRA_OVERRIDES+=("reference_aggregate_paths={${PAIRS%, }}")
+  EXTRA_OVERRIDES+=("++reference_aggregate_paths={${PAIRS%, }}")
 fi
 
 python -m lilybench.evaluate.text_midi \
