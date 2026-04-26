@@ -33,6 +33,9 @@ mkdir -p logs
 
 source "$SLURM_SUBMIT_DIR/.venv/bin/activate"
 
+export LILYPOND_BIN="${LILYPOND_BIN:-/home/spanio/lilypond-2.24.4/bin/lilypond}"
+export PATH="$(dirname "$LILYPOND_BIN"):$PATH"
+
 SCRATCH_ROOT="${TMPDIR:-/tmp}"
 SCRATCH="$SCRATCH_ROOT/$USER-$SLURM_JOB_ID"
 mkdir -p "$SCRATCH"

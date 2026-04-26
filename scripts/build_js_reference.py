@@ -48,9 +48,17 @@ def _iter_test_full_texts(jsonl_path: Path) -> list[tuple[str, str]]:
 def _iter_mutopia_full_texts(manifest_path: Path) -> list[tuple[str, str]]:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     base = manifest_path.parent
+
+    if isinstance(manifest, dict):
+        entries = list(manifest.items())
+    else:
+        entries = [(str(i), e) for i, e in enumerate(manifest)]
+
     items: list[tuple[str, str]] = []
-    for piece_id, entry in manifest.items():
-        rel = entry.get("localPath") or entry.get("path")
+    for piece_id, entry in entries:
+        if not isinstance(entry, dict):
+            continue
+        rel = entry.get("localPath") or entry.get("path") or entry.get("lyFile")
         if not rel:
             continue
         ly_path = (base / rel).resolve()
