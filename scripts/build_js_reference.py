@@ -73,6 +73,18 @@ def _iter_mutopia_full_texts(manifest_path: Path) -> list[tuple[str, str]]:
     return items
 
 
+def _iter_ly_dir(dir_path: Path) -> list[tuple[str, str]]:
+    items: list[tuple[str, str]] = []
+    for path in sorted(dir_path.rglob("*.ly")):
+        try:
+            text = path.read_text(encoding="utf-8", errors="ignore")
+        except Exception:
+            continue
+        if text:
+            items.append((path.stem, text))
+    return items
+
+
 def _process_one(args: tuple[str, str, Path, Path]) -> tuple[str, dict]:
     rid, text, ly_dir, midi_dir = args
     ly_path = ly_dir / f"{rid}.ly"
@@ -88,7 +100,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source", type=Path, required=True,
                         help="test.jsonl or mutopia manifest path")
-    parser.add_argument("--kind", choices=("test", "mutopia"), required=True)
+    parser.add_argument("--kind", choices=("test", "mutopia", "ly_dir"), required=True)
     parser.add_argument("--out", type=Path, required=True,
                         help="output JSON cache path")
     parser.add_argument("--workdir", type=Path, required=True,
@@ -100,8 +112,10 @@ def main() -> int:
 
     if args.kind == "test":
         items = _iter_test_full_texts(args.source)
-    else:
+    elif args.kind == "mutopia":
         items = _iter_mutopia_full_texts(args.source)
+    else:
+        items = _iter_ly_dir(args.source)
 
     if args.limit:
         items = items[: args.limit]
