@@ -69,6 +69,8 @@ def test_evaluate_text_midi_config_composes() -> None:
     cfg = _compose("evaluate/text_midi")
     assert cfg.expected_notation == "relative"
     assert cfg.get("hf") is None
+    assert cfg.reference_midi_dir is None
+    assert cfg.reference_aggregate_path is None
 
 
 def test_evaluate_fmd_config_composes() -> None:

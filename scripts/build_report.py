@@ -109,6 +109,7 @@ def _table_muspy(runs: list[dict]) -> str:
         ("in_scale", "muspy_pitch_in_scale_rate_avg", 3),
         ("polyphony", "muspy_polyphony_avg", 3),
         ("groove_cons", "muspy_groove_consistency_avg", 3),
+        ("JS-sim", "js_divergence_similarity", 2),
     ]
     header = "| model | regime | " + " | ".join(c[0] for c in columns) + " |"
     sep = "|" + "|".join("---" for _ in range(2 + len(columns))) + "|"

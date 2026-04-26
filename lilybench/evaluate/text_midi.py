@@ -27,6 +27,11 @@ import hydra
 import music21 as _m21
 from omegaconf import DictConfig, OmegaConf
 
+from lilybench.evaluate.js_similarity import (
+    aggregate as _js_aggregate,
+    compute_js_similarity,
+    load_reference_aggregate,
+)
 from lilybench.evaluate.muspy_metrics import compute_muspy_metrics
 
 
@@ -1375,7 +1380,10 @@ def _collect_bool(records: List[Dict[str, Any]], path: List[str]) -> List[bool]:
     return out
 
 
-def _build_summary(records: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _build_summary(
+    records: List[Dict[str, Any]],
+    ref_agg: Optional[Dict[str, Dict[str, Any]]] = None,
+) -> Dict[str, Any]:
     if not records:
         return {"count": 0}
 
@@ -1416,6 +1424,18 @@ def _build_summary(records: List[Dict[str, Any]]) -> Dict[str, Any]:
         "muspy_empty_measure_rate_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_empty_measure_rate"])),
         "muspy_groove_consistency_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_groove_consistency"])),
     }
+
+    if ref_agg is not None:
+        per_file = {
+            rec["path"]: rec["midi_eval"]["metrics"]
+            for rec in records
+            if rec.get("midi_eval", {}).get("metrics")
+        }
+        if per_file:
+            summary["js_divergence_similarity"] = compute_js_similarity(
+                _js_aggregate(per_file), ref_agg
+            )
+
     return {k: v for k, v in summary.items() if v is not None}
 
 
@@ -1514,9 +1534,16 @@ def main(cfg: DictConfig) -> int:
         key = _group_key(input_dir, Path(rec["path"]))
         grouped.setdefault(key, []).append(rec)
 
+    ref_agg = load_reference_aggregate(
+        cfg.get("reference_midi_dir"),
+        cfg.get("reference_aggregate_path"),
+    )
+
     summary = {
-        "all": _build_summary(records),
-        "by_group": {k: _build_summary(v) for k, v in sorted(grouped.items())},
+        "all": _build_summary(records, ref_agg=ref_agg),
+        "by_group": {
+            k: _build_summary(v, ref_agg=ref_agg) for k, v in sorted(grouped.items())
+        },
     }
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")
 

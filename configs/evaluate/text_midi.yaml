@@ -21,3 +21,6 @@ expected_notation: relative
 require_lowercase: true
 allow_accidentals: true
 force_midi: false
+
+reference_midi_dir: null
+reference_aggregate_path: null
