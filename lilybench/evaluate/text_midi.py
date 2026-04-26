@@ -1382,7 +1382,7 @@ def _collect_bool(records: List[Dict[str, Any]], path: List[str]) -> List[bool]:
 
 def _build_summary(
     records: List[Dict[str, Any]],
-    ref_agg: Optional[Dict[str, Dict[str, Any]]] = None,
+    ref_aggs: Optional[Dict[str, Dict[str, Dict[str, Any]]]] = None,
 ) -> Dict[str, Any]:
     if not records:
         return {"count": 0}
@@ -1425,16 +1425,17 @@ def _build_summary(
         "muspy_groove_consistency_avg": _mean(_collect_numeric(records, ["midi_eval", "metrics", "muspy_groove_consistency"])),
     }
 
-    if ref_agg is not None:
+    if ref_aggs:
         per_file = {
             rec["path"]: rec["midi_eval"]["metrics"]
             for rec in records
             if rec.get("midi_eval", {}).get("metrics")
         }
         if per_file:
-            summary["js_divergence_similarity"] = compute_js_similarity(
-                _js_aggregate(per_file), ref_agg
-            )
+            model_agg = _js_aggregate(per_file)
+            for label, ref_agg in ref_aggs.items():
+                key = "js_divergence_similarity" if not label else f"js_divergence_similarity_{label}"
+                summary[key] = compute_js_similarity(model_agg, ref_agg)
 
     return {k: v for k, v in summary.items() if v is not None}
 
@@ -1534,15 +1535,25 @@ def main(cfg: DictConfig) -> int:
         key = _group_key(input_dir, Path(rec["path"]))
         grouped.setdefault(key, []).append(rec)
 
-    ref_agg = load_reference_aggregate(
+    ref_aggs: Dict[str, Dict[str, Dict[str, Any]]] = {}
+    legacy_ref = load_reference_aggregate(
         cfg.get("reference_midi_dir"),
         cfg.get("reference_aggregate_path"),
     )
+    if legacy_ref is not None:
+        ref_aggs[""] = legacy_ref
+    paths_cfg = cfg.get("reference_aggregate_paths") or {}
+    for label, path in dict(paths_cfg).items():
+        if not path:
+            continue
+        ref = load_reference_aggregate(None, path)
+        if ref is not None:
+            ref_aggs[str(label)] = ref
 
     summary = {
-        "all": _build_summary(records, ref_agg=ref_agg),
+        "all": _build_summary(records, ref_aggs=ref_aggs),
         "by_group": {
-            k: _build_summary(v, ref_agg=ref_agg) for k, v in sorted(grouped.items())
+            k: _build_summary(v, ref_aggs=ref_aggs) for k, v in sorted(grouped.items())
         },
     }
     summary_path.write_text(json.dumps(summary, indent=2, ensure_ascii=False), encoding="utf-8")

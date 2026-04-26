@@ -71,6 +71,7 @@ def test_evaluate_text_midi_config_composes() -> None:
     assert cfg.get("hf") is None
     assert cfg.reference_midi_dir is None
     assert cfg.reference_aggregate_path is None
+    assert dict(cfg.reference_aggregate_paths) == {}
 
 
 def test_evaluate_fmd_config_composes() -> None:

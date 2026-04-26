@@ -51,6 +51,18 @@ fi
 if [ -n "${REFERENCE_AGGREGATE_PATH:-}" ]; then
   EXTRA_OVERRIDES+=("reference_aggregate_path=$REFERENCE_AGGREGATE_PATH")
 fi
+# Multi-reference JS-sim: pass each label and path via REFERENCE_AGGREGATE_PATH_<LABEL>.
+# Example: REFERENCE_AGGREGATE_PATH_TEST=/.../test.json REFERENCE_AGGREGATE_PATH_MUTOPIA=/.../mut.json
+PAIRS=""
+for VAR in $(env | awk -F= '/^REFERENCE_AGGREGATE_PATH_/ {print $1}'); do
+  LABEL=$(echo "${VAR#REFERENCE_AGGREGATE_PATH_}" | tr 'A-Z' 'a-z')
+  VAL="${!VAR}"
+  [ -z "$VAL" ] && continue
+  PAIRS="$PAIRS$LABEL: $VAL, "
+done
+if [ -n "$PAIRS" ]; then
+  EXTRA_OVERRIDES+=("reference_aggregate_paths={${PAIRS%, }}")
+fi
 
 python -m lilybench.evaluate.text_midi \
   "input_dir=$INPUT_DIR" \

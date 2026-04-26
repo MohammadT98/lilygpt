@@ -24,3 +24,4 @@ force_midi: false
 
 reference_midi_dir: null
 reference_aggregate_path: null
+reference_aggregate_paths: {}
