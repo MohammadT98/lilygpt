@@ -139,9 +139,15 @@ def _build_prompt(
         {"role": "user", "content": user},
     ]
     if not getattr(tokenizer, "chat_template", None):
-        raise RuntimeError(
-            f"tokenizer for model '{model_id}' has no chat_template but regime='{regime}' "
-            "requires one. Either provide a chat_template or switch regime=lora."
+        # Base (non-instruct) models like gemma-2-27b ship no chat template.
+        # Use a generic instruction format so zero/few-shot still produce
+        # comparable prompts. Quality is expected to be lower than an
+        # instruction-tuned variant; report this in the paper alongside the
+        # affected models.
+        return (
+            f"### System:\n{system}\n\n"
+            f"### User:\n{user}\n\n"
+            f"### Assistant:\n"
         )
     return tokenizer.apply_chat_template(
         messages, tokenize=False, add_generation_prompt=True

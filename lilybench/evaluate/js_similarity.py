@@ -42,7 +42,11 @@ def aggregate(per_file: dict[str, dict[str, float | None]]) -> dict[str, dict]:
     agg: dict[str, dict] = {}
 
     for metric in all_metrics:
-        values = [v[metric] for v in per_file.values() if v.get(metric) is not None]
+        values = [
+            v[metric]
+            for v in per_file.values()
+            if v.get(metric) is not None and isinstance(v[metric], (int, float)) and not isinstance(v[metric], bool)
+        ]
         n = len(values)
         if n == 0:
             agg[metric] = {"mean": None, "std": None, "n": 0}
