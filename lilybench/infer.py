@@ -30,14 +30,16 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from lilybench.hf_cache import apply_hf_env
 from lilybench.models import get_spec
 
-# DeepSeek-Coder-V2's vendored modeling_deepseek.py reads
-# `past_key_values.seen_tokens`, an attribute removed from DynamicCache in
-# transformers >=4.50. Re-add it as a thin alias for `get_seq_length()` so
-# trust_remote_code models work without forking their code.
+# DeepSeek-Coder-V2's vendored modeling_deepseek.py reads two attributes on
+# DynamicCache that newer transformers (>=4.50) removed: `seen_tokens` (now
+# `get_seq_length()`) and `get_max_length()` (no replacement; DynamicCache is
+# unbounded). Shim both so trust_remote_code models work without forking.
 try:
     from transformers.cache_utils import DynamicCache as _DynamicCache
     if not hasattr(_DynamicCache, "seen_tokens"):
         _DynamicCache.seen_tokens = property(lambda self: self.get_seq_length())
+    if not hasattr(_DynamicCache, "get_max_length"):
+        _DynamicCache.get_max_length = lambda self: None
 except Exception:
     pass
 
