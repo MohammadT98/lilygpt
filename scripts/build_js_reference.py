@@ -58,12 +58,20 @@ def _iter_mutopia_full_texts(manifest_path: Path) -> list[tuple[str, str]]:
     for piece_id, entry in entries:
         if not isinstance(entry, dict):
             continue
-        rel = entry.get("localPath") or entry.get("path") or entry.get("lyFile")
-        if not rel:
-            continue
-        ly_path = (base / rel).resolve()
-        if not ly_path.exists():
-            continue
+        ly_path: Path | None = None
+        cly = entry.get("convert_ly_path")
+        if cly:
+            candidate = Path(cly).expanduser().resolve()
+            if candidate.exists():
+                ly_path = candidate
+        if ly_path is None:
+            rel = entry.get("localPath") or entry.get("path") or entry.get("lyFile")
+            if not rel:
+                continue
+            candidate = (base / rel).resolve()
+            if not candidate.exists():
+                continue
+            ly_path = candidate
         try:
             text = ly_path.read_text(encoding="utf-8", errors="ignore")
         except Exception:

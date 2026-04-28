@@ -66,16 +66,26 @@ def _load_reference(kind: str, path: Path, min_chars: int) -> list[str]:
         entries = manifest.values() if isinstance(manifest, dict) else manifest
         docs = []
         for entry in entries:
+            file_path: Path | None = None
             if isinstance(entry, dict):
-                rel = entry.get("localPath") or entry.get("path") or entry.get("lyFile")
+                cly = entry.get("convert_ly_path")
+                if cly:
+                    candidate = Path(cly).expanduser().resolve()
+                    if candidate.exists():
+                        file_path = candidate
+                if file_path is None:
+                    rel = entry.get("localPath") or entry.get("path") or entry.get("lyFile")
+                else:
+                    rel = None
             else:
                 rel = entry
-            if not rel:
-                continue
-            p = (root / rel).resolve()
-            if not p.exists():
-                continue
-            txt = p.read_text(encoding="utf-8", errors="ignore").strip()
+            if file_path is None:
+                if not rel:
+                    continue
+                file_path = (root / rel).resolve()
+                if not file_path.exists():
+                    continue
+            txt = file_path.read_text(encoding="utf-8", errors="ignore").strip()
             if len(txt) >= min_chars:
                 docs.append(txt)
         return docs
