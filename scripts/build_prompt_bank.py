@@ -22,14 +22,39 @@ from pathlib import Path
 from lilybench.preprocess.metadata_header import load_metadata, resolve_metadata
 
 
-def _render_user_prompt(meta_dict: dict) -> str:
+def _render_user_prompt(meta_dict: dict, bars: int | None = None) -> str:
     composer = meta_dict.get("composer") or "an unnamed 18th-century composer"
     period = meta_dict.get("period") or "Baroque"
     forms = meta_dict.get("musical_form") or []
     form_str = ", ".join(forms) if forms else "a short piece"
+    part = meta_dict.get("part") or "full"
+
+    # When `bars` is set, drop the full-ensemble listing and ask for a
+    # bounded-length fragment so the model has the budget to actually
+    # finish. We allow an optional accompaniment so the eval set spans
+    # both monophonic and small polyphonic outputs naturally — but
+    # explicitly cap the texture (one extra voice max) so generations
+    # don't sprawl into multi-instrument scores that get truncated mid-
+    # piece under max_new_tokens=3000.
+    if bars is not None and bars > 0:
+        target_clause = (
+            "a melodic line"
+            if part == "full"
+            else f"the {part} part as a melodic line"
+        )
+        return (
+            f"Compose a short LilyPond fragment of approximately {bars} bars "
+            f"in the style of {composer} ({period}). "
+            f"Form: {form_str}. Write {target_clause}, optionally with simple "
+            f"accompaniment (chords or a bass line — at most one extra voice). "
+            f"Avoid full multi-instrument scores. "
+            f"Use Dutch (nederlands) note names and lowercase relative notation. "
+            f"Output only the LilyPond code; no prose, no markdown."
+        )
+
+    # Original full-ensemble prompt (kept for reproducibility of bank_1000).
     ensemble = meta_dict.get("ensemble") or []
     ensemble_str = ", ".join(ensemble) if ensemble else "a small ensemble"
-    part = meta_dict.get("part") or "full"
     part_clause = (
         "the full ensemble score"
         if part == "full"
@@ -58,6 +83,7 @@ def build_bank(
     metadata_path: Path,
     n: int,
     seed: int,
+    bars: int | None = None,
 ) -> list[dict]:
     metadata, key_index = load_metadata(metadata_path)
     files = sorted(preprocessed_dir.glob("*.ly"))
@@ -76,7 +102,7 @@ def build_bank(
                 "id": f"bank_{idx:04d}",
                 "source_file": fp.name,
                 "metadata": md,
-                "user_prompt": _render_user_prompt(md),
+                "user_prompt": _render_user_prompt(md, bars=bars),
             }
         )
     return records
@@ -101,9 +127,18 @@ def main() -> None:
     )
     parser.add_argument("--n", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument(
+        "--bars",
+        type=int,
+        default=None,
+        help="when set, ask for a single-voice fragment of approximately N bars; "
+        "drops the full ensemble listing from the prompt",
+    )
     args = parser.parse_args()
 
-    records = build_bank(args.preprocessed_dir, args.metadata, args.n, args.seed)
+    records = build_bank(
+        args.preprocessed_dir, args.metadata, args.n, args.seed, bars=args.bars,
+    )
 
     args.out.parent.mkdir(parents=True, exist_ok=True)
     with args.out.open("w", encoding="utf-8") as fh:
