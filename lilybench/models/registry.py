@@ -75,7 +75,7 @@ MODEL_REGISTRY: dict[str, ModelSpec] = {
     ),
     "gemma": ModelSpec(
         model_id="gemma",
-        hf_id="google/gemma-3-12b-it",
+        hf_id="google/gemma-4-31B",
         dtype="bf16",
         chat_template_kind="gemma",
         max_seq_len=2048,
