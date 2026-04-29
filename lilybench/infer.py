@@ -30,6 +30,18 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 from lilybench.hf_cache import apply_hf_env
 from lilybench.models import get_spec
 
+# DeepSeek-Coder-V2's vendored modeling_deepseek.py imports
+# `is_torch_fx_available` from transformers.utils.import_utils, which was
+# removed in transformers 5.x. Re-add it as a module-level alias so the
+# trust_remote_code import succeeds.
+try:
+    import torch.fx as _torch_fx
+    import transformers.utils.import_utils as _tx_import_utils
+    if not hasattr(_tx_import_utils, "is_torch_fx_available"):
+        _tx_import_utils.is_torch_fx_available = lambda: True
+except Exception:
+    pass
+
 # DeepSeek-Coder-V2's vendored modeling_deepseek.py reads three attributes on
 # DynamicCache that newer transformers (>=4.50) removed:
 #   - seen_tokens         (now get_seq_length())
