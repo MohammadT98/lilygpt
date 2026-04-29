@@ -97,7 +97,20 @@ def main(cfg: DictConfig) -> int:
         tokenizer=tokenizer,
         max_length=cfg.max_length,
     )
-    print(f"[eval_loss] samples: {len(dataset)}")
+    print(f"[eval_loss] samples (raw): {len(dataset)}")
+    # Filter samples whose entire label sequence is -100 (only metadata +
+    # prelude, no body tokens). Cross-entropy with ignore_index=-100 returns
+    # NaN when all targets are masked, which propagates to the aggregated
+    # eval_loss. We require at least 1 non-masked label per sample.
+    eligible = [
+        s for s in dataset.samples
+        if any(label != -100 for label in s.labels)
+    ]
+    n_dropped = len(dataset) - len(eligible)
+    if n_dropped:
+        print(f"[eval_loss] dropped {n_dropped} samples with no body tokens")
+    dataset.samples = eligible
+    print(f"[eval_loss] samples (eligible): {len(dataset)}")
 
     print(f"[eval_loss] loading base model: {spec.hf_id}")
     model = AutoModelForCausalLM.from_pretrained(
