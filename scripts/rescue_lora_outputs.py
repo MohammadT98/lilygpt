@@ -212,18 +212,19 @@ def _find_assignments(text: str) -> list[_Assignment]:
                     prev -= 1
                 if prev < 0 or text[prev] in "}\n>":
                     # Find the next `{` after the `=` (skipping any
-                    # `\command args`).
+                    # `\command args`). _scan_advance already skips strings
+                    # and comments; we just step past anything else one char
+                    # at a time. A bounded search prevents pathological
+                    # cases (e.g. an `=` not followed by a `{` at all).
                     j = m.end()
-                    while j < n:
-                        j, jmode = _scan_advance(text, j, n)
+                    bound = min(j + 256, n)
+                    while j < bound:
+                        j, jmode = _scan_advance(text, j, bound)
                         if jmode == "eof":
                             break
                         if text[j] == "{":
                             break
-                        # Not yet at body — skip a token (e.g., `\relative`,
-                        # `c''`, etc.) up to next whitespace.
-                        while j < n and text[j] not in " \t\r\n{":
-                            j += 1
+                        j += 1
                     if j < n and text[j] == "{":
                         body_start = j + 1
                         # Find matching `}` honoring nesting (and skipping
