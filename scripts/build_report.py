@@ -238,12 +238,99 @@ def build_report(eval_root: Path, out_path: Path) -> None:
     print(f"[report] wrote {out_path} ({len(runs)} runs)")
 
 
+UNDERSTANDING_TASK_ORDER = (
+    "bar_count",
+    "metadata_qa",
+    "bar_sequencing",
+    "next_bar_prediction",
+    "metadata_prediction",
+    "music_captioning",
+    "composer_recognition",
+    "genre_recognition",
+)
+
+
+def _collect_understanding(root: Path) -> dict[str, dict]:
+    """Read ``<root>/<model>/summary.json`` from the understanding eval root.
+
+    Returns ``{model_id: summary_dict}``. Missing or unreadable summaries are
+    silently skipped — call sites render them as ``—``.
+    """
+    out: dict[str, dict] = {}
+    if not root.exists():
+        return out
+    for child in sorted(root.iterdir()):
+        if not child.is_dir():
+            continue
+        summary = _load_json(child / "summary.json")
+        if summary is None:
+            continue
+        out[child.name] = summary
+    return out
+
+
+def _table_understanding(summaries: dict[str, dict]) -> str:
+    if not summaries:
+        return "_(no understanding evaluations found)_"
+    models = sorted(summaries.keys())
+    header = "| task | " + " | ".join(models) + " |"
+    sep = "|" + "|".join("---" for _ in range(1 + len(models))) + "|"
+    lines = [header, sep]
+    for task in UNDERSTANDING_TASK_ORDER:
+        row = [task]
+        for m in models:
+            entry = (summaries[m].get("tasks") or {}).get(task)
+            if not entry or entry.get("missing"):
+                row.append("—")
+                continue
+            score = entry.get("accuracy", entry.get("score"))
+            n = entry.get("n", 0)
+            row.append(f"{_fmt(score, 3)} (n={n})")
+        lines.append("| " + " | ".join(row) + " |")
+    # Overall averages row.
+    avg_row = ["**macro_avg**"]
+    weighted_row = ["**weighted_avg**"]
+    for m in models:
+        overall = summaries[m].get("overall") or {}
+        avg_row.append(_fmt(overall.get("macro_avg"), 3))
+        weighted_row.append(_fmt(overall.get("weighted_avg"), 3))
+    lines.append("| " + " | ".join(avg_row) + " |")
+    lines.append("| " + " | ".join(weighted_row) + " |")
+    return "\n".join(lines)
+
+
+def build_understanding_report(und_root: Path, out_path: Path) -> None:
+    summaries = _collect_understanding(und_root)
+    parts = [
+        "# LilyBench music-understanding REPORT",
+        "",
+        f"Aggregated from `{und_root}`. One column per model; rows are the 8 tasks plus overall averages.",
+        "",
+        _table_understanding(summaries),
+        "",
+    ]
+    out_path.write_text("\n".join(parts), encoding="utf-8")
+    print(f"[report] wrote {out_path} ({len(summaries)} models)")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--eval-root", type=Path, default=Path("data/eval"))
     parser.add_argument("--out", type=Path, default=Path("REPORT.md"))
+    parser.add_argument(
+        "--understanding-root",
+        type=Path,
+        default=None,
+        help="If set, additionally emit a per-task × model matrix from this dir "
+             "(structure: <root>/<model>/summary.json). Output: REPORT_understanding.md "
+             "next to --out unless --understanding-out is given.",
+    )
+    parser.add_argument("--understanding-out", type=Path, default=None)
     args = parser.parse_args()
     build_report(args.eval_root, args.out)
+    if args.understanding_root is not None:
+        und_out = args.understanding_out or args.out.with_name("REPORT_understanding.md")
+        build_understanding_report(args.understanding_root, und_out)
 
 
 if __name__ == "__main__":

@@ -1,0 +1,21 @@
+# @package _global_
+defaults:
+  - _self_
+  - model: phi4
+  - hf
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${output_dir}
+  sweep:
+    dir: ${output_dir}
+    subdir: ${hydra.job.override_dirname}
+
+bench_path: data/understanding/bench.jsonl
+output_dir: data/understanding/predictions
+max_new_tokens: 20
+seed: 1234
+limit: null            # cap records per task for smoke runs (null = run all)
+tasks: all             # "all" or a comma-separated subset (e.g. "bar_count,composer_recognition")

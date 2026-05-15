@@ -1,0 +1,18 @@
+# @package _global_
+defaults:
+  - _self_
+
+hydra:
+  job:
+    chdir: false
+  run:
+    dir: ${output_dir}
+  sweep:
+    dir: ${output_dir}
+    subdir: ${hydra.job.override_dirname}
+
+model_id: phi4
+predictions_dir: data/understanding/predictions/${model_id}
+bench_path: data/understanding/bench.jsonl
+out: data/understanding/eval/${model_id}/summary.json
+output_dir: data/understanding/eval/${model_id}
