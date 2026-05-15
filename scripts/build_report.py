@@ -247,6 +247,7 @@ UNDERSTANDING_TASK_ORDER = (
     "music_captioning",
     "composer_recognition",
     "genre_recognition",
+    "emotion_recognition",
 )
 
 

@@ -179,4 +179,17 @@ TASKS: dict[str, TaskSpec] = {
             "Select the most likely genre of the score from the four options."
         ),
     ),
+    "emotion_recognition": TaskSpec(
+        name="emotion_recognition",
+        n=120,
+        template_kind="multiple_choice",
+        task_instruction=(
+            "Select the most likely Russell valence-arousal quadrant for the score "
+            "from the four options. "
+            "Q1 = high valence + high arousal, "
+            "Q2 = low valence + high arousal, "
+            "Q3 = low valence + low arousal, "
+            "Q4 = high valence + low arousal."
+        ),
+    ),
 }

@@ -9,8 +9,10 @@ wraps this into a CLI; see that script for the canonical invocation.
 
 from __future__ import annotations
 
+import csv
 import json
 import random
+from collections import defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
@@ -505,3 +507,138 @@ def write_jsonl(records: Iterable[dict], path: Path) -> None:
     with path.open("w", encoding="utf-8") as fh:
         for r in records:
             fh.write(json.dumps(r, ensure_ascii=False) + "\n")
+
+
+# =========================================================================
+# EMOPIA emotion-recognition task (separate corpus + bench)
+# =========================================================================
+
+_EMOTION_QUADRANTS = ("Q1", "Q2", "Q3", "Q4")
+
+
+@dataclass
+class EmotionEntry:
+    """One EMOPIA clip after midi2ly conversion and 16-bar truncation."""
+    clip_id: str
+    song_id: str
+    label: str           # one of {"Q1","Q2","Q3","Q4"}
+    source_file: str
+    text: str            # truncated LilyPond (≤ max_bars bars)
+
+
+def _truncate_to_bars(ly_text: str, max_bars: int) -> str:
+    """Return a LilyPond snippet containing the first ``max_bars`` bars.
+
+    Falls back to the original text when ``split_bars`` finds none — better
+    to keep a possibly-too-long input than to drop the entry silently.
+    """
+    bars = split_bars(ly_text)
+    if not bars:
+        return ly_text
+    if len(bars) <= max_bars:
+        # Reconstruct so the trailing partial (after the last ``|``) is dropped.
+        body = " | ".join(bars) + " |\n"
+    else:
+        body = " | ".join(bars[:max_bars]) + " |\n"
+    return body
+
+
+def load_emotion_corpus(
+    manifest_csv: Path,
+    ly_root: Path,
+    *,
+    max_bars: int = 16,
+) -> list[EmotionEntry]:
+    """Read the EMOPIA manifest CSV and load each clip's truncated LilyPond.
+
+    Manifest schema (produced by ``scripts/prepare_emopia.py``):
+        clip_id, song_id, label, ly_path[, n_bars_full, n_bars_truncated]
+
+    ``ly_path`` is resolved relative to ``ly_root`` when not absolute.
+    Missing or empty files are silently skipped (midi2ly may have failed).
+    """
+    manifest_csv = Path(manifest_csv)
+    ly_root = Path(ly_root)
+    out: list[EmotionEntry] = []
+    with manifest_csv.open("r", encoding="utf-8", newline="") as fh:
+        reader = csv.DictReader(fh)
+        for row in reader:
+            label = (row.get("label") or "").strip()
+            if label not in _EMOTION_QUADRANTS:
+                continue
+            ly_path = Path(row.get("ly_path") or "")
+            if not ly_path.is_absolute():
+                ly_path = (ly_root / ly_path).resolve()
+            if not ly_path.exists():
+                continue
+            try:
+                raw = ly_path.read_text(encoding="utf-8", errors="ignore")
+            except OSError:
+                continue
+            text = _truncate_to_bars(raw, max_bars)
+            if not text.strip():
+                continue
+            out.append(
+                EmotionEntry(
+                    clip_id=(row.get("clip_id") or "").strip(),
+                    song_id=(row.get("song_id") or "").strip(),
+                    label=label,
+                    source_file=str(ly_path),
+                    text=text,
+                )
+            )
+    return out
+
+
+def build_emotion_bench(
+    corpus: list[EmotionEntry],
+    *,
+    seed: int,
+    n: int = 120,
+) -> list[dict]:
+    """Sample a balanced bench: floor(n/4) records per quadrant.
+
+    Options are always the full {Q1, Q2, Q3, Q4} set shuffled per record;
+    the gold index is wherever the true quadrant lands in the shuffle.
+    """
+    spec = tasks.TASKS["emotion_recognition"]
+    per_q = n // len(_EMOTION_QUADRANTS)
+    rng = random.Random(seed ^ (hash("emotion_recognition") & 0xFFFFFFFF))
+
+    by_q: dict[str, list[EmotionEntry]] = defaultdict(list)
+    for e in corpus:
+        by_q[e.label].append(e)
+
+    out: list[dict] = []
+    idx = 0
+    for q in _EMOTION_QUADRANTS:
+        bucket = by_q.get(q, [])
+        if not bucket:
+            continue
+        take = min(per_q, len(bucket))
+        picked = rng.sample(bucket, take)
+        for entry in picked:
+            options = list(_EMOTION_QUADRANTS)
+            rng.shuffle(options)
+            gold_index = options.index(entry.label)
+            prompt = tasks.format_mc_prompt(
+                input_content=entry.text,
+                task_instruction=spec.task_instruction,
+                options=options,
+            )
+            out.append({
+                "task": spec.name,
+                "id": f"{spec.name}_{idx:04d}",
+                "clip_id": entry.clip_id,
+                "song_id": entry.song_id,
+                "source_file": entry.source_file,
+                "input_content": entry.text,
+                "task_instruction": spec.task_instruction,
+                "options": options,
+                "gold": entry.label,
+                "gold_index": gold_index,
+                "template_kind": spec.template_kind,
+                "prompt": prompt,
+            })
+            idx += 1
+    return out

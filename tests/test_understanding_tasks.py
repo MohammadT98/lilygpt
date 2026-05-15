@@ -14,7 +14,7 @@ import pytest
 from lilybench.understanding import tasks
 
 
-def test_task_registry_has_eight_tasks():
+def test_task_registry_has_all_paper_tasks():
     expected = {
         "bar_count",
         "metadata_qa",
@@ -24,6 +24,7 @@ def test_task_registry_has_eight_tasks():
         "music_captioning",
         "composer_recognition",
         "genre_recognition",
+        "emotion_recognition",
     }
     assert set(tasks.TASKS.keys()) == expected
 
@@ -39,6 +40,7 @@ def test_task_sample_sizes_match_paper():
         "music_captioning": 60,
         "composer_recognition": 96,
         "genre_recognition": 132,
+        "emotion_recognition": 120,
     }
 
 
@@ -50,6 +52,7 @@ def test_template_kinds():
         "music_captioning",
         "composer_recognition",
         "genre_recognition",
+        "emotion_recognition",
     }
     structured = {"bar_count", "bar_sequencing"}
     for name, spec in tasks.TASKS.items():
