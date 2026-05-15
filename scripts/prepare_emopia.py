@@ -80,59 +80,59 @@ def _unzip(zip_path: Path, dest: Path) -> Path:
 
 
 def _read_label_csv(label_csv: Path) -> dict[str, str]:
-    """Return ``{clip_stem: 'Qn'}`` from EMOPIA's ``label.csv``."""
+    """Return ``{clip_stem: 'Qn'}`` from EMOPIA's ``label.csv``.
+
+    EMOPIA 2.2 ships ``label.csv`` with columns ``ID, 4Q, annotator`` where
+    ``4Q`` is a bare digit ``1..4``. We accept aliases for robustness.
+    """
     out: dict[str, str] = {}
     with label_csv.open("r", encoding="utf-8", newline="") as fh:
         reader = csv.DictReader(fh)
         for row in reader:
-            stem = (row.get("clip_name") or row.get("filename") or row.get("clip")
-                    or "").strip()
+            stem = (row.get("ID") or row.get("clip_name") or row.get("filename")
+                    or row.get("clip") or "").strip()
             if stem.endswith(".mid"):
                 stem = stem[:-4]
-            label = (row.get("4Q") or row.get("label") or row.get("emotion")
-                     or "").strip()
-            if not stem or not label:
+            raw = (row.get("4Q") or row.get("label") or row.get("emotion")
+                   or "").strip()
+            if not stem or not raw:
                 continue
-            if not label.startswith("Q"):
-                label = f"Q{label}"
+            label = raw if raw.startswith("Q") else f"Q{raw}"
             out[stem] = label
     return out
 
 
-def _read_song_map(song_csv: Path) -> dict[str, str]:
-    """Return ``{clip_stem: song_id}`` from EMOPIA's ``metadata_by_song.csv``."""
-    out: dict[str, str] = {}
-    if not song_csv.exists():
-        return out
-    with song_csv.open("r", encoding="utf-8", newline="") as fh:
-        reader = csv.DictReader(fh)
-        for row in reader:
-            song_id = (row.get("song_id") or row.get("YouTube_id")
-                       or row.get("youtube_id") or "").strip()
-            clips_field = (row.get("clip_name") or row.get("clips")
-                           or row.get("clip_list") or "").strip()
-            if not song_id or not clips_field:
-                continue
-            for clip in clips_field.replace(";", ",").split(","):
-                clip = clip.strip().rstrip(".mid")
-                if clip:
-                    out[clip] = song_id
-    return out
+def _song_id_from_stem(stem: str) -> str:
+    """Derive YouTube song id from an EMOPIA clip stem.
+
+    Filename convention: ``Qn_<youtubeID>_<clipIdx>``. YouTube IDs may
+    themselves contain underscores, so we strip the leading ``Qn_`` and the
+    trailing ``_<digits>`` rather than splitting on ``_`` blindly.
+    """
+    parts = stem.split("_")
+    if len(parts) >= 3:
+        return "_".join(parts[1:-1])
+    return stem
 
 
 def _convert_one(args: tuple) -> tuple[str, bool, int, int]:
-    """Worker: convert one MIDI → .ly, return survey counts."""
+    """Worker: convert one MIDI → .ly, return survey counts.
+
+    Skips the midi2ly subprocess when the target ``.ly`` is already present
+    and non-empty — keeps reruns cheap.
+    """
     midi_path_str, out_path_str, midi2ly, timeout_s, max_bars = args
     midi_path = Path(midi_path_str)
     out_path = Path(out_path_str)
-    result = convert_midi_to_lily(
-        midi_path=midi_path,
-        out_path=out_path,
-        midi2ly_bin=midi2ly,
-        timeout_s=timeout_s,
-    )
-    if result is None:
-        return midi_path.stem, False, 0, 0
+    if not (out_path.exists() and out_path.stat().st_size > 0):
+        result = convert_midi_to_lily(
+            midi_path=midi_path,
+            out_path=out_path,
+            midi2ly_bin=midi2ly,
+            timeout_s=timeout_s,
+        )
+        if result is None:
+            return midi_path.stem, False, 0, 0
     try:
         text = out_path.read_text(encoding="utf-8", errors="ignore")
     except OSError:
@@ -155,13 +155,11 @@ def main() -> int:
     emopia_root = _unzip(zip_path, workdir)
 
     label_csv = emopia_root / "label.csv"
-    song_csv = emopia_root / "metadata_by_song.csv"
     if not label_csv.exists():
         print(f"[prep-emopia] label.csv not found at {label_csv}", file=sys.stderr)
         return 2
     label_map = _read_label_csv(label_csv)
-    song_map = _read_song_map(song_csv)
-    print(f"[prep-emopia] labels: {len(label_map)} clips  songs: {len(song_map)}")
+    print(f"[prep-emopia] labels: {len(label_map)} clips")
 
     midi_dir = emopia_root / "midis"
     midi_paths = sorted(midi_dir.glob("*.mid")) + sorted(midi_dir.glob("*.MID"))
@@ -203,7 +201,7 @@ def main() -> int:
             label = label_map.get(stem, "")
             if not label:
                 continue
-            song_id = song_map.get(stem, stem.rsplit("_", 1)[0])
+            song_id = _song_id_from_stem(stem)
             w.writerow({
                 "clip_id": stem,
                 "song_id": song_id,
