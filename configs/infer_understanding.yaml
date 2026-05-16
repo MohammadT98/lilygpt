@@ -20,3 +20,4 @@ seed: 1234
 limit: null            # cap records per task for smoke runs (null = run all)
 tasks: all             # "all" or a comma-separated subset (e.g. "bar_count,composer_recognition")
 max_input_chars: null  # cap on input_content size in characters; null = no truncation
+quant: null            # null | "int8" | "int4" — bitsandbytes quantisation

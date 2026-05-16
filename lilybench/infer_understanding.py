@@ -173,15 +173,35 @@ def main(cfg: DictConfig) -> int:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    dtype = _DTYPE[spec.dtype]
-    print(f"[infer-und] loading model: {spec.hf_id} ({spec.dtype})")
-    model = AutoModelForCausalLM.from_pretrained(
-        spec.hf_id,
+    quant = cfg.get("quant")
+    quantization_config = None
+    if quant in {"int8", "int4"}:
+        from transformers import BitsAndBytesConfig
+        if quant == "int8":
+            quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+        else:
+            quantization_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.bfloat16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+            )
+        print(f"[infer-und] loading model: {spec.hf_id} ({quant})")
+    elif quant not in (None, "none"):
+        raise ValueError(f"unknown quant={quant!r}; expected null, int8, int4")
+    else:
+        print(f"[infer-und] loading model: {spec.hf_id} ({spec.dtype})")
+
+    from_pretrained_kwargs = dict(
         device_map="auto",
-        torch_dtype=dtype,
         low_cpu_mem_usage=True,
         trust_remote_code=spec.trust_remote_code,
     )
+    if quantization_config is not None:
+        from_pretrained_kwargs["quantization_config"] = quantization_config
+    else:
+        from_pretrained_kwargs["torch_dtype"] = _DTYPE[spec.dtype]
+    model = AutoModelForCausalLM.from_pretrained(spec.hf_id, **from_pretrained_kwargs)
     model.eval()
     device = next(model.parameters()).device
 
