@@ -38,6 +38,7 @@ from lilybench.infer import (  # reuse cache compat shims + chat fallback
     _DTYPE_MAP,  # noqa: F401  (imported for side-effect via lilybench.infer)
 )
 from lilybench.models import get_spec
+from lilybench.understanding import tasks as _tasks
 
 BANNER_LINE = "=" * 80
 _DTYPE = {"bf16": torch.bfloat16, "fp16": torch.float16, "fp32": torch.float32}
@@ -111,6 +112,32 @@ def _parse_answer(raw: str, *, task: str, template_kind: str) -> str:
     return max(runs, key=len) if runs else ""
 
 
+def _maybe_truncate_prompt(rec: dict, max_input_chars: int | None) -> str:
+    """If ``max_input_chars`` is set and the score is longer, truncate the
+    ``input_content`` and re-render the prompt so the score is shortened but
+    the question / options / final instruction remain intact.
+    """
+    body = rec["prompt"]
+    if not max_input_chars:
+        return body
+    inp = rec.get("input_content", "")
+    if len(inp) <= max_input_chars:
+        return body
+    truncated = inp[:max_input_chars] + "\n% ...truncated...\n"
+    template_kind = rec.get("template_kind") or "multiple_choice"
+    if template_kind == "multiple_choice":
+        return _tasks.format_mc_prompt(
+            input_content=truncated,
+            task_instruction=rec["task_instruction"],
+            options=rec["options"],
+        )
+    return _tasks.format_structured_prompt(
+        input_content=truncated,
+        task_instruction=rec["task_instruction"],
+        structured_output_template=rec.get("structured_output_template", ""),
+    )
+
+
 @hydra.main(config_path="../configs", config_name="infer_understanding", version_base=None)
 def main(cfg: DictConfig) -> int:
     apply_hf_env(cfg.get("hf"))
@@ -164,13 +191,18 @@ def main(cfg: DictConfig) -> int:
     if torch.cuda.is_available():
         torch.cuda.manual_seed_all(seed)
 
+    max_input_chars = cfg.get("max_input_chars")
+    if max_input_chars is not None:
+        max_input_chars = int(max_input_chars)
+        print(f"[infer-und] truncating input_content to {max_input_chars} chars")
+
     # One JSONL per task. Open lazily to avoid empty files for filtered-out tasks.
     file_handles: dict[str, Any] = {}
     try:
         for i, rec in enumerate(records):
             task = rec["task"]
             template_kind = rec.get("template_kind") or "multiple_choice"
-            prompt_body = rec["prompt"]
+            prompt_body = _maybe_truncate_prompt(rec, max_input_chars)
             prompt = _build_chat_prompt(prompt_body, tokenizer)
 
             inputs = tokenizer(prompt, return_tensors="pt")
