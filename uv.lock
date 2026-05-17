@@ -927,7 +927,7 @@ requires-dist = [
     { name = "sentencepiece", specifier = ">=0.2.1" },
     { name = "torch", specifier = ">=2.5" },
     { name = "tqdm", specifier = ">=4.67.1" },
-    { name = "transformers", specifier = ">=4.40" },
+    { name = "transformers", specifier = ">=4.40,<5.0" },
 ]
 
 [package.metadata.requires-dev]

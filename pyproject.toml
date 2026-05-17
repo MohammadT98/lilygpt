@@ -4,19 +4,23 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "lilybench"
-version = "0.1.0"
-description = "LilyPond code-generation benchmark: dataset builder, LoRA fine-tuning, and evaluation"
+version = "0.2.0"
+description = "LilyBench — an LLM evaluation framework for LilyPond generation and understanding (Ital-IA 2026)."
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Matteo Spanio", email = "spanio@dei.unipd.it"},
-    {name = "Mohammad Torabi", email = "mohamad.torabi76@gmail.com"},
+    {name = "Mohammad Torabi", email = "mohammad.torabi@studenti.unipd.it"},
+    {name = "Andrea Poltronieri", email = "andrea.poltronieri@upf.edu"},
+    {name = "Antonio Rodà", email = "roda@dei.unipd.it"},
 ]
-keywords = ["lilypond", "music", "nlp", "gpt", "fine-tuning", "lora"]
+keywords = [
+    "lilypond", "symbolic music", "large language models",
+    "music generation", "music understanding", "benchmark",
+]
 classifiers = [
-    "Development Status :: 3 - Alpha",
-    "Intended Audience :: Developers",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Science/Research",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -26,17 +30,23 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 dependencies = [
-    "pandas>=1.5",
     "music21>=9.1",
-    "python-ly>=0.9.10",
+    "muspy>=0.5.0",
     "transformers>=4.40,<5.0",
     "torch>=2.5",
     "tqdm>=4.67.1",
-    "hydra-core>=1.3",
-    "hydra-submitit-launcher>=1.2",
-    "muspy>=0.5.0",
     "sentencepiece>=0.2.1",
+    "numpy>=1.24",
+    "scipy>=1.10",
 ]
+
+[project.scripts]
+lilybench = "lilybench.cli:main"
+
+[project.urls]
+Paper = "https://github.com/CSCPadova/lilybench"
+LilyBERT = "https://github.com/CSCPadova/lilybert"
+BMdataset = "https://zenodo.org/records/lilybench-bmdataset"
 
 [tool.setuptools.packages.find]
 include = ["lilybench*"]
@@ -46,21 +56,11 @@ dev = [
     "pytest>=9.0.3",
     "pytest-xdist>=3.8.0",
 ]
-train = [
-    "peft>=0.4",
-    "accelerate>=0.20",
-    "tensorboard>=2.13",
-    "wandb>=0.26.0",
+# Optional 4/8-bit decoding through bitsandbytes.
+quant = [
     "bitsandbytes>=0.43",
-    "kernels>=0.4",
+    "accelerate>=0.20",
 ]
-eval = [
-    "scipy>=1.10",
-    "numpy>=1.24",
-]
-
-[project.scripts]
-lilybench = "lilybench.cli:main"
 
 [tool.pytest.ini_options]
 minversion = "9.0"

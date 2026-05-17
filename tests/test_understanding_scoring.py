@@ -13,7 +13,7 @@ import math
 
 import pytest
 
-from lilybench.understanding.scoring import (
+from lilybench.metrics.understanding import (
     accuracy,
     bar_sequencing_score,
     error_detection_f1,

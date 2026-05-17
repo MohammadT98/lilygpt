@@ -1,230 +1,306 @@
-# lilybench
+# LilyBench
 
-LilyPond code-generation benchmark: dataset builder, LoRA fine-tuning, and evaluation.
+LilyBench is an evaluation framework for large language models on
+[LilyPond](https://lilypond.org/), a code-like textual score format.
+It accompanies the Ital-IA 2026 paper
 
-## Overview
+> **Can LLMs understand LilyPond? A benchmark for symbolic music
+> generation and understanding.**
+> *Matteo Spanio, Mohammad Torabi, Andrea Poltronieri, Antonio Rodà.*
+> Ital-IA 2026 — 6th National Conference on Artificial Intelligence
+> (CINI), Rome, Italy.
 
-`lilybench` turns the `data/bmdataset/preprocessed/` LilyPond corpus into a full-file
-training dataset with anti-memorization augmentations and a structured metadata
-header, trains LoRA adapters over several code/general LLMs, and evaluates the
-generated `.ly` samples with text checks, MIDI analysis, and Fréchet Music Distance.
+The framework pairs
 
-The design rationale — dataset source, chunking policy, augmentations, metadata
-conditioning, loss masking, schema — lives in [notelog.md](notelog.md).
+* a **generation benchmark** — a fixed metadata-conditioned prompt bank
+  evaluated with compile rate, Jensen–Shannon similarity over three MusPy
+  descriptors, and a LilyBERT-based Fréchet Music Distance, and
+* an **understanding benchmark** — ten ABC-Eval-adapted tasks
+  (bar count, metadata QA, bar sequencing, next-bar prediction,
+  metadata prediction, music captioning, composer recognition, genre
+  recognition, emotion recognition, error detection) scored with
+  accuracy, exact match, penalised Kendall-τ, and macro-F1.
+
+Both benchmarks are modular and extendable: new generation regimes plug
+in through `lilybench.generation.regimes.Regime`, new understanding
+tasks through the `@register_task` decorator. The four backbones used in
+the paper — `phi4`, `qwen-coder`, `deepseek-coder`, `codestral` — are
+registered out of the box; adding a new HuggingFace model is one
+`register_model(ModelSpec(...))` call.
 
 ## Installation
 
 ```bash
-uv sync --all-groups          # runtime + train + eval + dev (pytest)
-# or, without uv:
-pip install -e ".[train,eval]"
+git clone https://github.com/CSCPadova/lilybench.git
+cd lilybench
+python -m venv .venv && source .venv/bin/activate
+pip install -e .
+# Optional: bitsandbytes int4 / int8 decoding
+pip install -e ".[quant]"
 ```
 
-Evaluation shells out to the LilyPond binary. If `lilypond` isn't on `PATH`, set
-`LILYPOND_BIN` to its full path.
+LilyBench shells out to the LilyPond binary for the compile-rate metric.
+Install LilyPond 2.24.4 from the [official site](https://lilypond.org/) or
+your distribution; set `LILYPOND_BIN` if it is not on `PATH`.
 
-## Usage
+## Datasets
 
-Build the full-file training JSONL:
+The companion archive on Zenodo (DOI to be assigned) bundles:
+
+| Corpus     | Use case                              | Source            |
+|------------|---------------------------------------|-------------------|
+| BMdataset  | Generation in-domain; understanding   | Spanio et al. 2026 |
+| Mutopia    | Generation out-of-domain; understanding | Mutopia Project  |
+| EMOPIA     | Emotion-recognition task              | Hung et al. 2021  |
+
+Unpack the archive under `data/` (see [`data/README.md`](data/README.md)
+for the expected layout). Two helper scripts are shipped only for users
+who want to *rebuild* the archive from upstream sources:
+[`scripts/convert_mutopia.py`](scripts/convert_mutopia.py) and
+[`scripts/prepare_emopia.py`](scripts/prepare_emopia.py). The
+LilyBERT checkpoint used for FMD lives at
+<https://github.com/CSCPadova/lilybert>.
+
+## Quickstart
+
+LilyBench exposes a single CLI with four verbs. Every paper experiment
+fits in roughly the following pipeline.
+
+### 1. Build the prompt bank
 
 ```bash
-lilybench build-dataset \
-  --input-dir data/bmdataset/preprocessed \
-  --metadata data/bmdataset/metadata.json \
-  --output data/fullfile_dataset/all_examples.jsonl
+lilybench prompt-bank build \
+    --bmdataset-dir data/bmdataset/preprocessed \
+    --bmdataset-metadata data/bmdataset/metadata.json \
+    --n 200 --seed 1234 \
+    --out data/prompt_bank.jsonl
 ```
 
-Split into train/val/test by source work:
+The bank is reused byte-for-byte across every `(model, regime)` cell so
+comparisons are fair. The 200-prompt size matches the paper; pass
+`--n` to evaluate at a different budget.
+
+### 2. Generate
 
 ```bash
-lilybench build-splits \
-  --input-jsonl data/fullfile_dataset/all_examples.jsonl \
-  --output-dir data/splits_full
+# Zero-shot
+lilybench generation run \
+    --model phi4 --regime zero \
+    --prompts data/prompt_bank.jsonl \
+    --out runs/phi4_zero
+
+# Few-shot from the training distribution
+lilybench generation run \
+    --model phi4 --regime few \
+    --fewshot-file configs/fewshot_train_distribution.txt \
+    --prompts data/prompt_bank.jsonl \
+    --out runs/phi4_few
+
+# Few-shot ablation (hand-written A-minor demos, §3.2 of the paper)
+lilybench generation run \
+    --model phi4 --regime few \
+    --fewshot-file configs/fewshot_ablation_amin.txt \
+    --prompts data/prompt_bank.jsonl \
+    --out runs/phi4_few_ablation
 ```
 
-## Training
+Generated `.ly` files land under `runs/<cell>/samples/sample_####.ly`,
+with the raw decoded text alongside in `raw_####.txt` for debugging.
 
-LoRA training is driven by Hydra (see `lilybench/models/registry.py` for known
-model ids, `configs/train.yaml` for tunables):
+### 3. Build the understanding bench
 
 ```bash
-python -m lilybench.train \
-  model=phi4 \
-  data.train=data/splits_full/train.jsonl \
-  data.val=data/splits_full/val.jsonl \
-  output_dir=runs/phi4_lora \
-  epochs=3 batch_size=1 gradient_accumulation_steps=32 \
-  learning_rate=5e-5 bf16=true
+# Mutopia tasks (eight of the ten)
+lilybench understanding build \
+    --corpus mutopia \
+    --mutopia-manifest data/mutopia/dataset_mutopia.json \
+    --tasks all --seed 1234 \
+    --out data/understanding/mutopia.jsonl
 
-# Multi-run sweep to SLURM via submitit
-python -m lilybench.train --multirun model=phi4,qwen-coder hydra/launcher=slurm_train
+# EMOPIA emotion task
+lilybench understanding build \
+    --corpus emopia \
+    --emopia-manifest data/emopia/manifest.csv \
+    --emopia-ly-root  data/emopia/ly \
+    --tasks emotion_recognition --seed 1234 \
+    --out data/understanding/emopia.jsonl
 ```
 
-Known model ids: `gpt-oss`, `phi4`, `qwen-coder`, `deepseek-coder`, `codestral`.
-All models are trained and evaluated on raw LilyPond text only — no special
-structural tokens are added to any tokenizer vocabulary. Key/time/tempo/voice
-information is expressed via the native LilyPond directives (`\key`, `\time`,
-`\tempo`, `\new Voice …`).
-
-SLURM templates in `slurm/train/` and `slurm/infer/` are env-var driven:
+### 4. Run understanding inference (greedy)
 
 ```bash
-MODEL_ID=qwen-coder \
-TRAIN_JSONL=data/splits_full/train.jsonl \
-VAL_JSONL=data/splits_full/val.jsonl \
-OUTPUT_DIR=runs/qwen_coder_lora \
-sbatch slurm/train/train_multimodel.slurm
-
-MODEL_ID=qwen-coder REGIME=zero NUM_SAMPLES=100 \
-  sbatch slurm/infer/infer_multimodel.slurm
+lilybench understanding run \
+    --model phi4 \
+    --bench data/understanding/mutopia.jsonl \
+    --out runs/understanding
 ```
 
-> Codestral-22B is a **gated** model on HuggingFace. Accept the license and
-> export `HF_TOKEN` (or run `huggingface-cli login`) before the first load.
+One JSONL of predictions per task is written under
+`runs/understanding/phi4/<task>.jsonl`.
 
-## Inference
-
-Generation is a Hydra entry point; regime picks zero/few/lora:
+### 5. Score generations
 
 ```bash
-python -m lilybench.infer model=phi4 regime=zero num_samples=100
-python -m lilybench.infer model=phi4 regime=lora regime.path=runs/phi4_lora/final
-python -m lilybench.infer model=phi4 regime=few regime.fewshot_file=configs/fewshot/phi4.txt
-
-# Multi-run sweep to SLURM
-python -m lilybench.infer --multirun model=phi4,qwen-coder regime=zero,lora \
-  hydra/launcher=slurm_infer
+lilybench metrics generation \
+    --samples runs/phi4_zero/samples \
+    --reference-test          data/splits/test.jsonl \
+    --reference-mutopia       data/mutopia/dataset_mutopia.json \
+    --reference-test-midi-dir data/splits/test_midi \
+    --reference-mutopia-midi-dir data/mutopia/midi \
+    --lilybert /path/to/lilybert \
+    --out runs/phi4_zero/summary.json
 ```
 
-Samples are written to `${output_dir}/samples/sample_####.ly`. If you still need
-to parse older SLURM log files, `lilybench/evaluate/extract_detokenized.py`
-remains available as an argparse helper.
+The output JSON contains `compile_rate`, `js_similarity` (in-domain and
+out-of-domain), and `fmd` (in-domain and out-of-domain), matching the
+columns of Table 1 in the paper. Provide only the metrics you care about
+— each `--reference-*` is optional.
 
-## Evaluation
-
-Three Hydra entry points. Text and MIDI analysis:
+### 6. Score understanding
 
 ```bash
-python -m lilybench.evaluate.text_midi \
-  input_dir=data/inference/samples \
-  out=data/inference/sample_eval/eval.jsonl \
-  summary=data/inference/sample_eval/summary.json \
-  midi_dir=data/inference/sample_eval/midi
+lilybench metrics understanding \
+    --bench data/understanding/mutopia.jsonl \
+    --predictions runs/understanding/phi4 \
+    --model-id phi4 \
+    --out runs/understanding/phi4/summary.json
 ```
 
-Held-out loss (requires a trained LoRA adapter):
+Per-task metrics plus a macro / weighted aggregate are written to
+`summary.json`.
 
-```bash
-python -m lilybench.evaluate.loss \
-  model=phi4 \
-  lora_path=runs/phi4_lora/final \
-  data=data/splits_full/test.jsonl
-```
+## Architecture
 
-### Fréchet Music Distance (FMD)
-
-LilyBench reports FMD as a primary distributional quality metric, with
-LilyBERT as the symbolic-music embedder applied directly to LilyPond source.
-Report FMD against two reference sets:
-
-- **in-domain:** held-out test split (`data/splits_full/test.jsonl`)
-- **out-of-domain:** Mutopia LilyPond corpus
-
-```bash
-pip install -e ".[eval]"
-
-python -m lilybench.evaluate.fmd \
-  generations_dir=data/inference/samples/phi4_zero \
-  reference_kind=test \
-  reference_path=data/splits_full/test.jsonl \
-  embedder_checkpoint=/path/to/lilybert \
-  out=data/inference/sample_eval/fmd_phi4_zero_test.json
-```
-
-LilyBERT checkpoint: https://github.com/CSCPadova/lilybert. FMD is computed
-as in Retkowski et al. 2024; a self-vs-self FMD on the reference set is ≈ 0.
-
-## Development
-
-Tests are written in pytest (with pytest-xdist for parallel runs):
-
-```bash
-uv run pytest                  # sequential
-uv run pytest -n auto          # parallel across CPU cores
-uv run pytest -k augmentations # filter by substring
-```
-
-Pytest config is in `[tool.pytest.ini_options]` in `pyproject.toml`; fixtures
-are in `tests/conftest.py`.
-
-## Reproducibility
-
-### Run order (end-to-end)
-
-1. Build the full-file dataset: `lilybench build-dataset …`
-2. Split: `lilybench build-splits …`
-3. Train: `python -m lilybench.train model=… data.train=… data.val=… output_dir=…` (or `sbatch slurm/train/train_multimodel.slurm` with the legacy env-var contract)
-4. Infer: `python -m lilybench.infer model=… regime={zero,few,lora} [regime.path=…]`
-5. Evaluate: `python -m lilybench.evaluate.text_midi …` / `python -m lilybench.evaluate.loss …` / `python -m lilybench.evaluate.fmd …`
-
-### Expected artifacts
-
-- Trained adapters/checkpoints under `runs/.../final`
-- Inference logs under `logs/` (SLURM `%j` job-id naming)
-- Extracted LilyPond samples under `data/inference/samples/exp*/sample_*.ly`
-- Evaluation outputs under `data/inference/sample_eval/`
-
-### Determinism notes
-
-- Dataset build is deterministic: seeds are `file_seed ^ variant.seed_salt` where `file_seed` is a hash of the filename stem.
-- Inference scripts set deterministic seeds per sample (`1234 + i`).
-- Generation is still stochastic (`do_sample=True`), so outputs can vary across runs/hardware. Compare trends across matched settings, not exact text identity.
-
-## Project structure
+The package is intentionally small and orthogonal:
 
 ```
 lilybench/
-  cli.py                          - argparse CLI (build-dataset, build-splits)
-  train.py                        - Hydra entry point: LoRA training
-  infer.py                        - Hydra entry point: inference (zero/few/lora)
-  models/registry.py              - Model registry (HF id, dtype, chat template, LoRA targets)
-  preprocess/
-    build_dataset.py              - Full-file JSONL builder
-    build_splits.py               - Train/val/test split by base work
-    prelude.py                    - Prelude boundary detection
-    augmentations.py              - shuffle / drop / inline + brace-balance gate
-    metadata_header.py            - Metadata resolution and %% === METADATA === block
+  cli.py                 unified argparse CLI (prompt-bank, generation,
+                         understanding, metrics)
+  models.py              backbone registry + HF loader (+ DeepSeek shims)
+  utils.py               JSONL I/O, HF env helpers, LilyPond binary lookup
   data/
-    training_dataset.py           - Tokenizing dataset loader with char-range loss masking
-  evaluate/
-    loss.py                       - Hydra entry point: held-out loss of a LoRA adapter
-    text_midi.py                  - Hydra entry point: text + MIDI analysis
-    fmd.py                        - Hydra entry point: Fréchet Music Distance
-    extract_detokenized.py        - argparse helper: extract .ly files from log files
-configs/                          - Hydra config tree (train, infer, evaluate, model, regime, launcher)
-scripts/
-  translate_preprocessed_to_nederlands.py - one-shot corpus fixer (notelog §8.1)
-tests/                            - pytest suite
-slurm/
-  train/                          - Training job templates (thin Hydra wrappers)
-  infer/                          - Inference job templates (thin Hydra wrappers)
+    bmdataset.py         BMdataset preprocessed/*.ly loader
+    mutopia.py           Mutopia manifest loader
+    emopia.py            EMOPIA manifest-CSV loader (midi2ly outputs)
+    splits.py            deterministic work-level splitter
+    types.py             CorpusEntry dataclass (uniform input type)
+  generation/
+    prompt_bank.py       stratified prompt-bank builder (paper: 200 prompts)
+    regimes.py           ZeroShot, FewShot, plus a `register_regime` hook
+    runner.py            backbone + regime + bank -> sample directory
+    metadata_block.py    %% === METADATA === block renderer
+  understanding/
+    base.py              UnderstandingTask abstract base class
+    registry.py          @register_task decorator + lookup
+    runner.py            greedy-decoding inference loop
+    tasks/               ten registered tasks, one module each
+    bar_utils.py         |-delimited bar splitting / counting
+    corruptor.py         five error-injection categories
+    score_metadata.py    extract/mask key / meter / note-length
+    title_parser.py      extract title from \header blocks
+    midi_to_lily.py      midi2ly subprocess wrapper (EMOPIA prep)
+  metrics/
+    compile_rate.py      LilyPond compile rate
+    muspy_descriptors.py the three MusPy descriptors used by JS-similarity
+    js_similarity.py     JS-similarity over Gaussian-fit descriptors
+    fmd.py               LilyBERT-based Fréchet Music Distance
+    understanding.py     accuracy / Kendall-τ / F1 / bar-count tolerance
 ```
 
-## Data structure
+### Adding a new generation regime
 
+```python
+from lilybench.generation.regimes import Regime, register_regime
+
+class ChainOfThought(Regime):
+    name = "cot"
+    def build_prompt(self, prompt, *, tokenizer):
+        ...  # build any chat-template string here
+
+register_regime(ChainOfThought)
 ```
-data/
-  bmdataset/
-    preprocessed/                 - Input .ly files (include-resolved, nederlands-pitched)
-    metadata.json                 - Per-piece metadata (composer, period, form, instruments)
-  fullfile_dataset/               - Built JSONL (all_examples.jsonl)
-  splits_full/                    - train.jsonl / val.jsonl / test.jsonl
-  inference/
-    outputs/                      - Raw SLURM inference .out files
-    samples/                      - Extracted .ly files
-    sample_eval/                  - eval.jsonl, summary.json, midi/
+
+Then `lilybench generation run --regime cot ...` works without any
+other edits.
+
+### Adding a new understanding task
+
+```python
+from lilybench.understanding import UnderstandingTask, register_task
+
+@register_task
+class HarmonicFunctionQA(UnderstandingTask):
+    name = "harmonic_function"
+    template_kind = "multiple_choice"
+    task_instruction = "Pick the most plausible Roman-numeral function..."
+    default_n = 60
+
+    def build(self, corpus, *, n, seed): ...
+    def score(self, bench, predictions): ...
+```
+
+The task is picked up automatically by `lilybench understanding build`
+(`--tasks all`) and `lilybench metrics understanding`.
+
+### Registering a new backbone
+
+```python
+from lilybench.models import ModelSpec, register_model
+
+register_model(ModelSpec(
+    model_id="my-model",
+    hf_id="org/my-model",
+    dtype="bf16",
+    family="general",
+))
+```
+
+## Reproducing the paper
+
+The paper reports four backbones × three generation regimes (zero,
+few-train, few-ablation) and four backbones × ten understanding tasks.
+With the Zenodo archive unpacked, the full sweep is twelve generation
+runs and four understanding runs. The `slurm/` directory contains three
+thin wrappers (`generation.slurm`, `understanding.slurm`,
+`metrics.slurm`) showing how to drive the CLI from a SLURM cluster.
+
+Determinism notes:
+
+* The prompt bank is built with `seed=1234`; per-prompt inference seeds
+  are `seed_base + i`. Generation is `do_sample=True`, so numeric
+  metrics drift slightly between runs — compare trends, not exact text.
+* Understanding decoding is greedy (`do_sample=False`, `T=0`,
+  `max_new_tokens=20`) per ABC-Eval, so understanding predictions are
+  deterministic on identical hardware/library versions.
+* Splits are computed at the work level (no part-of-the-same-piece can
+  cross the split boundary). The Zenodo archive ships the splits used
+  in the paper.
+
+## Testing
+
+```bash
+pytest                  # sequential
+pytest -n auto          # parallel via pytest-xdist
 ```
 
 ## License
 
-MIT
+Code: MIT (see [LICENSE](LICENSE)).
+Datasets retain their upstream licenses; see the corresponding entries on
+Zenodo for redistribution terms.
+
+## Citation
+
+If you use LilyBench in your research, please cite:
+
+```bibtex
+@inproceedings{spanio2026lilybench,
+  title  = {Can LLMs understand LilyPond? A benchmark for symbolic music
+            generation and understanding},
+  author = {Spanio, Matteo and Torabi, Mohammad and Poltronieri, Andrea
+            and Rod{\`a}, Antonio},
+  booktitle = {Proceedings of Ital-IA 2026},
+  year   = {2026},
+}
+```

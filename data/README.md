@@ -1,37 +1,37 @@
-# data/
+# `data/`
 
-This directory is git-ignored. The pipeline expects and generates the following
-structure:
+The `data/` tree is git-ignored. LilyBench's reproduction pipeline expects the
+following layout, populated from the Zenodo release that accompanies the paper:
 
 ```
 data/
-  bmdataset/
-    preprocessed/         Input .ly files (include-resolved, nederlands-pitched)
-    metadata.json         Per-piece metadata (composer, period, form, instruments)
-  fullfile_dataset/
-    all_examples.jsonl    Output of `lilybench build-dataset`
-  splits_full/            train.jsonl / val.jsonl / test.jsonl
-  inference/
-    outputs/              Raw SLURM inference .out files
-    samples/              Extracted .ly files (per experiment)
-    sample_eval/          Evaluation results
-      eval.jsonl          Per-sample metrics
-      summary.json        Aggregate summary
-      midi/               Rendered MIDI files
+  bmdataset/                       # in-domain corpus
+    preprocessed/*.ly              # nederlands-pitched, include-resolved scores
+    metadata.json                  # per-work composer / period / form / ensemble
+  mutopia/                         # out-of-domain corpus
+    dataset_mutopia.json           # manifest + relative .ly paths
+    stripped/.../...               # .ly files referenced by the manifest
+  emopia/                          # emotion-recognition corpus
+    manifest.csv                   # one row per clip (clip_id, song_id, label, ly_path)
+    ly/*.ly                        # midi2ly-converted LilyPond clips
+  splits/                          # deterministic work-level splits over bmdataset
+    train.jsonl
+    val.jsonl
+    test.jsonl                     # the in-domain reference used by FMD & JS
+  prompt_bank.jsonl                # output of `lilybench prompt-bank build`
+  runs/                            # per-model generation + understanding outputs
 ```
 
-## Generating the data
+All of these — the BMdataset corpus, the Mutopia stripped tree, the EMOPIA
+manifest, and the BMdataset splits — are published as a single archive on
+Zenodo. Unpack it under `data/` and you are ready to reproduce the paper.
 
-1. Obtain `bmdataset/preprocessed/` and `bmdataset/metadata.json`.
-2. Run the pipeline (see root README for details):
+## Data preparation scripts (only needed to *rebuild* the archive)
 
-```bash
-lilybench build-dataset \
-  --input-dir data/bmdataset/preprocessed \
-  --metadata data/bmdataset/metadata.json \
-  --output data/fullfile_dataset/all_examples.jsonl
+* `scripts/convert_mutopia.py` upgrades a raw Mutopia tree with `convert-ly`
+  (the corpus carries ~15 years of LilyPond syntax drift).
+* `scripts/prepare_emopia.py` downloads EMOPIA, runs `midi2ly` on every clip,
+  and emits the manifest CSV.
 
-lilybench build-splits \
-  --input-jsonl data/fullfile_dataset/all_examples.jsonl \
-  --output-dir data/splits_full
-```
+End users do not need to run them; they only matter if you want to regenerate
+the published artifacts from scratch.
