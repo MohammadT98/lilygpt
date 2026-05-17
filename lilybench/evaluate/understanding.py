@@ -22,8 +22,15 @@ from pathlib import Path
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
+from collections import defaultdict
+
 from lilybench.understanding import tasks
-from lilybench.understanding.scoring import accuracy, bar_sequencing_score
+from lilybench.understanding.scoring import (
+    accuracy,
+    bar_sequencing_score,
+    error_detection_f1,
+    parse_bar_list,
+)
 
 
 def _load_jsonl(path: Path) -> list[dict]:
@@ -61,22 +68,104 @@ def _score_task(task: str, bench: list[dict], preds: list[dict]) -> dict:
         preds_str = [p["parsed_answer"] for _, p in aligned]
         golds = [b["gold"] for b, _ in aligned]
         n_parsed = sum(1 for s in preds_str if s.isdigit())
+        tolerance = _bar_count_tolerance(preds_str, golds)
         return {
             "task": task,
             "n": n,
             "accuracy": accuracy(preds_str, golds) if n else 0.0,
             "n_parsed": n_parsed,
+            "tolerance": tolerance,
         }
+
+    if task == "error_detection":
+        return _score_error_detection(aligned)
 
     # 4-way MC tasks: compare option-index strings.
     preds_str = [p["parsed_answer"] for _, p in aligned]
     golds = [str(b["gold_index"]) for b, _ in aligned]
     n_parsed = sum(1 for s in preds_str if s in {"0", "1", "2", "3"})
-    return {
+    summary = {
         "task": task,
         "n": n,
         "accuracy": accuracy(preds_str, golds) if n else 0.0,
         "n_parsed": n_parsed,
+    }
+    if task == "emotion_recognition":
+        summary["confusion"] = _emotion_confusion_matrix(aligned)
+    return summary
+
+
+def _bar_count_tolerance(preds_str: list[str], golds: list[str]) -> dict[str, float]:
+    """Return {within_1, within_5, within_10} accuracy + mean/median abs err.
+
+    Skips records where the model's output didn't parse as an integer (n_parsed
+    captures that count separately).
+    """
+    diffs = []
+    for p, g in zip(preds_str, golds):
+        try:
+            diffs.append(abs(int(p) - int(g)))
+        except ValueError:
+            continue
+    if not diffs:
+        return {"within_1": 0.0, "within_5": 0.0, "within_10": 0.0,
+                "mean_abs_err": None, "median_abs_err": None, "n_parsed": 0}
+    diffs_sorted = sorted(diffs)
+    return {
+        "within_1":  sum(1 for d in diffs if d <= 1) / len(diffs),
+        "within_5":  sum(1 for d in diffs if d <= 5) / len(diffs),
+        "within_10": sum(1 for d in diffs if d <= 10) / len(diffs),
+        "mean_abs_err":   sum(diffs) / len(diffs),
+        "median_abs_err": diffs_sorted[len(diffs_sorted) // 2],
+        "n_parsed": len(diffs),
+    }
+
+
+def _emotion_confusion_matrix(aligned: list) -> dict:
+    """Return a 4×4 confusion matrix gold→pred over Q1..Q4."""
+    quads = ("Q1", "Q2", "Q3", "Q4")
+    quad_set = set(quads)
+    # rows: gold, cols: predicted option label
+    matrix = {g: {p: 0 for p in quads} for g in quads}
+    n_off_grid = 0
+    for b, p in aligned:
+        gold = b.get("gold")
+        if gold not in quad_set:
+            continue
+        parsed = p.get("parsed_answer", "")
+        if parsed in {"0", "1", "2", "3"}:
+            try:
+                pred_label = b["options"][int(parsed)]
+            except (KeyError, IndexError, ValueError):
+                pred_label = None
+        else:
+            pred_label = None
+        if pred_label in quad_set:
+            matrix[gold][pred_label] += 1
+        else:
+            n_off_grid += 1
+    return {"matrix": matrix, "n_off_grid": n_off_grid}
+
+
+def _score_error_detection(aligned: list) -> dict:
+    """F1 per record, macro-averaged across the 5 categories."""
+    per_record_f1: list[float] = []
+    by_cat: dict[str, list[float]] = defaultdict(list)
+    for b, p in aligned:
+        gold = set(b.get("gold_bars") or [])
+        pred = set(parse_bar_list(p.get("parsed_answer", "") or p.get("raw_output", "")))
+        f1 = error_detection_f1(pred=pred, gold=gold)
+        per_record_f1.append(f1)
+        by_cat[b.get("category", "unknown")].append(f1)
+
+    per_cat_f1 = {c: (sum(v) / len(v) if v else 0.0) for c, v in by_cat.items()}
+    macro_f1 = sum(per_cat_f1.values()) / len(per_cat_f1) if per_cat_f1 else 0.0
+    return {
+        "task": "error_detection",
+        "n": len(aligned),
+        "macro_f1": macro_f1,
+        "mean_f1": sum(per_record_f1) / len(per_record_f1) if per_record_f1 else 0.0,
+        "per_category_f1": per_cat_f1,
     }
 
 
@@ -89,7 +178,10 @@ def _aggregate(per_task: dict[str, dict]) -> dict:
     """
     pairs = []
     for name, summary in per_task.items():
-        score = summary.get("accuracy", summary.get("score", 0.0))
+        score = summary.get(
+            "accuracy",
+            summary.get("score", summary.get("macro_f1", 0.0)),
+        )
         n = summary.get("n", 0)
         pairs.append((name, score, n))
     if not pairs:

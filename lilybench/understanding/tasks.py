@@ -192,4 +192,18 @@ TASKS: dict[str, TaskSpec] = {
             "Q4 = high valence + low arousal."
         ),
     ),
+    "error_detection": TaskSpec(
+        name="error_detection",
+        n=220,
+        template_kind="structured_output",
+        task_instruction=(
+            "The score below may contain one or more erroneous bars "
+            "(invalid metadata, garbage content, wrong bar duration, "
+            "implausible melodic leap, or accidental outside the declared key). "
+            "Identify the 1-indexed bar numbers where the errors occur. "
+            "Output the numbers as a space-separated list (e.g. '3 7 12'). "
+            "If no errors are present, output 'none'."
+        ),
+        structured_output_template="<space-separated integer bar numbers, or 'none'>",
+    ),
 }

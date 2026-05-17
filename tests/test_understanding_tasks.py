@@ -25,6 +25,7 @@ def test_task_registry_has_all_paper_tasks():
         "composer_recognition",
         "genre_recognition",
         "emotion_recognition",
+        "error_detection",
     }
     assert set(tasks.TASKS.keys()) == expected
 
@@ -41,6 +42,7 @@ def test_task_sample_sizes_match_paper():
         "composer_recognition": 96,
         "genre_recognition": 132,
         "emotion_recognition": 120,
+        "error_detection": 220,
     }
 
 
@@ -54,7 +56,7 @@ def test_template_kinds():
         "genre_recognition",
         "emotion_recognition",
     }
-    structured = {"bar_count", "bar_sequencing"}
+    structured = {"bar_count", "bar_sequencing", "error_detection"}
     for name, spec in tasks.TASKS.items():
         if name in mc:
             assert spec.template_kind == "multiple_choice", name

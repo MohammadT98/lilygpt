@@ -248,6 +248,7 @@ UNDERSTANDING_TASK_ORDER = (
     "composer_recognition",
     "genre_recognition",
     "emotion_recognition",
+    "error_detection",
 )
 
 
@@ -284,7 +285,8 @@ def _table_understanding(summaries: dict[str, dict]) -> str:
             if not entry or entry.get("missing"):
                 row.append("—")
                 continue
-            score = entry.get("accuracy", entry.get("score"))
+            # error_detection uses macro_f1, others use accuracy or score.
+            score = entry.get("accuracy", entry.get("score", entry.get("macro_f1")))
             n = entry.get("n", 0)
             row.append(f"{_fmt(score, 3)} (n={n})")
         lines.append("| " + " | ".join(row) + " |")
@@ -300,14 +302,94 @@ def _table_understanding(summaries: dict[str, dict]) -> str:
     return "\n".join(lines)
 
 
+def _table_bar_count_tolerance(summaries: dict[str, dict]) -> str:
+    """Per-model bar_count accuracy under ±1 / ±5 / ±10 tolerance windows."""
+    models = sorted(summaries.keys())
+    rows_have_any = False
+    header = "| model | exact | within ±1 | within ±5 | within ±10 | mean abs err | median abs err |"
+    sep = "|---|---|---|---|---|---|---|"
+    lines = [header, sep]
+    for m in models:
+        entry = (summaries[m].get("tasks") or {}).get("bar_count")
+        if not entry or entry.get("missing"):
+            continue
+        tol = entry.get("tolerance") or {}
+        if not tol:
+            continue
+        rows_have_any = True
+        lines.append(
+            "| " + " | ".join([
+                m,
+                _fmt(entry.get("accuracy"), 3),
+                _fmt(tol.get("within_1"), 3),
+                _fmt(tol.get("within_5"), 3),
+                _fmt(tol.get("within_10"), 3),
+                _fmt(tol.get("mean_abs_err"), 2),
+                _fmt(tol.get("median_abs_err"), 0),
+            ]) + " |"
+        )
+    if not rows_have_any:
+        return "_(no bar_count tolerance data available)_"
+    return "\n".join(lines)
+
+
+def _table_emotion_confusion(summaries: dict[str, dict]) -> str:
+    """Per-model 4×4 confusion matrices for emotion_recognition."""
+    models = sorted(summaries.keys())
+    parts: list[str] = []
+    quads = ("Q1", "Q2", "Q3", "Q4")
+    for m in models:
+        entry = (summaries[m].get("tasks") or {}).get("emotion_recognition")
+        if not entry or entry.get("missing"):
+            continue
+        conf = entry.get("confusion")
+        if not conf or not conf.get("matrix"):
+            continue
+        matrix = conf["matrix"]
+        parts.append(f"**{m}** (off-grid predictions: {conf.get('n_off_grid', 0)})")
+        parts.append("")
+        parts.append("| gold ↓ / pred → | " + " | ".join(quads) + " |")
+        parts.append("|" + "|".join(["---"] * (1 + len(quads))) + "|")
+        for g in quads:
+            row = [g]
+            row_total = sum(matrix.get(g, {}).get(p, 0) for p in quads)
+            for p in quads:
+                cell = matrix.get(g, {}).get(p, 0)
+                pct = (cell / row_total) if row_total else 0.0
+                row.append(f"{cell} ({pct:.0%})")
+            parts.append("| " + " | ".join(row) + " |")
+        parts.append("")
+    if not parts:
+        return "_(no emotion_recognition confusion matrices available)_"
+    return "\n".join(parts)
+
+
 def build_understanding_report(und_root: Path, out_path: Path) -> None:
     summaries = _collect_understanding(und_root)
     parts = [
         "# LilyBench music-understanding REPORT",
         "",
-        f"Aggregated from `{und_root}`. One column per model; rows are the 8 tasks plus overall averages.",
+        f"Aggregated from `{und_root}`. One column per model; rows are the 10 tasks plus overall averages.",
+        "",
+        "## 1. Task × model matrix",
         "",
         _table_understanding(summaries),
+        "",
+        "## 2. Bar-count tolerance breakdown",
+        "",
+        "Exact-match is brutally narrow on bar_count (the gold spans 1-1500 bars). "
+        "These columns relax to ±N tolerance windows and show the underlying "
+        "magnitude of the error.",
+        "",
+        _table_bar_count_tolerance(summaries),
+        "",
+        "## 3. Emotion-recognition confusion matrices",
+        "",
+        "Per-model 4×4 confusion matrices over Russell quadrants. Rows are the "
+        "gold quadrant; columns are the model's predicted quadrant. Counts and "
+        "row-percentages.",
+        "",
+        _table_emotion_confusion(summaries),
         "",
     ]
     out_path.write_text("\n".join(parts), encoding="utf-8")

@@ -84,3 +84,44 @@ def bar_sequencing_score(*, pred: str, gold: str) -> float:
     scaled = (float(tau) + 1.0) / 2.0
     completeness = min(1.0, len(parsed) / n)
     return scaled * completeness
+
+
+# ---- error_detection ----------------------------------------------------
+
+_INT_RE = re.compile(r"\d+")
+
+
+def parse_bar_list(text: str) -> list[int]:
+    """Extract integer bar indices from a model's free-form output.
+
+    Returns a deduplicated list preserving first-occurrence order. Useful
+    for converting `"3, 7, 12"` / `"bars 3 and 7"` / `"12"` into `[3, 7, 12]`.
+    """
+    if not text:
+        return []
+    out: list[int] = []
+    seen: set[int] = set()
+    for m in _INT_RE.findall(text):
+        v = int(m)
+        if v not in seen:
+            seen.add(v)
+            out.append(v)
+    return out
+
+
+def error_detection_f1(*, pred: set[int], gold: set[int]) -> float:
+    """F1 score between predicted and gold error bar sets.
+
+    When both sets are empty we return 1.0 (correctly identifying that no
+    errors exist). When either is empty but the other isn't, F1 = 0.0.
+    """
+    if not pred and not gold:
+        return 1.0
+    if not pred or not gold:
+        return 0.0
+    tp = len(pred & gold)
+    if tp == 0:
+        return 0.0
+    precision = tp / len(pred)
+    recall = tp / len(gold)
+    return 2 * precision * recall / (precision + recall)

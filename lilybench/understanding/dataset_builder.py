@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
 
-from lilybench.understanding import tasks
+from lilybench.understanding import corruptor, tasks
 from lilybench.understanding.bar_utils import count_bars, split_bars
 from lilybench.understanding.score_metadata import (
     extract_key,
@@ -641,4 +641,65 @@ def build_emotion_bench(
                 "prompt": prompt,
             })
             idx += 1
+    return out
+
+
+# =========================================================================
+# Error detection bench (separate bench file, injects errors into Mutopia)
+# =========================================================================
+
+
+def build_error_bench(
+    corpus: list[CorpusEntry],
+    *,
+    seed: int,
+    n: int = 220,
+) -> list[dict]:
+    """Sample ``n`` Mutopia pieces and inject one error each.
+
+    Balanced across the 5 paper categories. The bench is byte-stable per seed.
+    Pieces with too-few bars or for which the chosen injector returns None
+    are silently skipped (we re-roll within the same RNG stream).
+    """
+    spec = tasks.TASKS["error_detection"]
+    eligible = [c for c in corpus if count_bars(c.text) >= 4]
+    if len(eligible) < n:
+        n = len(eligible)
+    per_cat = n // len(corruptor.ERROR_CATEGORIES)
+    rng = random.Random(seed ^ (hash("error_detection") & 0xFFFFFFFF))
+    rng.shuffle(eligible)
+
+    pool = list(eligible)
+    out: list[dict] = []
+    pool_idx = 0
+    for category in corruptor.ERROR_CATEGORIES:
+        emitted = 0
+        attempts = 0
+        max_attempts = 8 * per_cat   # bound the retry budget
+        while emitted < per_cat and pool_idx < len(pool) and attempts < max_attempts:
+            entry = pool[pool_idx]
+            pool_idx += 1
+            attempts += 1
+            corruption = corruptor.inject(entry.text, category, rng=rng)
+            if corruption is None:
+                continue
+            prompt = tasks.format_structured_prompt(
+                input_content=corruption.text,
+                task_instruction=spec.task_instruction,
+                structured_output_template=spec.structured_output_template,
+            )
+            idx = len(out)
+            out.append({
+                "task": spec.name,
+                "id": f"{spec.name}_{idx:04d}",
+                "source_file": entry.source_file,
+                "input_content": corruption.text,
+                "task_instruction": spec.task_instruction,
+                "structured_output_template": spec.structured_output_template,
+                "gold_bars": list(corruption.error_bars),
+                "category": corruption.category,
+                "template_kind": spec.template_kind,
+                "prompt": prompt,
+            })
+            emitted += 1
     return out
