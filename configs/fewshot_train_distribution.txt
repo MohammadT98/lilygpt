@@ -1,0 +1,229 @@
+Here are examples of LilyPond fragments in the requested style. Each example follows the structure used by the training corpus: a metadata header (composer, period, musical form, ensemble, part) in `%% ===` comments, then `\version` / `\language`, then one or more named music assignments. The model must output only LilyPond code in the same shape — no prose, no markdown fences.
+
+Example 1:
+%% === METADATA ===
+%% composer: Vivaldi
+%% period: <unk>
+%% musical_form: concerto
+%% ensemble: violin, acoustic guitar (nylon), cello, viola
+%% part: viola
+%% === END METADATA ===
+\version "2.24.0"
+\language "nederlands"
+forma = {
+
+    \time 3/4
+    \key c\major
+    \tempo 2 = 65
+    s2.*72\break
+    \key g\minor
+    s2.*39\break
+    \key c\major
+    s2.*16
+    \bar"|."
+
+}
+
+
+
+IIvlI = {
+    \global
+    <<\IIvlIn \forma>>
+
+}
+
+IIvlII = {
+    \global
+    <<\IIvlIIn \forma>>
+
+}
+
+
+IIvla = {
+    \global
+    \clef alto
+    <<\IIvlan \forma>>
+
+}
+
+IIbc = {
+    \global
+    \clef bass
+    <<\IIbcn \forma \IIbfn>>
+
+}
+
+
+%{
+convert-ly (GNU LilyPond) 2.20.0  convert-ly: Processing `'...
+Applying conversion: 2.19.2, 2.19.7, 2.19.11, 2.19.16, 2.19.22,
+2.19.24, 2.19.28, 2.19.29, 2.19.32, 2.19.40, 2.19.46, 2.19.49,
+2.19.80, 2.20.0
+%}
+% === END INCLUDE: vivaldi_concerto_di_parigi_n_5_RV 114_ciaccona.ly ===
+% === BEGIN INCLUDE: vivaldi_concerto_per_violino_RV 390_andante_molto.ly ===
+\version "2.24.0"
+
+mbreak = { } %\break
+
+global = {
+   \override Score.MetronomeMark.transparent = ##t
+   \override Score.BarNumber.font-size = #0.5
+   \override Score.BarNumber.padding = #1.3
+   \override TupletBracket.bracket-visibility = ##f
+}
+
+Example 2:
+%% === METADATA ===
+%% composer: Corrette
+%% period: Late Baroque
+%% musical_form: <unk>
+%% ensemble: bassoon, cello, contrabass, flute, french horn, synth voice, viola, violin
+%% part: full
+%% === END METADATA ===
+\version "2.18.0"
+\language "nederlands"
+forma = {
+
+    \time 12/8
+    \tempo 2. = 55
+    s1.*106
+    s2.
+    \once \override Score.RehearsalMark.extra-offset = #'(+10 . +1)
+    \mark\markup\italic"Mineur"
+    s
+    s1.*31
+    \bar "|."
+
+}
+
+IVcrI = {
+    %\notypeset
+    <<\IVcrIn \forma>>
+
+}
+
+IVcrII = {
+    <<\IVcrIIn \forma>>
+
+}
+
+IVvlI = {
+    <<\IVvlIn \forma>>
+
+}
+
+IVvlII = {
+    <<\IVvlIIn \forma>>
+
+}
+
+IVvlIII = {
+    <<\IVvlIIIn \forma>>
+
+}
+
+IVvla = {
+    \clef alto
+    <<\IVvlan \forma>>
+
+}
+
+IVsoprano = {
+    \new Voice = "iuvenes1"
+    \clef violin
+    <<\IVsopranon \forma>>
+}
+
+IValto = {
+    \new Voice = "iuvenes2"
+    <<\IValton \forma>>
+}
+
+IVtenore = {
+    \new Voice = "iuvenes3"
+    <<\IVtenoren \forma>>
+}
+
+IVbaritono = {
+    \new Voice = "iuvenes4"
+    <<\IVbaritonon \forma>>
+}
+
+IVbasso = {
+    \new Voice = "iuvenes5"
+    <<\IVbasson \forma>>
+}
+
+IVfg = {
+    \clef bass
+    <<\IVfgn \forma>>
+}
+
+IVbc = {
+    \clef bass
+    <<\IVbcn \forma \IVbfn>>
+    \typeset
+}
+% === END INCLUDE: corrette_salmo_laudate_dominum_pastorale.ly ===
+% === END INCLUDE: corrette_salmo_laudate_dominum_header.ly ===
+
+#(set-default-paper-size "a4")
+
+#(set-global-staff-size 16)
+
+\version "2.20.0"
+
+\pointAndClickOff
+
+Example 3:
+%% === METADATA ===
+%% composer: Johann Sebastian Bach
+%% period: High Baroque
+%% musical_form: <unk>
+%% ensemble: voice oohs, violin, cello, flute
+%% part: <unk>
+%% === END METADATA ===
+\version "2.20.0"
+\language "nederlands"
+global = 	{
+    \override Score.MetronomeMark.transparent = ##t
+    \override Score.BarNumber.font-size = #0.5
+    \override Score.BarNumber.padding = #1.3
+    \override TupletNumber.transparent = ##t
+    \override TupletBracket.bracket-visibility = ##f
+    \con \terzine
+
+}
+
+\header {instrument = "Basso continuo / Organo"}
+
+\paper {
+
+    systems-per-page = #11
+    print-first-page-number = ##f
+    first-page-number = #1
+
+}
+
+    \score {
+
+            \new Staff <<
+                \Ibc \global
+            >>
+
+        \layout {
+
+            indent = 1\cm
+            incipit-width = 1.2\cm
+
+            \context	{
+                \Score
+                \override SpacingSpanner.base-shortest-duration = #(ly:make-moment 1/4)
+                %\override SpacingSpanner.uniform-stretching = ##t
+                skipBars = ##t
+            }
+
+        }
+
+    }

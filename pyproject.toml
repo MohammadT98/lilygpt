@@ -1,0 +1,69 @@
+[build-system]
+requires = ["setuptools>=65"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lilybench"
+version = "0.2.0"
+description = "LilyBench — an LLM evaluation framework for LilyPond generation and understanding (Ital-IA 2026)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Matteo Spanio", email = "spanio@dei.unipd.it"},
+    {name = "Mohammad Torabi", email = "mohammad.torabi@studenti.unipd.it"},
+    {name = "Andrea Poltronieri", email = "andrea.poltronieri@upf.edu"},
+    {name = "Antonio Rodà", email = "roda@dei.unipd.it"},
+]
+keywords = [
+    "lilypond", "symbolic music", "large language models",
+    "music generation", "music understanding", "benchmark",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = [
+    "music21>=9.1",
+    "muspy>=0.5.0",
+    "transformers>=4.40,<5.0",
+    "torch>=2.5",
+    "tqdm>=4.67.1",
+    "sentencepiece>=0.2.1",
+    "numpy>=1.24",
+    "scipy>=1.10",
+]
+
+[project.scripts]
+lilybench = "lilybench.cli:main"
+
+[project.urls]
+Paper = "https://github.com/CSCPadova/lilybench"
+LilyBERT = "https://github.com/CSCPadova/lilybert"
+BMdataset = "https://zenodo.org/records/lilybench-bmdataset"
+
+[tool.setuptools.packages.find]
+include = ["lilybench*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+    "pytest-xdist>=3.8.0",
+]
+# Optional 4/8-bit decoding through bitsandbytes.
+quant = [
+    "bitsandbytes>=0.43",
+    "accelerate>=0.20",
+]
+
+[tool.pytest.ini_options]
+minversion = "9.0"
+testpaths = ["tests"]
+addopts = "-ra --strict-markers --strict-config"
+xfail_strict = true
