@@ -2,19 +2,23 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)](https://www.python.org/downloads/)
+[![arXiv](https://img.shields.io/badge/arXiv-2606.08722-b31b1b.svg)](https://arxiv.org/abs/2606.08722)
 [![DOI](https://img.shields.io/badge/DOI-10.5281%2Fzenodo.20267079-1682d4.svg)](https://doi.org/10.5281/zenodo.20267079)
+[![Demo](https://img.shields.io/badge/demo-cscpadova.github.io%2Flilybench-6b4bd6.svg)](https://cscpadova.github.io/lilybench/)
 [![LilyBERT](https://img.shields.io/badge/LilyBERT-CSCPadova%2Flilybert-2ea44f?logo=github)](https://github.com/CSCPadova/lilybert)
 
 LilyBench is an evaluation framework for large language models on
 [LilyPond](https://lilypond.org/), a code-like textual score format.
-It accompanies the following paper, currently **under review** at
-Ital-IA 2026:
+It accompanies the following paper, **accepted at Ital-IA 2026**:
 
 > **Can LLMs understand LilyPond? A benchmark for symbolic music
 > generation and understanding.**
 > *Matteo Spanio, Mohammad Torabi, Andrea Poltronieri, Antonio Rodà.*
-> Submitted to Ital-IA 2026 — 6th National Conference on Artificial
-> Intelligence (CINI), Rome, Italy.
+> Ital-IA 2026 — 6th National Conference on Artificial Intelligence
+> (CINI), Rome, Italy. [arXiv:2606.08722](https://arxiv.org/abs/2606.08722).
+
+🎧 **Interactive demo:** see and hear the benchmark in action at
+[cscpadova.github.io/lilybench](https://cscpadova.github.io/lilybench/).
 
 The framework pairs
 
@@ -299,16 +303,21 @@ Zenodo for redistribution terms.
 
 ## Citation
 
-The accompanying paper is currently under review. Until it is accepted,
-please cite the Zenodo companion archive:
-
 ```bibtex
-@unpublished{spanio2026lilybench,
-  title  = {Can LLMs understand LilyPond? A benchmark for symbolic music
-            generation and understanding},
-  author = {Spanio, Matteo and Torabi, Mohammad and Poltronieri, Andrea
-            and Rod{\`a}, Antonio},
-  year   = {2026},
-  note   = {Under review at Ital-IA 2026},
+@inproceedings{spanio2026lilybench,
+  title     = {Can LLMs understand LilyPond? A benchmark for symbolic music
+               generation and understanding},
+  author    = {Spanio, Matteo and Torabi, Mohammad and Poltronieri, Andrea
+               and Rod{\`a}, Antonio},
+  booktitle = {Proceedings of the 6th National Conference on Artificial
+               Intelligence (Ital-IA 2026)},
+  year      = {2026},
+  address   = {Rome, Italy},
+  publisher = {CEUR-WS},
+  eprint    = {2606.08722},
+  archivePrefix = {arXiv},
 }
 ```
+
+The dataset archive is independently citable via its Zenodo DOI
+([10.5281/zenodo.20267079](https://doi.org/10.5281/zenodo.20267079)).
