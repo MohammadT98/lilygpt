@@ -1,0 +1,149 @@
+[
+  {
+    "idx": 240,
+    "metadata": {
+      "composer": "Vivaldi",
+      "period": "Late Baroque",
+      "form": "sinfonia",
+      "ensemble": "violin, viola, oboe, bassoon",
+      "part": "full"
+    },
+    "user_prompt": "Write a LilyPond fragment in the style of Vivaldi (Late Baroque). Form: sinfonia. Ensemble: violin, viola, oboe, bassoon. Produce the full ensemble score. Use Dutch (nederlands) note names and lowercase relative notation. Output only the LilyPond code; no prose, no markdown.",
+    "models": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "ly": "0240_phi4.ly",
+        "midi": "0240_phi4.mid",
+        "compiles": true,
+        "notes": 220,
+        "scale_drift": false
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "ly": "0240_qwen-coder.ly",
+        "midi": "0240_qwen-coder.mid",
+        "compiles": true,
+        "notes": 68,
+        "scale_drift": false
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "ly": "0240_deepseek-coder.ly",
+        "midi": "0240_deepseek-coder.mid",
+        "compiles": true,
+        "notes": 256,
+        "scale_drift": false
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "ly": "0240_codestral.ly",
+        "midi": "0240_codestral.mid",
+        "compiles": true,
+        "notes": 29,
+        "scale_drift": false
+      }
+    ]
+  },
+  {
+    "idx": 17,
+    "metadata": {
+      "composer": "Boismortier",
+      "period": "Late Baroque",
+      "form": "suite",
+      "ensemble": "violin, bassoon, contrabass, oboe, flute, viola",
+      "part": "dessus"
+    },
+    "user_prompt": "Write a LilyPond fragment in the style of Boismortier (Late Baroque). Form: suite. Ensemble: violin, bassoon, contrabass, oboe, flute, viola. Produce the dessus part. Use Dutch (nederlands) note names and lowercase relative notation. Output only the LilyPond code; no prose, no markdown.",
+    "models": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "ly": "0017_phi4.ly",
+        "midi": "0017_phi4.mid",
+        "compiles": true,
+        "notes": 60,
+        "scale_drift": false
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "ly": "0017_qwen-coder.ly",
+        "midi": "0017_qwen-coder.mid",
+        "compiles": true,
+        "notes": 64,
+        "scale_drift": true
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "ly": "0017_deepseek-coder.ly",
+        "midi": "0017_deepseek-coder.mid",
+        "compiles": true,
+        "notes": 660,
+        "scale_drift": true
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "ly": "0017_codestral.ly",
+        "midi": "0017_codestral.mid",
+        "compiles": true,
+        "notes": 35,
+        "scale_drift": false
+      }
+    ]
+  },
+  {
+    "idx": 193,
+    "metadata": {
+      "composer": "de Lalande",
+      "period": null,
+      "form": "sinfonia",
+      "ensemble": "bassoon, cello, flute, oboe, recorder, violin",
+      "part": "basso"
+    },
+    "user_prompt": "Write a LilyPond fragment in the style of de Lalande (Baroque). Form: sinfonia. Ensemble: bassoon, cello, flute, oboe, recorder, violin. Produce the basso part. Use Dutch (nederlands) note names and lowercase relative notation. Output only the LilyPond code; no prose, no markdown.",
+    "models": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "ly": "0193_phi4.ly",
+        "midi": "0193_phi4.mid",
+        "compiles": true,
+        "notes": 55,
+        "scale_drift": false
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "ly": "0193_qwen-coder.ly",
+        "midi": "0193_qwen-coder.mid",
+        "compiles": true,
+        "notes": 126,
+        "scale_drift": false
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "ly": "0193_deepseek-coder.ly",
+        "midi": "0193_deepseek-coder.mid",
+        "compiles": true,
+        "notes": 52,
+        "scale_drift": false
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "ly": "0193_codestral.ly",
+        "midi": "0193_codestral.mid",
+        "compiles": true,
+        "notes": 26,
+        "scale_drift": false
+      }
+    ]
+  }
+]

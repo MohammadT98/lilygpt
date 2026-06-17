@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LilyBench — Can LLMs understand LilyPond?</title>
+<meta name="description" content="Companion demo for LilyBench: a LilyPond benchmark jointly evaluating symbolic music generation and understanding on open-weight LLMs.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,600;1,6..72,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="hero">
+  <nav class="topnav">
+    <span class="brand">🎼 LilyBench</span>
+    <div class="navlinks">
+      <a href="#benchmark">Benchmark</a>
+      <a href="#generation">Generation</a>
+      <a href="#understanding">Understanding</a>
+      <a href="#cite">Cite</a>
+    </div>
+  </nav>
+
+  <h1>Can LLMs understand LilyPond?</h1>
+  <p class="subtitle">A benchmark for symbolic music generation and understanding</p>
+
+  <ul class="authors">
+    <li><a href="https://orcid.org/0000-0002-5780-2456">Matteo Spanio</a><sup>1</sup></li>
+    <li>Mohammad Torabi<sup>1</sup></li>
+    <li><a href="https://orcid.org/0000-0003-3848-7574">Andrea Poltronieri</a><sup>2</sup></li>
+    <li><a href="https://orcid.org/0000-0001-9921-0590">Antonio Rodà</a><sup>1</sup></li>
+  </ul>
+  <p class="affil">
+    <sup>1</sup> Centro di Sonologia Computazionale, University of Padova &nbsp;·&nbsp;
+    <sup>2</sup> Music Technology Group, Universitat Pompeu Fabra
+  </p>
+  <p class="venue">Accepted at <strong>Ital-IA 2026</strong> — 6th National Conference on Artificial Intelligence (CINI), Rome</p>
+
+  <div class="buttons">
+    <a class="btn primary" href="https://arxiv.org/abs/2606.08722">📄 Paper (arXiv)</a>
+    <a class="btn" href="https://github.com/CSCPadova/lilybench">💻 Code</a>
+    <a class="btn" href="https://doi.org/10.5281/zenodo.20267079">🗂️ Dataset</a>
+    <a class="btn" href="https://github.com/CSCPadova/lilybert">🧠 LilyBERT</a>
+  </div>
+</header>
+
+<main>
+
+<section id="abstract" class="prose">
+  <h2>Abstract</h2>
+  <p>Symbolic music evaluation for large language models remains fragmented across
+  representations, datasets, and metrics. We introduce <strong>LilyBench</strong>, a
+  LilyPond-based benchmark that jointly evaluates symbolic music generation and music
+  understanding on the same family of open-weight LLMs. The benchmark includes a
+  200-prompt generation suite and ten understanding tasks adapted from ABC-Eval,
+  covering syntax, metadata prediction, structural sequencing, and music recognition.
+  Generation quality is measured with compile rate, MusPy descriptor distributions via
+  Jensen–Shannon similarity, and a LilyBERT-based Fréchet Music Distance (FMD).
+  Experiments on four open-weight models show that executable LilyPond generation is
+  achievable zero-shot, while structural understanding tasks remain hard despite strong
+  composer and genre recognition. The descriptor- and embedding-based metrics
+  systematically disagree, suggesting that symbolic music evaluation benefits from metric
+  triangulation rather than single-score ranking.</p>
+</section>
+
+<section id="benchmark" class="prose">
+  <h2>Two benchmarks, one family of models</h2>
+  <div class="cards2">
+    <div class="card">
+      <h3>🎹 Generation</h3>
+      <p>A fixed bank of 200 metadata-conditioned prompts (composer, period, form,
+      ensemble, part). Outputs are scored by <em>compile rate</em>, <em>JS similarity</em>
+      over three MusPy descriptors, and a <em>LilyBERT-FMD</em> against in-domain
+      (BMdataset) and out-of-domain (Mutopia) references.</p>
+    </div>
+    <div class="card">
+      <h3>🔎 Understanding</h3>
+      <p>Ten ABC-Eval-adapted tasks over raw LilyPond text, grouped by reasoning depth:
+      counting, metadata QA, bar sequencing, next-bar prediction, captioning, composer /
+      genre / emotion recognition, and error detection. Greedy decoding, no
+      chain-of-thought.</p>
+    </div>
+  </div>
+
+  <table class="tasktable">
+    <thead><tr><th>Category</th><th>Task</th><th>n</th><th>Source</th><th>Format</th><th>Metric</th></tr></thead>
+    <tbody>
+      <tr><td rowspan="2">Basic</td><td>bar_count</td><td>100</td><td>Mutopia</td><td>integer</td><td>exact-match acc.</td></tr>
+      <tr><td>metadata_qa</td><td>60</td><td>Mutopia</td><td>4-way MC</td><td>accuracy</td></tr>
+      <tr><td rowspan="3">Segment</td><td>bar_sequencing</td><td>119</td><td>Mutopia</td><td>4-digit perm.</td><td>Kendall-τ (pen.)</td></tr>
+      <tr><td>next_bar_prediction</td><td>119</td><td>Mutopia</td><td>4-way MC</td><td>accuracy</td></tr>
+      <tr><td>metadata_prediction</td><td>60</td><td>Mutopia</td><td>4-way MC</td><td>accuracy</td></tr>
+      <tr><td rowspan="5">Sequence</td><td>music_captioning</td><td>60</td><td>Mutopia</td><td>4-way MC</td><td>accuracy</td></tr>
+      <tr><td>composer_recognition</td><td>96</td><td>Mutopia</td><td>4-way MC</td><td>accuracy</td></tr>
+      <tr><td>genre_recognition</td><td>132</td><td>Mutopia</td><td>4-way MC</td><td>accuracy</td></tr>
+      <tr><td>emotion_recognition</td><td>120</td><td>EMOPIA</td><td>4-way MC</td><td>accuracy</td></tr>
+      <tr><td>error_detection</td><td>220</td><td>Mutopia†</td><td>bar list</td><td>macro-F1</td></tr>
+    </tbody>
+  </table>
+  <p class="note">† Mutopia scores with five categories of synthetic corruption. The four
+  backbones evaluated are <strong>Phi-4</strong>, <strong>Qwen2.5-Coder-14B</strong>,
+  <strong>DeepSeek-Coder-V2-Lite</strong> and <strong>Codestral-22B</strong>.</p>
+</section>
+
+<section id="generation">
+  <div class="prose">
+    <h2>Generation, heard</h2>
+    <p>Each backbone receives the same metadata-conditioned prompt and must emit
+    LilyPond. Below are the raw <strong>zero-shot</strong> outputs — engraved and
+    sonified straight from the models, nothing cherry-picked bar-by-bar. Quality varies
+    sharply: some models write idiomatic Baroque lines, others drift into ascending
+    scale-runs (a real failure mode the compile/FMD metrics capture).</p>
+  </div>
+  <div id="prompt-picker" class="picker"></div>
+  <div id="generation-gallery"></div>
+</section>
+
+<section id="generation-results" class="prose">
+  <h2>Generation results</h2>
+  <div id="gen-table"></div>
+</section>
+
+<section id="understanding">
+  <div class="prose">
+    <h2>Understanding, probed</h2>
+    <p>Real benchmark questions with each model's greedy answer. Recognition is strong
+    (composer, genre, title); one-shot structural reasoning — counting bars, locating a
+    corrupted bar, placing emotion on the valence axis — collapses.</p>
+  </div>
+  <div id="understanding-list"></div>
+</section>
+
+<section id="understanding-results" class="prose">
+  <h2>Understanding results</h2>
+  <div id="und-table"></div>
+</section>
+
+<section id="cite" class="prose">
+  <h2>Citation</h2>
+  <pre class="bibtex"><code>@inproceedings{spanio2026lilybench,
+  title     = {Can LLMs understand LilyPond? A benchmark for symbolic
+               music generation and understanding},
+  author    = {Spanio, Matteo and Torabi, Mohammad and
+               Poltronieri, Andrea and Rod{\`a}, Antonio},
+  booktitle = {Proceedings of the 6th National Conference on Artificial
+               Intelligence (Ital-IA 2026)},
+  year      = {2026},
+  address   = {Rome, Italy},
+  publisher = {CEUR-WS},
+  eprint    = {2606.08722},
+  archivePrefix = {arXiv},
+}</code></pre>
+</section>
+
+</main>
+
+<footer>
+  <p>Paper © 2026 the authors, CC BY 4.0 · Code MIT · Sheet music engraved with
+  <a href="https://lilypond.org/">LilyPond</a>, audio via FluidSynth.</p>
+  <p>Companion page for <a href="https://github.com/CSCPadova/lilybench">CSCPadova/lilybench</a>.</p>
+</footer>
+
+<script type="module" src="script.js"></script>
+</body>
+</html>

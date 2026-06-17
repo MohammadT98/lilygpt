@@ -1,0 +1,161 @@
+[
+  {
+    "idx": 240,
+    "metadata": {
+      "composer": "Vivaldi",
+      "period": "Late Baroque",
+      "form": "sinfonia",
+      "ensemble": "violin, viola, oboe, bassoon",
+      "part": "full"
+    },
+    "user_prompt": "Write a LilyPond fragment in the style of Vivaldi (Late Baroque). Form: sinfonia. Ensemble: violin, viola, oboe, bassoon. Produce the full ensemble score. Use Dutch (nederlands) note names and lowercase relative notation. Output only the LilyPond code; no prose, no markdown.",
+    "models": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "compiles": true,
+        "notes": 220,
+        "scale_drift": false,
+        "ly_code": "\\version \"2.24.1\"\n\\header {\n  title = \"Sinfonia in Vivaldi Style\"\n  composer = \"Inspired by Vivaldi\"\n  tagline = ##f\n}\n\n\\language \"nederlands\"\n\nglobal = {\n  \\key g \\major\n  \\time 4/4\n}\n\nviolinI = \\relative c'' {\n  \\global\n  \\clef treble\n  \\voiceOne\n  r8 d e fis g4 a8 g fis e\n  d4 r8 d e fis g4 a8 g\n  fis4 r8 fis g a b4 c8 b\n  a4 r8 a b c d4 e8 d\n  c4 r8 c d e fis4 g8 fis\n  e4 r8 e fis g a4 b8 a\n  g2 r4 r2\n}\n\nviolinII = \\relative c' {\n  \\global\n  \\clef treble\n  \\voiceTwo\n  r8 b c d e4 fis8 e d c\n  b4 r8 b c d e4 fis8 e\n  d4 r8 d e fis g4 a8 g\n  fis4 r8 fis g a b4 c8 b\n  a4 r8 a b c d4 e8 d\n  c4 r8 c d e fis4 g8 fis\n  e2 r4 r2\n}\n\nviola = \\relative c' {\n  \\global\n  \\clef alto\n  r8 e f g a4 b8 a g f\n  e4 r8 e f g a4 b8 a\n  g4 r8 g a b c4 d8 c\n  b4 r8 b c d e4 f8 e\n  d4 r8 d e f g4 a8 g\n  f4 r8 f g a b4 c8 b\n  a2 r4 r2\n}\n\noboe = \\relative c'' {\n  \\global\n  \\clef treble\n  r8 fis g a b4 c8 b a g\n  fis4 r8 fis g a b4 c8 b\n  a4 r8 a b c d4 e8 d\n  c4 r8 c d e fis4 g8 fis\n  e4 r8 e fis g a4 b8 a\n  g4 r8 g a b c4 d8 c\n  b2 r4 r2\n}\n\nbassoon = \\relative c {\n  \\global\n  \\clef bass\n  r8 g a b c4 d8 c b a\n  g4 r8 g a b c4 d8 c\n  b4 r8 b c d e4 f8 e\n  d4 r8 d e f g4 a8 g\n  fis4 r8 fis g a b4 c8 b\n  a4 r8 a b c d4 e8 d\n  c2 r4 r2\n}\n\n\\score {\n  <<\n    \\new Staff = \"violinI\" \\violinI\n    \\new Staff = \"violinII\" \\violinII\n    \\new Staff = \"viola\" \\viola\n    \\new Staff = \"oboe\" \\oboe\n    \\new Staff = \"bassoon\" \\bassoon\n  >>\n  \\layout { }\n  \\midi { }\n}\n",
+        "score": "assets/scores/0240_phi4.svg",
+        "audio": "assets/audio/0240_phi4.mp3"
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "compiles": true,
+        "notes": 68,
+        "scale_drift": false,
+        "ly_code": "\\language \"nederlands\"\n\\version \"2.24.2\"\n\n\\header {\n  title = \"Sinfonia\"\n  composer = \"Vivaldi\"\n  piece = \"Sinfonia\"\n  opus = \"\"\n  arranger = \"\"\n  copyright = \"\"\n}\n\nglobal = {\n  \\key c \\major\n  \\time 4/4\n  \\tempo \"Allegro\"\n}\n\nviolinI = \\relative c' {\n  \\global\n  c4 d e f | g a b c' | d4 e f g | a b c' d'\n}\n\nviolinII = \\relative c' {\n  \\global\n  e4 f g a | b c' d e' | f4 g a b | c' d e' f'\n}\n\nviola = \\relative c' {\n  \\global\n  g4 a b c | d e f g | a4 b c' d' | e f g a\n}\n\noboe = \\relative c' {\n  \\global\n  c4 d e f | g a b c' | d4 e f g | a b c' d'\n}\n\nbassoon = \\relative c' {\n  \\global\n  c2 r | g2 r | d2 r | a2 r\n}\n\n\\score {\n  <<\n    \\new StaffGroup <<\n      \\new Staff = \"violinI\" {\n        \\clef treble\n        \\key c \\major\n        \\time 4/4\n        \\violinI\n      }\n      \\new Staff = \"violinII\" {\n        \\clef treble\n        \\key c \\major\n        \\time 4/4\n        \\violinII\n      }\n      \\new Staff = \"viola\" {\n        \\clef alto\n        \\key c \\major\n        \\time 4/4\n        \\viola\n      }\n      \\new Staff = \"oboe\" {\n        \\clef treble\n        \\key c \\major\n        \\time 4/4\n        \\transpose c c \\oboe\n      }\n      \\new Staff = \"bassoon\" {\n        \\clef bass\n        \\key c \\major\n        \\time 4/4\n        \\transpose c c \\bassoon\n      }\n    >>\n  >>\n}\n",
+        "score": "assets/scores/0240_qwen-coder.svg",
+        "audio": "assets/audio/0240_qwen-coder.mp3"
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "compiles": true,
+        "notes": 256,
+        "scale_drift": false,
+        "ly_code": "\\language \"nederlands\"\n\\version \"2.24.0\"\n\n\\header {\n  composer = \"Vivaldi\"\n  title = \"Sinfonia\"\n  subtitle = \"for violin, viola, oboe, and bassoon\"\n}\n\n\\layout {\n  \\context {\n    \\Score\n    \\remove \"Bar_number_engraver\"\n  }\n}\n\nglobal = {\n  \\key c \\major\n  \\time 4/4\n  \\tempo \"Allegro\" 4 = 120\n}\n\nviolin = \\new Staff \\with {\n  instrumentName = \"Violin\"\n  shortInstrumentName = \"Vln.\"\n} {\n  \\global\n  \\relative c' {\n    \\set Staff.midiInstrument = \"violin\"\n    c4 d e f | g a b c | d e f g | a b c d |\n    e f g a | b c d e | f g a b | c d e f |\n    g a b c | d e f g | a b c d | e f g a |\n    b c d e | f g a b | c d e f | g a b c |\n  }\n}\n\nviola = \\new Staff \\with {\n  instrumentName = \"Viola\"\n  shortInstrumentName = \"Vla.\"\n} {\n  \\global\n  \\relative c' {\n    \\set Staff.midiInstrument = \"viola\"\n    e4 f g a | b c d e | f g a b | c d e f |\n    g a b c | d e f g | a b c d | e f g a |\n    b c d e | f g a b | c d e f | g a b c |\n    d e f g | a b c d | e f g a | b c d e |\n  }\n}\n\noboe = \\new Staff \\with {\n  instrumentName = \"Oboe\"\n  shortInstrumentName = \"Ob.\"\n} {\n  \\global\n  \\relative c' {\n    \\set Staff.midiInstrument = \"oboe\"\n    c4 d e f | g a b c | d e f g | a b c d |\n    e f g a | b c d e | f g a b | c d e f |\n    g a b c | d e f g | a b c d | e f g a |\n    b c d e | f g a b | c d e f | g a b c |\n  }\n}\n\nbassoon = \\new Staff \\with {\n  instrumentName = \"Bassoon\"\n  shortInstrumentName = \"Bs.\"\n} {\n  \\global\n  \\relative c {\n    \\set Staff.midiInstrument = \"bassoon\"\n    g4 a b c | d e f g | a b c d | e f g a |\n    b c d e | f g a b | c d e f | g a b c |\n    d e f g | a b c d | e f g a | b c d e |\n    f g a b | c d e f | g a b c | d e f g |\n  }\n}\n\n\\score {\n  <<\n    \\violin\n    \\viola\n    \\oboe\n    \\bassoon\n  >>\n  \\layout { }\n  \\midi { }\n}\n",
+        "score": "assets/scores/0240_deepseek-coder.svg",
+        "audio": "assets/audio/0240_deepseek-coder.mp3"
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "compiles": true,
+        "notes": 29,
+        "scale_drift": false,
+        "ly_code": "\\version \"2.22.1\"\n\\language \"nederlands\"\n\nupper = \\relative c'' {\n  \\time 3/8\n  \\key c \\major\n  \\tempo 4 = 100\n  c4 c c e e d c2\n}\n\nlower = \\relative c {\n  \\clef bass\n  \\time 3/8\n  \\key c \\major\n  c2 c c2\n}\n\noboe = \\relative c' {\n  \\clef treble\n  \\time 3/8\n  \\key c \\major\n  r4 c c e e d c2\n}\n\nbassoon = \\relative c {\n  \\clef bass\n  \\time 3/8\n  \\key c \\major\n  r2 c c2\n}\n\n\\score {\n  <<\n    \\new Staff \\with {\n      instrumentName = \"Violin 1\"\n    } \\upper\n    \\new Staff \\with {\n      instrumentName = \"Viola\"\n    } \\lower\n    \\new Staff \\with {\n      instrumentName = \"Oboe\"\n    } \\oboe\n    \\new Staff \\with {\n      instrumentName = \"Bassoon\"\n    } \\bassoon\n  >>\n  \\layout {\n    \\context {\n      \\Score\n      \\override SpacingSpanner.common-shortest-duration = #(ly:make-moment 1/8)\n      \\override SpacingSpanner.uniform-stretching = ##t\n    }\n  }\n}\n",
+        "score": "assets/scores/0240_codestral.svg",
+        "audio": "assets/audio/0240_codestral.mp3"
+      }
+    ]
+  },
+  {
+    "idx": 17,
+    "metadata": {
+      "composer": "Boismortier",
+      "period": "Late Baroque",
+      "form": "suite",
+      "ensemble": "violin, bassoon, contrabass, oboe, flute, viola",
+      "part": "dessus"
+    },
+    "user_prompt": "Write a LilyPond fragment in the style of Boismortier (Late Baroque). Form: suite. Ensemble: violin, bassoon, contrabass, oboe, flute, viola. Produce the dessus part. Use Dutch (nederlands) note names and lowercase relative notation. Output only the LilyPond code; no prose, no markdown.",
+    "models": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "compiles": true,
+        "notes": 60,
+        "scale_drift": false,
+        "ly_code": "\\language \"nederlands\"\n\\version \"2.24.0\"\n\n\\header {\n  title = \"Suite in the Style of Boismortier\"\n  composer = \"Johann-Joseph Boismortier\"\n  tagline = ##f\n}\n\nglobal = {\n  \\key d \\major\n  \\time 4/4\n  \\override Score.BarNumber.break-visibility = ##(#f #f #t)\n}\n\ndessus = \\relative c' {\n  \\clef treble\n  \\global\n  \\repeat volta 2 {\n    a8( bes) c4 d8( e) f4 g8( a) |\n    bes4 a8( g) f4 e8( d) c4 |\n    bes8( a) g4 f8( e) d4 c8( bes) |\n    a4 r8 a' g f e d c4 |\n  }\n  \\repeat volta 2 {\n    bes8( a) g4 f8( e) d4 c8( bes) |\n    a4 g8( f) e4 d8( c) bes4 |\n    a'8( g) f4 e8( d) c4 bes8( a) |\n    g4 f8( e) d4 c8( bes) a4 |\n  }\n}\n\n\\score {\n  \\new StaffGroup <<\n    \\new Staff \\dessus\n  >>\n  \\layout { }\n}\n",
+        "score": "assets/scores/0017_phi4.svg",
+        "audio": "assets/audio/0017_phi4.mp3"
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "compiles": true,
+        "notes": 64,
+        "scale_drift": true,
+        "ly_code": "\\version \"2.24.2\"\n\\language \"nederlands\"\n\n\\header {\n  composer = \"Boismortier\"\n  title = \"Suite\"\n}\n\n\\relative c' {\n  \\clef treble\n  \\key c \\major\n  \\time 4/4\n\n  % Allemande\n  \\tempo \"Lento\"\n  c4 d e f | g a b c | d e f g | a b c d |\n\n  % Courante\n  \\tempo \"Andante\"\n  e4 f g a | b c d e | f g a b | c d e f |\n\n  % Sarabande\n  \\tempo \"Adagio\"\n  g4 a b c | d e f g | a b c d | e f g a |\n\n  % Gigue\n  \\tempo \"Allegro\"\n  c4 d e f | g a b c | d e f g | a b c d |\n}\n",
+        "score": "assets/scores/0017_qwen-coder.svg",
+        "audio": "assets/audio/0017_qwen-coder.mp3"
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "compiles": true,
+        "notes": 660,
+        "scale_drift": true,
+        "ly_code": "\\language \"nederlands\"\n\\version \"2.24.0\"\n\n\\header {\n  composer = \"Boismortier\"\n  period = \"Late Baroque\"\n  musical_form = \"suite\"\n  ensemble = \"violin, bassoon, contrabass, oboe, flute, viola\"\n  part = \"dessus\"\n}\n\ndessus = {\n  \\time 4/4\n  \\key c \\major\n\n  % Movement 1\n  c'4 d' e' f' | g' a' b' c'' | d'' e'' f'' g'' | a'' b'' c'' d'' |\n  e'' f'' g'' a'' | b'' c'' d'' e'' | f'' g'' a'' b'' | c''1 \\bar \"|.\"\n\n  % Movement 2\n  e'4 f' g' a' | b' c'' d'' e'' | f'' g'' a'' b'' | c''1 |\n  c''4 d'' e'' f'' | g'' a'' b'' c'' | d'' e'' f'' g'' | a''1 \\bar \"|.\"\n\n  % Movement 3\n  c'4 d' e' f' | g' a' b' c'' | d'' e'' f'' g'' | a'' b'' c'' d'' |\n  e'' f'' g'' a'' | b'' c'' d'' e'' | f'' g'' a'' b'' | c''1 \\bar \"|.\"\n\n  % Movement 4\n  e'4 f' g' a' | b' c'' d'' e'' | f'' g'' a'' b'' | c''1 |\n  c''4 d'' e'' f'' | g'' a'' b'' c'' | d'' e'' f'' g'' | a''1 \\bar \"|.\"\n}\n\n\\score {\n  \\new StaffGroup <<\n    \\new Staff \\with { instrumentName = \"Violin\" } { \\dessus }\n    \\new Staff \\with { instrumentName = \"Bassoon\" } { \\dessus }\n    \\new Staff \\with { instrumentName = \"Contrabass\" } { \\dessus }\n    \\new Staff \\with { instrumentName = \"Oboe\" } { \\dessus }\n    \\new Staff \\with { instrumentName = \"Flute\" } { \\dessus }\n    \\new Staff \\with { instrumentName = \"Viola\" } { \\dessus }\n  >>\n  \\layout { }\n  \\midi { }\n}\n",
+        "score": "assets/scores/0017_deepseek-coder.svg",
+        "audio": "assets/audio/0017_deepseek-coder.mp3"
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "compiles": true,
+        "notes": 35,
+        "scale_drift": false,
+        "ly_code": "\\version \"2.24.4\"\n\\language \"nederlands\"\n\\relative c'' {\n  \\key d \\major\n  \\time 3/4\n\n  d4 e f g2 |\n  e4 f g a2 |\n  g4 a b c2 |\n  d4 e f g2\n\n  \\bar \"||\"\n\n  d4 e f g2 |\n  e4 f g a2 |\n  g4 a b c2 |\n  d4 e f g2\n}\n",
+        "score": "assets/scores/0017_codestral.svg",
+        "audio": "assets/audio/0017_codestral.mp3"
+      }
+    ]
+  },
+  {
+    "idx": 193,
+    "metadata": {
+      "composer": "de Lalande",
+      "period": null,
+      "form": "sinfonia",
+      "ensemble": "bassoon, cello, flute, oboe, recorder, violin",
+      "part": "basso"
+    },
+    "user_prompt": "Write a LilyPond fragment in the style of de Lalande (Baroque). Form: sinfonia. Ensemble: bassoon, cello, flute, oboe, recorder, violin. Produce the basso part. Use Dutch (nederlands) note names and lowercase relative notation. Output only the LilyPond code; no prose, no markdown.",
+    "models": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "compiles": true,
+        "notes": 55,
+        "scale_drift": false,
+        "ly_code": "\\version \"2.22.0\"\n\\language \"english\"\n\n\\header {\n  composer = \"de Lalande\"\n  title = \"Sinfonia\"\n  instrument = \"Basso\"\n}\n\n\\score {\n  \\new Staff \\with {\n    instrumentName = \"Basso\"\n  } {\n    \\relative c' {\n      \\key g \\minor\n      \\time 4/4\n\n      % Baroque style basso continuo\n      d2 g,4 a\n      b2 c4 d\n      e2 f4 g\n      a2 b4 c\n      d2 e4 f\n      g2 a4 b\n      c2 d4 e\n      f2 g4 a\n\n      % Repeat and develop the motif\n      b2 a4 g\n      f2 e4 d\n      c2 b4 a\n      g2 f4 e\n      d2 c4 b\n      a2 g4 f\n      e2 d4 c\n      b2 a4 g\n\n      % Cadence\n      c2 b4 a\n      g2 f4 e\n      d1\n    }\n  }\n}\n",
+        "score": "assets/scores/0193_phi4.svg",
+        "audio": "assets/audio/0193_phi4.mp3"
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "compiles": true,
+        "notes": 126,
+        "scale_drift": false,
+        "ly_code": "\\language \"nederlands\"\n\\version \"2.24.2\"\n\n% Bassoon\nbassoon = \\relative c' {\n  \\clef bass\n  \\key g \\minor\n  \\time 4/4\n  r2 g4 b4 c4 d2 |\n  e4 f4 g4 a4 b2 |\n  c4 d4 e4 f4 g2 |\n  a4 b4 c4 d4 e2\n}\n\n% Cello\ncello = \\relative c {\n  \\clef bass\n  \\key g \\minor\n  \\time 4/4\n  r2 g4 b4 c4 d2 |\n  e4 f4 g4 a4 b2 |\n  c4 d4 e4 f4 g2 |\n  a4 b4 c4 d4 e2\n}\n\n% Flute\nflute = \\relative c' {\n  \\clef treble\n  \\key g \\minor\n  \\time 4/4\n  r2 g4 b4 c4 d2 |\n  e4 f4 g4 a4 b2 |\n  c4 d4 e4 f4 g2 |\n  a4 b4 c4 d4 e2\n}\n\n% Oboe\noboe = \\relative c' {\n  \\clef treble\n  \\key g \\minor\n  \\time 4/4\n  r2 g4 b4 c4 d2 |\n  e4 f4 g4 a4 b2 |\n  c4 d4 e4 f4 g2 |\n  a4 b4 c4 d4 e2\n}\n\n% Recorder\nrecorder = \\relative c' {\n  \\clef treble\n  \\key g \\minor\n  \\time 4/4\n  r2 g4 b4 c4 d2 |\n  e4 f4 g4 a4 b2 |\n  c4 d4 e4 f4 g2 |\n  a4 b4 c4 d4 e2\n}\n\n% Violin\nviolin = \\relative c' {\n  \\clef treble\n  \\key g \\minor\n  \\time 4/4\n  r2 g4 b4 c4 d2 |\n  e4 f4 g4 a4 b2 |\n  c4 d4 e4 f4 g2 |\n  a4 b4 c4 d4 e2\n}\n\n\\score {\n  <<\n    \\new StaffGroup <<\n      \\new Staff { \\bassoon }\n      \\new Staff { \\cello }\n      \\new Staff { \\flute }\n      \\new Staff { \\oboe }\n      \\new Staff { \\recorder }\n      \\new Staff { \\violin }\n    >>\n  >>\n  \\layout { }\n  \\midi { }\n}\n",
+        "score": "assets/scores/0193_qwen-coder.svg",
+        "audio": "assets/audio/0193_qwen-coder.mp3"
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "compiles": true,
+        "notes": 52,
+        "scale_drift": false,
+        "ly_code": "\\language \"nederlands\"\n\\version \"2.24.0\"\n\n\\header {\n  composer = \"de Lalande\"\n  title = \"Sinfonia\"\n  subtitle = \"Basso Part\"\n}\n\n\\paper {\n  indent = 0\\mm\n  left-margin = 15\\mm\n  right-margin = 15\\mm\n  top-margin = 10\\mm\n  bottom-margin = 10\\mm\n  ragged-last-bottom = ##t\n}\n\nglobal = {\n  \\key d \\major\n  \\time 4/4\n  \\tempo 4 = 80\n}\n\nupperStrings = \\relative c'' {\n  \\clef treble\n  \\global\n  \\set Staff.instrumentName = \"Violin \"\n  \\set Staff.shortInstrumentName = \"Vl. \"\n  \\repeat volta 2 {\n    a4 gis fis e |\n    d4. e8 fis4 gis |\n    a4 gis fis e |\n    d2. r4 |\n    a'4 gis fis e |\n    d4. e8 fis4 gis |\n    a4 gis fis e |\n    d2. r4 |\n  }\n}\n\nlowerStrings = \\relative c {\n  \\clef bass\n  \\global\n  \\set Staff.instrumentName = \"Bassoon \"\n  \\set Staff.shortInstrumentName = \"Bsn. \"\n  \\repeat volta 2 {\n    d4 e fis gis |\n    a4. b8 cis4 d |\n    e4 d cis b |\n    a2. r4 |\n    d4 e fis gis |\n    a4. b8 cis4 d |\n    e4 d cis b |\n    a2. r4 |\n  }\n}\n\n\\score {\n  <<\n    \\new Staff \\upperStrings\n    \\new Staff \\lowerStrings\n  >>\n  \\layout { }\n}\n",
+        "score": "assets/scores/0193_deepseek-coder.svg",
+        "audio": "assets/audio/0193_deepseek-coder.mp3"
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "compiles": true,
+        "notes": 26,
+        "scale_drift": false,
+        "ly_code": "\\version \"2.24.4\"\n\\language \"nederlands\"\n\\relative c' {\n  \\key f \\major\n  \\time 3/4\n\n  f4 r8 f'8 f\n  f4 r8 f'8 f\n  e4 r8 e'8 e\n  d4 r8 d'8 d\n\n  c4 r8 c'8 c\n  d4 r8 d'8 d\n  e4 r8 e'8 e\n  f4 r8 f'8 f\n\n  % Repeat above pattern if necessary\n}\n",
+        "score": "assets/scores/0193_codestral.svg",
+        "audio": "assets/audio/0193_codestral.mp3"
+      }
+    ]
+  }
+]

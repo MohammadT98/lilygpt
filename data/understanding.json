@@ -1,0 +1,407 @@
+[
+  {
+    "task": "bar_count",
+    "category": "Basic",
+    "instruction": "Count the number of bars in the LilyPond score above. Output a single integer.",
+    "template_kind": "structured_output",
+    "story": "Counting bars: every model misses, defaulting to round phrase lengths.",
+    "input_excerpt": "\\version \"2.16.0\"\n\n% Allegro e Custoso assai\nIMandI =  \\relative c'' {\n  \\clef \"treble\"\n  \\set tupletSpannerDuration = #(ly:make-moment 1 4)\n  \\key d\\major\n  \\time 4/4\n%page 9\n  \\partial 8 a8 |\n   a8[ \\times 2/3 {b16 cis d]}  cis8[ b]  a[ \\times 2/3 {fis'16 g a]}  g8[ fis] |\n  \\times 4/6 { e16[ fis g b a g]}  fis8[ e] d a16 fis d8 a' |\n   a8[ \\times 2/3 {b16 cis d]}  cis8[ b]  a[ \\times 2/3 {fis'16 g a]}  g8[ fis] |\n  \\times 4/6 { e16[ fis g b a g]}  fis8[ e] d4 r8 a8 |\n  %5\n  b16 d d g g d d g \\times 4/6 { b[ a g fis e d]}  b'8[ b,] |\n  a16 d d fis fis d d fis \\times 4/6 { a[ g fis fis e d]}  a'8[ a,] |\n  g16 cis cis e e g g e \\times 4/6 { e16[ d cis e fis g]  e[ % d instead of e?\n    d cis g' fis e]} |\n  \\times 2/3 { fis16[ e d} d,8] \\times 4/6 {r16  fis'16[ g a g fis ]}  e8[ a,]\n    \\times 4/6 {r16  cis[ d e d cis]} |\n  d16 g g fis fis b, b cis d b' b a a gis gis a |\n  %10\n  \\times 4/6 { a16[ e d cis d e]  cis[ e d cis d e]}\n     d8[ a]  d,[ \\times 2/3 {d'16 e fis]} |\n   e8[ \\times 2/3 {a16 gis fis]} \\times 4/6 { e[ d cis b cis d]}\n     cis8[ \\times 2/3 {a'16 gis fis]} \\times 4/6 { e[ d cis b cis d]} |\n  cis16 g'! g fis fis gis gis a a e a e fis d fis d |\n  \\times 4/6 { cis16[ d e fis e d]}  cis8[ b] a a'16 e cis a cis e |\n%page 10\n  a16 e a e cis a cis e cis8 e16 e e8 e |\n  %15\n  e4 r4 r4 r8 e8 |\n   e8[ \\times 2/3 {a16 gis fis]}  e8[ \\times 2/3 {a16 gis fis]}\n     e8[ \\times 2/3 {fis16 e d]} cis16 fis e d |\n   cis8[ \\times 2/3 {d16 cis b]} a16 b cis d\n    \\times 4/6 { cis[ d e fis e d]}  cis8[ b] |\n\u2026",
+    "options": null,
+    "gold": "28",
+    "n_correct": 0,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "25",
+        "correct": false
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "25",
+        "correct": false
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "24",
+        "correct": false
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "25",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "task": "metadata_qa",
+    "category": "Basic",
+    "instruction": "Select the value of the queried metadata field from the four options. The relevant field is given in the question. Field: meter.",
+    "template_kind": "multiple_choice",
+    "story": "Reading metadata straight from the header.",
+    "input_excerpt": "\\version \"2.16.0\"\n\nmd = \\markup {\\italic \"d.\"}\n\nIMandI =  \\relative c'' {\n  \\clef \"treble\"\n  \\time 4/4\n  \\key d\\major\n\n  %1 page 2\n  <fis a, d,>4 <a a,> <fis a, d,> a16 fis d a |\n  <fis' a, d,>4 <a a,> <fis a, d,> a16 fis d a |\n  <g' b, d, g,>4 <b b,> <g b, d, g> b16 g d b |\n  <g' b, d, g,>4 <b b,> <g b, d, g> b16 g d b |\n  <fis' a, d,>4 <a a,> <fis a, d,> a16 fis d a |\n  <fis' a, d,>4 <a a,> <fis a, d,> a16 fis d a |\n  %7\n  <<{e'4 fis e} {cis d cis} \\\\ {a a a}>> a'16 e cis a |\n  <<{e'4 fis e} {cis d cis}>> a'16 e cis a |\n  <fis' a,>4 <fis a,> <fis a,> d,16 e fis g |\n  a b a g fis g fis e d4 <fis' a, d,> |\n  <g b, d,> <<e cis \\\\ a>> <fis' a, d,> d,16 e fis g |\n  %12 page 3\n  a b a g fis g fis e d4 <fis' a, d,> |\n  <g b, d,> <<e cis \\\\ a>> <fis' a, d,> r8 fis |\n  %14 Note: Quarters in bars 14 and 16 are written without stems in the manuscript. My interpretation is :16.\n  <<{e16 e e e_ \\markup{\\italic \"simili\"} a4:16 e: fis: | e} \\\\ {cis16 cis cis cis cis4:16 cis: d: |\n  cis}>> cis8 e d b gis b | <<{e4:16 fis: e: a: | e} \\\\ {cis:16 d: cis: cis: |\n  cis}>> cis8 e d b gis b |\n  %18\n  a'16 gis fis e d cis b a <cis e,>4 <<b \\\\ gis>> |\n  a'16 gis fis e d cis b a <cis e,>4 <<b \\\\ gis>> |\n  <<{a'16 a a a a a a a a a a a a a a a} \\\\\n    {cis, cis cis cis cis cis cis cis cis cis cis cis cis cis cis cis}>> |\n  %21 page 4\n  <<{a' a a a a a a a a a a a a a a a | gis gis gis gis gis gis gis gis\n    gis gis gis gis gis gis gis gis} \\\\ {b, b b b b b b b b b b b b b b b |\n    b b b b b b b b b b b b b b b b}>> |\n\u2026",
+    "options": [
+      "2/2",
+      "18/16",
+      "4/4",
+      "12/8"
+    ],
+    "gold": "4/4",
+    "n_correct": 4,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "4/4",
+        "correct": true
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "4/4",
+        "correct": true
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "4/4",
+        "correct": true
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "4/4",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "task": "bar_sequencing",
+    "category": "Segment",
+    "instruction": "The bars below are shuffled and labelled with indices 0..3. Output the indices in the correct sequential order as a single digit string (for example, 0312).",
+    "template_kind": "structured_output",
+    "story": "Ordering shuffled bars: mostly wrong.",
+    "input_excerpt": "0. \\version \"\"\n\ntreblesWstep={\n  r4 <e a>4 <a c'>\n1. <c' e'> <a c'><e a>\n  r4 <e a>4 <a c'>\n2. <c' e'> <a c'><e a>\n}\nbassWstep={\n  <a,, a,>2. <a,, a,><a,, a,><a,, a,>\n}\n\ntreblesA=  {\n\t\t\t\t% 1\n  \\chordmode {\n    r4 a2:m/e ( r4 a2:m/e r4 a2:m/e ~  a2:m/e g4:7)\n\t\t\t\t% 5\n    r4 c'2/g' r4  c'2/g' r4  c'2/g'~ c'2./g' }\n\t\t\t\t% 9\n  r4 <a' c'' f''>2 r4 <a' c'' f''>2 r4 < gis' h' e''>2 ~< gis' h' e''>2.\n\t\t\t\t%13\n  \\chordmode {r4  g2:dim r4 g2:dim } <f'a'd''>2.~<f'a'd''>\n\t\t\t\t%17\n  \\chordmode{r4 a2:m/e r4  a2:m/e r4 e2 ~ e2. }\n}\n\n\nbassA=  {\n\t\t\t\t% 1\n  <a a,>2.   <a a,>   <a a,>   <a a,>2  <g g,>4\n\t\t\t\t% 5\n  <c g>2.  <c g>  <c g>  <c g>\n\t\t\t\t% 9\n  <f c>  <f c> <e h e'><e h e'>\n\t\t\t\t%13\n  <e e'><e e'> <d a d'> <d a d'>\n\t\t\t\t%17\n  <e a c'><e a c'> <e gis h><e gis h>\n}\n\ntreblesB=  {\n\t\t\t\t% 21\n  \\chordmode {\n    r4 a2 r4  a2 r4 a2~a2.\n\t\t\t\t% 25\n    r4 d'2/a' r4 d'2/a' r4 a2 ~ a2. }\n\t\t\t\t% 29\n  \\chordmode {r4 fis2:m}\n3. r4 <gis' his' gis''>2",
+    "options": null,
+    "gold": "0123",
+    "n_correct": 1,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "0312",
+        "correct": false
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "0123",
+        "correct": true
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "0213",
+        "correct": false
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "1023",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "task": "metadata_prediction",
+    "category": "Segment",
+    "instruction": "The score has one metadata field masked. Predict the value of that field from the four options based on the musical content. Masked field: key.",
+    "template_kind": "multiple_choice",
+    "story": "Inferring a masked field from the notes: mixed.",
+    "input_excerpt": "\\version \"2.18.2\"\n% [Include not found: header.ily]\n\nglobal = {\n  \\time 3/4\n  \n}\n\nhornI = \\relative c'' {\n  \\repeat volta 2 {\n    g'2( e4) |\n    f d d |\n    r d8 e f d |\n    e4 c8 d e f |\n    g2( e4) |\n    \\appoggiatura g8\n    f4 d d |\n    r d8 e f d |\n    \\octaveCheck c''\n    c4 r r\n  }\n\n  \\repeat volta 2 {\n    d2( e4)\n    c( b c) |\n    f2( e4) |\n    d4 a'( g ) |\n    fis2. |\n    g4( d) d |\n    es2( c4) |\n    b4 \\< c8 d e f |\n    \\octaveCheck g''\n    g2\\f ( e4) |\n    f4 d d |\n    r d8\\p e f d |\n    e4  c8\\< d e f\\! |\n    g2( e4) |\n\n    \\appoggiatura g8\n    f4 d d |\n    r d8 e f d |\n    \\octaveCheck c''\n    c4 r r |\n  }\n  \n  \\repeat volta 2 {\n    \\break\n    e2.^\"Trio\"\\mf |\n    f2( e4) |\n    dis2. |\n    e4 r r |\n    c2 e4~ e d a'4~a g b, |\n    \\octaveCheck c''\n    c r r |\n  }\n  \n  \\repeat volta 2 {\n    e2(\\p d4) |\n    c2( b4) |\n    f'2( e4) |\n    d2( c4) |\n    e4 e e f d b |\n    a( b) gis |\n    \\octaveCheck a'\n    a r r |\n  }\n}\n\nhornII = \\relative c'' {\n  \\repeat volta 2 {\n    e2( c4) d4 g, g |\n    g, g' g |\n    c c, c |\n    c8 c e g c g |\n    d'4 g, g |\n    g, g' g |\n    \\octaveCheck c''\n    c,4 r r |\n  }\n  \n  \\repeat volta 2 {\n    R1 * 3/4 |\n    d'2(\\p e4) |\n    c4( b c) |\n    f2 e4 |\n    es d c |\n    b r g |\n    fis2. |\n    g4 r r |\n    e'2(\\f c4) |\n    d g, g |\n    g, g'\\p g |\n    c c,\\< c\\! |\n    \\octaveCheck c'\n    c8 c e g c g |\n    d'4 g, g |\n    g, g' g |\n    c, r r |\n  }\n  \n  \\repeat volta 2 {\n    \\octaveCheck c'\n    c'2.\\mf d2 c4~ c b a |\n    g4 r r |\n    e,2. f2. g |\n\u2026",
+    "options": [
+      "bes \\minor",
+      "c \\major",
+      "sol \\minor",
+      "mib \\major"
+    ],
+    "gold": "c \\major",
+    "n_correct": 2,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "c \\major",
+        "correct": true
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "sol \\minor",
+        "correct": false
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "c \\major",
+        "correct": true
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "Based on the musical con",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "task": "next_bar_prediction",
+    "category": "Segment",
+    "instruction": "Given the opening bars of the score, select the option that is most likely to be the next bar.",
+    "template_kind": "multiple_choice",
+    "story": "Local continuation: models split.",
+    "input_excerpt": "\\version \"\"\n\n\\header {\n  title = \"\"\n  composer = \"\"\n  opus = \"\"\n  style = \"\"\n  source = \"\"\n  date = \"\"\n  mutopiacomposer = \"\"\n  mutopiainstrument = \"\"\n  mutopiatitle = \"\"\n  license = \"\"\n  maintainer = \"\"\n  maintainerEmail = \"\"\n  moreInfo = \"\"\n\n footer = \"\"\n copyright = \\markup {\\override #'(font-name . \"\") \\override #'(baseline-skip . 0) \\right-column {\\with-url #\"\" {\\abs-fontsize #9  \"\" \\concat {\\abs-fontsize #12 \\with-color #white \\char ##x01C0 \\abs-fontsize #9 \"\"}}}\\override #'(font-name . \"\") \\override #'(baseline-skip . 0 ) \\center-column {\\abs-fontsize #11.9 \\with-color #grey \\bold {\\char ##x01C0 \\char ##x01C0 }}\\override #'(font-name . \"\") \\override #'(baseline-skip . 0) \\column { \\abs-fontsize #8 \\concat {\"\" \\with-url #\"\" \"\" \\char ##x00A9 \"\" \"\" \\maintainer \"\" \\char ##x2014 \"\" \\footer}\\concat {\\concat {\\abs-fontsize #8 { \\with-url #\"\" \"\"\\char ##x2014 \"\" }}\\abs-fontsize #13 \\with-color #white \\char ##x01C0 }}}\n tagline = ##f\n}\n\n\n\\layout {\n  indent = 2.2\\cm\n}\n\nmbreak = {} % { \\break }\n\nu_theme_a = {\n  g8[ e' c g]\ng8[ e' c g]\ng8[ e' a, d]\nc4 b8 g",
+    "options": [
+      "g8[ e' c g]",
+      "<< {\\voiceTwo\\shiftOnn \\once\\override NoteColumn.force-hshift=#-1.2 c,4 c8 r } \\\\\n     {\\voiceThree\\stemDown c'16[ g] e'[ c] s4 } >>",
+      "g4 r",
+      "g'4 ees8 f"
+    ],
+    "gold": "0",
+    "n_correct": 2,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "g8[ e' c g]",
+        "correct": true
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "g8[ e' c g]",
+        "correct": true
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "g4 r",
+        "correct": false
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "Based on the given openi",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "task": "composer_recognition",
+    "category": "Sequence",
+    "instruction": "Select the most likely composer of the score from the four options.",
+    "template_kind": "multiple_choice",
+    "story": "Recognition: composer identified from surface style.",
+    "input_excerpt": "\n\\header {\n  copyrightYear = \"2007\"\n  title = \"Salve Regine\"\n  subtitle = \"\u00c0 voix seule\"\n  composer = \"\"\n\n  notes = \\markup \\column {\n    \\line { Documents originaux :}\n    \\null\n    \\wordwrap {\n      Mottets, a voix seule, deux et trois parties \n      et symphonies de Mr Couperin, \n      copie de l'atelier Philidor, Ca 1705.\n    }\n    \\with-url #\"http://gallica.bnf.fr/Catalogue/noticesInd/FRBNF39579545.htm\" \\typewriter \"http://gallica.bnf.fr\"\n  }\n}\n\n% [Include not found: common/common.ily]\n\n\\currentOpus \"SalveRegina\"\n\\includeScore \"A\"\n\\includeScore \"B\"\n\\includeScore \"C\"\n\\includeScore \"D\"",
+    "options": [
+      "CouperinF",
+      "SancesGF",
+      "BanchieriA",
+      "MasonL"
+    ],
+    "gold": "CouperinF",
+    "n_correct": 4,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "CouperinF",
+        "correct": true
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "CouperinF",
+        "correct": true
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "CouperinF",
+        "correct": true
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "CouperinF",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "task": "emotion_recognition",
+    "category": "Sequence",
+    "instruction": "Select the most likely Russell valence-arousal quadrant for the score from the four options. Q1 = high valence + high arousal, Q2 = low valence + high arousal, Q3 = low valence + low arousal, Q4 = high valence + low arousal.",
+    "template_kind": "multiple_choice",
+    "story": "Valence/arousal collapses \u2014 models default to one quadrant.",
+    "input_excerpt": "% Lily was here -- automatically converted by midi2ly from /nfsd/voce/machine_learning/datasets/emopia/_workdir/EMOPIA_2.2/midis/Q4_--2B4d4lQhs_3.mid\n\\version \"\"\n\n\\layout {\n  \\context {\n    \\Voice\n    \\remove Note_heads_engraver\n    \\consists Completion_heads_engraver\n    \\remove Rest_engraver\n    \\consists Completion_rest_engraver\n  }\n}\n\ntrackAchannelA = {\n  \n  \\tempo 4 = 120 \n  \n  \\time 4/4 \n  \\skip 4*1/384 \n}\n\ntrackA = <<\n  \\context Voice = voiceA \\trackAchannelA\n>>\n\n\ntrackBchannelA = {\n  \\skip 4*23033/384 \n}\n\ntrackBchannelB = \\relative c {\n  r4*373/384 f4*1047/384 r4*11/384 f4*535/384 r4*435/384 f4*765/384 \n  r4*355/384 c4*1113/384 r4*307/384 a''4*1041/384 r4*9/384 a'4*7/384 \n  r4*356/384 ais,,4*1107/384 r4*308/384 f'''4*295/384 r4*91/384 e,,4*743/384 \n  r4*345/384 c4*1125/384 r4*3/384 ais,4*4/384 r4*4/384 ais'' r4*2/384 e'4*751/384 \n  r4*4/384 f,4*825/384 r4*341/384 g4*760/384 r4*173/384 a'4*226/384 \n  r4*337/384 e4*1100/384 r4*340/384 fis,,4*10/384 r4*3/384 cis''128*17 \n  r4*4/384 a'4*947/384 r4*176/384 e4*386/384 r4*9/384 e64*15 r4*43/384 d4*622/384 \n  r4*4/384 g4*606/384 r4*10/384 g4*1042/384 r4*427/384 c,,4*537/384 \n}\n\ntrackBchannelBvoiceB = \\relative c {\n  \\voiceFour\n  r4*383/384 f'4*1360/384 r4*10/384 f4*650/384 r4*5/384 c'4*717/384 \n  r4*10/384 c4*1511/384 r4*298/384 d,4*209/384 r4*4/384 g'4*603/384 \n  r4*231/384 ais,,,,4*1468/384 r4*311/384 f'''128*91 r4*9/384 f4*1550/384 \n  r4*342/384 ais,,4*1199/384 r4*706/384 ais'4*798/384 r4*354/384 c,4*695/384 \n  r4*1/384 g''4*387/384 r4*344/384 ais4*1161/384 r4*378/384 d,,4*217/384 \n\u2026",
+    "options": [
+      "Q3",
+      "Q1",
+      "Q4",
+      "Q2"
+    ],
+    "gold": "Q4",
+    "n_correct": 0,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "Q1",
+        "correct": false
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "Q1",
+        "correct": false
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "Q1",
+        "correct": false
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "Based on the analysis of",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "task": "error_detection",
+    "category": "Sequence",
+    "instruction": "The score below may contain one or more erroneous bars (invalid metadata, garbage content, wrong bar duration, implausible melodic leap, or accidental outside the declared key). Identify the 1-indexed bar numbers where the errors occur. Output the numbers as a space-separated list (e.g. '3 7 12'). If no errors are present, output 'none'.",
+    "template_kind": "structured_output",
+    "story": "Spotting the corrupted bar in one shot is out of reach.",
+    "input_excerpt": "\\version \"2.18.2\"\n\n% [Include not found: header.ily]\n\nglobal =  {\n  \\time 3/4\n  \\key c \\major\n  s2.*16\n  \\key f \\major\n  s2.*16\n  \\key c \\major\n}\n\nhornI =  \\relative c'' {\n  \\repeat volta 2 {\n    c4\\f d8 e f e e( d ) d4 d |\n    d e8 f g\n    f f( e )\n    e4 e | e f8 g a g |\n    fis d f4. e8 |\n    e8( d ) d c d e c4 r r\n  }\n  \\repeat volta 2 {\n    d4 e8 f g f dis( e) e4 r |\n    g8 e c' g f e |\n    g8( e) d4 r |\n    c4 d8 e f e d4 e8 f g f e( g)  c,4 b |\n    c4 r r\n  }\n  \\repeat volta 2 {\n    c2.\\p^\"Trio\"\n    cis8( d) d4. g8 f( e d c d e ) |\n    f-. a( g f e d ) |\n    cis2 d8( a')  ??? |\n    b,2 c8( g') |\n    g( f) f( d) c( b) |\n    c4 r r\n  }\n  \\repeat volta 2 {\n    e2( f4)|\n    \\tuplet 3/2 { g8 e c } bes4 a |\n    e'2(\\p f4) |\n    \\tuplet 3/2 { g8 e c } bes4 a c2. |\n    cis8\\mf( d) d4.(g8) |\n    f( e d c d e ) f4 r r\n  }\n}\n\nhornII =  \\relative c' {\n  \\repeat volta 2 {\n    r4 r c \\f g' r8 g( fis g) |\n    g,4 r g' |\n    c r8 c g e |\n    c4 r c'8 b |\n    a d a b c4 |\n    c8 g r4 g |\n    c,8 c' g e c4  |\n  }\n  \\repeat volta 2 {\n    b'8 g\n    \\repeat unfold 2 { b g } |\n    \\repeat unfold 3 {c g } |\n    c g e' g, c g |\n    e'( c) b4 g |\n    r4 c, c'~ c b8 a b4 c4 e, g c, g c\n  }\n  \\repeat volta 2 {\n    a'4\\p r a\n    bes r bes |\n    g c bes a r r |\n    r8 g a g fis4 |\n    r8 f g f e4 |\n    f4 r g |\n    c,8 c' g e c4 |\n  }\n  \\repeat volta 2 {\n    \\tuplet 3/2 { c8\\mf e g } bes4 a |\n    e2( f4)\n    \\tuplet 3/2 { c8\\p e g } bes4 a |\n    e2( f4)\n    a4 f a bes\\mf f bes g c c, f8 a c a f4_\\markup { \\italic \\halign #0.45 \"Menuetto da capo\" }\n\u2026",
+    "options": null,
+    "gold": "bars 11",
+    "n_correct": 0,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "bars 3 7 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29",
+        "correct": false
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "none",
+        "correct": false
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "bars 15 16 20 21 22 23 24 25 26 27 28 29 30",
+        "correct": false
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "bars 12",
+        "correct": false
+      }
+    ]
+  },
+  {
+    "task": "genre_recognition",
+    "category": "Sequence",
+    "instruction": "Select the most likely genre of the score from the four options.",
+    "template_kind": "multiple_choice",
+    "story": "Recognition: all four models agree with the gold label.",
+    "input_excerpt": "%%% Many thanks to the Case Western Reserve University Kulas Music library\n%%% for providing the old texts that would otherwise rot on the shelves.\n\n\\version \"2.18.2\"\n\n#(ly:set-option 'relative-includes #t)\n#(set-global-staff-size 13)\n\n\\paper {\n\tbookTitleMarkup = \\markup {}\n\tscoreTitleMarkup = \\markup {\\fill-line { \\center-column { \\line {\\abs-fontsize #18 {\\fromproperty #'header:subtitle }} \\null \\null \\null \\null \\null}}}\n}\n\n% [Include not found: paper.ily]\n\n\\markup { \\fill-line { \\center-column {\n\t\\null \\null \\null \\null\n\t\\null \\null \\null \\null\n\t\\null \\null \\null \\null\n\t\\null \\null \\null \\null\n\t\\null \\null \\null \\null\n\t\\null \\null \\null \\null\n\t\\null \\null \\null \\null\n\t\\line {\\abs-fontsize #18 \"P. TCHAIKOVSKY\"}\n\t\\null \\null \\null \\null\n\t\\line {\\abs-fontsize #28 \"VIOLIN CONCERTO IN D MAJOR\"}\n\t\\null \\null \\null \\null\n\t\\line {\\abs-fontsize #20 \"OPUS  35\"}\n\t} } }\n\n% [Include not found: mvmt1/includes.ily]\n\\bookpart {\n% [Include not found: mvmt1/header.ily]\n% [Include not found: mvmt1/score.ily]\n}\n\n% [Include not found: mvmt2/includes.ily]\n\\bookpart {\n% [Include not found: mvmt2/header.ily]\n% [Include not found: mvmt2/score.ily]\n}\n\n% [Include not found: mvmt3/includes.ily]\n\\bookpart {\n% [Include not found: mvmt3/header.ily]\n% [Include not found: mvmt3/score.ily]\n}",
+    "options": [
+      "Romantic",
+      "Modern",
+      "Folk",
+      "Song"
+    ],
+    "gold": "Romantic",
+    "n_correct": 4,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "Romantic",
+        "correct": true
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "Romantic",
+        "correct": true
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "Romantic",
+        "correct": true
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "Romantic",
+        "correct": true
+      }
+    ]
+  },
+  {
+    "task": "music_captioning",
+    "category": "Sequence",
+    "instruction": "Select the most likely title for the score from the four options.",
+    "template_kind": "multiple_choice",
+    "story": "Recognition: the right title picked from four options.",
+    "input_excerpt": "\\version \"2.13.3\"\n\\header {\n\ttitle = \"\"\n\t%subtitle = \"a sette\"\n\tcomposer = \"J.H.Schmelzer\"\n\t%instrument = \"CATB\"\n\ttagline = ##f\n}\nmystaffsize = #20\n% [Include not found: style.ily]\n% [Include not found: common.ily]\n%options\n#(ly:set-option 'delete-intermediate-files #t)\n#(ly:set-option 'no-point-and-click #t)\n\\paper{\n%\tragged-last-bottom = ##t\n #(define page-breaking ly:page-turn-breaking)\n}\nglobal={\n\t\\key c \\major \n\t\\set Score.skipBars = ##t\n}\n\\bookpart {\n \\header { instrument = \"Cornettino primo\" }\n \\score { \\new Staff \n\t<< \n\t\t\\new Voice {\\include \"./sonata_xii/layout.ily\"}\n\t\t\\new Voice {\\global \\clef treble \\include \"./sonata_xii/n_cn1.ily\"}\n\t>>\n\t}\n}\n\\bookpart {\n \\header { instrument = \"Cornettino 2do\" }\n \\score { \\new Staff \n\t<< \n\t\t\\new Voice {\\include \"./sonata_xii/layout.ily\"}\n\t\t\\new Voice {\\global \\clef treble \\include \"./sonata_xii/n_cn2.ily\"}\n\t>>\n\t}\n}\n\\bookpart {\n \\header { instrument = \"Clarino 1mo\" }\n \\score { \\new Staff \n\t<< \n\t\t\\new Voice {\\include \"./sonata_xii/layout.ily\"}\n\t\t\\new Voice {\\global \\clef treble \\include \"./sonata_xii/n_tr1.ily\"}\n\t>>\n\t}\n}\n\\bookpart {\n \\header { instrument = \"Clarino 2do\" }\n \\score { \\new Staff \n\t<< \n\t\t\\new Voice {\\include \"./sonata_xii/layout.ily\"}\n\t\t\\new Voice {\\global \\clef treble \\include \"./sonata_xii/n_tr2.ily\"}\n\t>>\n\t}\n}\n\\bookpart {\n \\header { instrument = \"Trombone 1\" }\n \\score { \\new Staff \n\t<< \n\t\t\\new Voice {\\include \"./sonata_xii/layout.ily\"}\n\t\t\\new Voice {\\global \\clef alto \\include \"./sonata_xii/n_tb1.ily\"}\n\t>>\n\t}\n}\n\\bookpart {\n\u2026",
+    "options": [
+      "Praeludium et Fuga",
+      "Sonata \u00e2\u0085\u00a2.",
+      "JUGENDFREUDEN.",
+      "Sonata XII"
+    ],
+    "gold": "Sonata XII",
+    "n_correct": 4,
+    "predictions": [
+      {
+        "id": "phi4",
+        "name": "Phi-4",
+        "answer": "Sonata XII",
+        "correct": true
+      },
+      {
+        "id": "qwen-coder",
+        "name": "Qwen2.5-Coder-14B",
+        "answer": "Sonata XII",
+        "correct": true
+      },
+      {
+        "id": "deepseek-coder",
+        "name": "DeepSeek-Coder-V2-Lite",
+        "answer": "Sonata XII",
+        "correct": true
+      },
+      {
+        "id": "codestral",
+        "name": "Codestral-22B",
+        "answer": "Sonata XII",
+        "correct": true
+      }
+    ]
+  }
+]

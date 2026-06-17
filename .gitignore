@@ -1,0 +1,5 @@
+_pull/
+_preview/
+*.wav
+__pycache__/
+.DS_Store

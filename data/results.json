@@ -1,0 +1,53 @@
+{
+  "models": ["Phi-4", "Qwen2.5-Coder-14B", "DeepSeek-Coder-V2-Lite", "Codestral-22B"],
+  "generation": {
+    "caption": "Generation matrix, 200 prompts per cell. JS and FMD are computed against the BMdataset test split (in-domain) and the out-of-domain Mutopia reference. Ablation uses hand-written A-minor demonstrations.",
+    "columns": [
+      {"key": "comp", "label": "Compile (%)", "dir": "up"},
+      {"key": "js_test", "label": "JS(test)", "dir": "up"},
+      {"key": "js_mut", "label": "JS(Mut.)", "dir": "up"},
+      {"key": "fmd_test", "label": "FMD(test)", "dir": "down"},
+      {"key": "fmd_mut", "label": "FMD(Mut.)", "dir": "down"}
+    ],
+    "regimes": [
+      {"name": "Zero-shot", "rows": [
+        {"model": "Phi-4",                   "comp": 71.1, "js_test": 83.27, "js_mut": 81.24, "fmd_test": 0.933, "fmd_mut": 1.419},
+        {"model": "Qwen2.5-Coder-14B",       "comp": 69.0, "js_test": 84.85, "js_mut": 73.80, "fmd_test": 1.139, "fmd_mut": 1.681},
+        {"model": "DeepSeek-Coder-V2-Lite",  "comp": 48.6, "js_test": 55.39, "js_mut": 58.07, "fmd_test": 0.887, "fmd_mut": 1.578},
+        {"model": "Codestral-22B",           "comp": 79.3, "js_test": 75.78, "js_mut": 65.56, "fmd_test": 0.960, "fmd_mut": 1.722}
+      ]},
+      {"name": "Few-shot", "rows": [
+        {"model": "Phi-4",                   "comp": 35.1, "js_test": 74.80, "js_mut": 67.58, "fmd_test": 0.701, "fmd_mut": 1.278},
+        {"model": "Qwen2.5-Coder-14B",       "comp": 19.9, "js_test": 63.43, "js_mut": 65.69, "fmd_test": 0.742, "fmd_mut": 1.414},
+        {"model": "DeepSeek-Coder-V2-Lite",  "comp": 26.3, "js_test": 57.04, "js_mut": 60.23, "fmd_test": 0.714, "fmd_mut": 1.428},
+        {"model": "Codestral-22B",           "comp": 45.2, "js_test": 67.55, "js_mut": 59.18, "fmd_test": 0.696, "fmd_mut": 1.407}
+      ]},
+      {"name": "Ablation (A-minor)", "rows": [
+        {"model": "Phi-4",                   "comp": 99.6, "js_test": 71.13, "js_mut": 69.50, "fmd_test": 1.874, "fmd_mut": 2.683},
+        {"model": "Qwen2.5-Coder-14B",       "comp": 98.9, "js_test": 63.09, "js_mut": 55.93, "fmd_test": 1.980, "fmd_mut": 2.796},
+        {"model": "DeepSeek-Coder-V2-Lite",  "comp": 99.9, "js_test": 53.44, "js_mut": 46.96, "fmd_test": 1.960, "fmd_mut": 2.773},
+        {"model": "Codestral-22B",           "comp": 97.1, "js_test": 89.44, "js_mut": 76.95, "fmd_test": 1.754, "fmd_mut": 2.535}
+      ]}
+    ]
+  },
+  "understanding": {
+    "caption": "Understanding results on the ten ABC-Eval-derived tasks (greedy decoding). Chance: 0.25 for 4-way multiple choice; effectively 0 for bar_count and error_detection. Higher is better.",
+    "models": ["Phi-4", "Qwen2.5-Coder-14B", "DeepSeek-Coder-V2-Lite", "Codestral-22B"],
+    "rows": [
+      {"category": "Basic",    "task": "bar_count",            "metric": "exact-match acc.", "scores": [0.010, 0.020, 0.000, 0.030]},
+      {"category": "Basic",    "task": "metadata_qa",          "metric": "accuracy",         "scores": [0.767, 0.767, 0.667, 0.683]},
+      {"category": "Segment",  "task": "bar_sequencing",       "metric": "Kendall-τ (pen.)", "scores": [0.545, 0.521, 0.542, 0.503]},
+      {"category": "Segment",  "task": "next_bar_prediction",  "metric": "accuracy",         "scores": [0.521, 0.420, 0.454, 0.370]},
+      {"category": "Segment",  "task": "metadata_prediction",  "metric": "accuracy",         "scores": [0.650, 0.633, 0.517, 0.083]},
+      {"category": "Sequence", "task": "music_captioning",     "metric": "accuracy",         "scores": [0.903, 0.935, 0.677, 0.839]},
+      {"category": "Sequence", "task": "composer_recognition", "metric": "accuracy",         "scores": [0.875, 0.885, 0.760, 0.500]},
+      {"category": "Sequence", "task": "genre_recognition",    "metric": "accuracy",         "scores": [0.939, 0.955, 0.924, 0.788]},
+      {"category": "Sequence", "task": "emotion_recognition",  "metric": "accuracy",         "scores": [0.283, 0.300, 0.417, 0.000]},
+      {"category": "Sequence", "task": "error_detection",      "metric": "macro-F1",         "scores": [0.009, 0.005, 0.041, 0.014]}
+    ],
+    "aggregate": [
+      {"label": "Mutopia macro avg",    "scores": [0.651, 0.642, 0.568, 0.474]},
+      {"label": "Mutopia weighted avg", "scores": [0.626, 0.611, 0.566, 0.461]}
+    ]
+  }
+}
